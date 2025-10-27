@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Analysis - Current vs Proposed | UCSB DIG</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #0f1419, #1e3c72, #2a3c5f);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1.5rem 0;
+            border-bottom: 1px solid rgba(254, 188, 17, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: #febc11;
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .nav-links a:hover {
+            color: #febc11;
+            background: rgba(254, 188, 17, 0.1);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        /* Page Title */
+        .page-title {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        .page-title h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #febc11);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-title p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(254, 188, 17, 0.2);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(254, 188, 17, 0.3);
+        }
+
+        .summary-card h3 {
+            color: #1e3c72;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #febc11;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .subtext {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Chart Comparison Section */
+        .chart-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .chart-section h2 {
+            color: #1e3c72;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-title {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Sector Comparison Table */
+        .comparison-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .comparison-section h2 {
+            color: #1e3c72;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .comparison-table thead th {
+            background: #1e3c72;
+            color: white;
+            padding: 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .comparison-table tbody td {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .comparison-table tbody tr:hover {
+            background: rgba(254, 188, 17, 0.05);
+        }
+
+        .sector-name {
+            font-weight: 600;
+            color: #1e3c72;
+        }
+
+        .gap-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .gap-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .gap-neutral {
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Holdings Tables */
+        .holdings-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .holdings-section h2 {
+            color: #1e3c72;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .holdings-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: 2px solid #1e3c72;
+            color: #1e3c72;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(30, 60, 114, 0.1);
+        }
+
+        .tab-button.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .holdings-table-container {
+            overflow-x: auto;
+        }
+
+        .holdings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .holdings-table thead th {
+            background: #f8f9fa;
+            color: #1e3c72;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #eee;
+        }
+
+        .holdings-table tbody td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .holdings-table tbody tr:hover {
+            background: rgba(254, 188, 17, 0.05);
+        }
+
+        .ticker {
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Portfolio Structure Visualization */
+        .structure-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .structure-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .structure-bar {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .structure-bar:hover {
+            transform: translateX(10px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Overlap Summary */
+        .overlap-summary {
+            margin-bottom: 2rem;
+        }
+
+        .overlap-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .overlap-stat-card {
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.05), rgba(254, 188, 17, 0.05));
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid rgba(30, 60, 114, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .overlap-stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(254, 188, 17, 0.5);
+            box-shadow: 0 8px 25px rgba(254, 188, 17, 0.2);
+        }
+
+        .overlap-stat-card h3 {
+            font-size: 2.5rem;
+            color: #1e3c72;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .overlap-stat-card p {
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Insights Section */
+        .insights-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .insights-section h2 {
+            color: #1e3c72;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .insight-card {
+            padding: 2rem;
+            border-left: 4px solid #febc11;
+            background: rgba(254, 188, 17, 0.05);
+            border-radius: 8px;
+        }
+
+        .insight-card h3 {
+            color: #1e3c72;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .insight-card p {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title h1 {
+                font-size: 2rem;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .holdings-tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>DIG Portfolio Analysis</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">← Back to Main Site</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Page Title -->
+        <div class="page-title">
+            <h1>Portfolio Analysis: Current vs Proposed</h1>
+            <p>Strategic sector-based rebalancing with passive core and alpha reserve</p>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3>Current Portfolio</h3>
+                <div class="value">23</div>
+                <div class="subtext">Active Holdings</div>
+            </div>
+            <div class="summary-card">
+                <h3>Proposed Portfolio</h3>
+                <div class="value">37+</div>
+                <div class="subtext">Active + Core + Reserve</div>
+            </div>
+            <div class="summary-card">
+                <h3>Current Beta</h3>
+                <div class="value">1.15</div>
+                <div class="subtext">Portfolio Risk</div>
+            </div>
+            <div class="summary-card">
+                <h3>Target Beta</h3>
+                <div class="value">1.07</div>
+                <div class="subtext">Active Portion Risk</div>
+            </div>
+        </div>
+
+        <!-- Sector Allocation Charts -->
+        <div class="chart-section">
+            <h2>Sector Allocation Comparison</h2>
+            <div class="charts-grid">
+                <div>
+                    <div class="chart-title">Current Portfolio by Sector</div>
+                    <div class="chart-container">
+                        <canvas id="currentSectorChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <div class="chart-title">Proposed Active Portfolio by Sector</div>
+                    <div class="chart-container">
+                        <canvas id="proposedSectorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sector Comparison Table -->
+        <div class="comparison-section">
+            <h2>Sector-by-Sector Breakdown</h2>
+            
+            <h3 style="margin: 2rem 0 1rem; color: #1e3c72; font-size: 1.3rem;">Passive Core (40%)</h3>
+            <div class="holdings-table-container">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Sector</th>
+                            <th>Current %</th>
+                            <th>Proposed %</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passiveCoreBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin: 2rem 0 1rem; color: #1e3c72; font-size: 1.3rem;">Actively Managed Core (40%)</h3>
+            <div class="holdings-table-container">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Sector</th>
+                            <th>Current %</th>
+                            <th>Proposed %</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activeCoreBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="margin: 2rem 0 1rem; color: #1e3c72; font-size: 1.3rem;">Satellite/Alpha Reserve (20%)</h3>
+            <div class="holdings-table-container">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Sector</th>
+                            <th>Current %</th>
+                            <th>Proposed %</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody id="satelliteBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Holdings Details -->
+        <div class="holdings-section">
+            <h2>Detailed Holdings</h2>
+            <div class="holdings-tabs">
+                <button class="tab-button active" onclick="switchTab('current')">Current Holdings (23)</button>
+                <button class="tab-button" onclick="switchTab('proposed')">Proposed Active (37)</button>
+                <button class="tab-button" onclick="switchTab('overlap')">Holdings Overlap</button>
+            </div>
+
+            <!-- Current Holdings Tab -->
+            <div id="current" class="tab-content active">
+                <div class="holdings-table-container">
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Current %</th>
+                                <th>Current Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="currentHoldingsBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Proposed Holdings Tab -->
+            <div id="proposed" class="tab-content">
+                <div class="holdings-table-container">
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Proposed %</th>
+                                <th>Beta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="proposedHoldingsBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Overlap Analysis Tab -->
+            <div id="overlap" class="tab-content">
+                <div class="overlap-summary">
+                    <div class="overlap-stats">
+                        <div class="overlap-stat-card">
+                            <h3 id="overlapCount">-</h3>
+                            <p>Overlapping Holdings</p>
+                        </div>
+                        <div class="overlap-stat-card">
+                            <h3 id="currentOnlyCount">-</h3>
+                            <p>Current Portfolio Only</p>
+                        </div>
+                        <div class="overlap-stat-card">
+                            <h3 id="proposedOnlyCount">-</h3>
+                            <p>Proposed Portfolio Only</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 2rem 0 1rem; color: #1e3c72;">Holdings in Both Portfolios</h3>
+                <div class="holdings-table-container">
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Current %</th>
+                                <th>Proposed %</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overlapHoldingsBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: #1e3c72;">New Positions to Add</h3>
+                <div class="holdings-table-container">
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Proposed %</th>
+                                <th>Beta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="newPositionsBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin: 2rem 0 1rem; color: #1e3c72;">Positions to Exit</h3>
+                <div class="holdings-table-container">
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Current %</th>
+                                <th>Current Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exitPositionsBody">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Current Portfolio Data (from Portfolio_Positions_Oct-27-2025.csv)
+        const currentPortfolio = [
+            {ticker: "VOO", company: "Vanguard S&P 500 ETF", sector: "Broad Market", percent: 50.02, value: 370697.95},
+            {ticker: "TSM", company: "Taiwan Semiconductor", sector: "Technology", percent: 5.48, value: 40630.64},
+            {ticker: "GOOGL", company: "Alphabet Inc", sector: "Technology", percent: 4.91, value: 36408.25},
+            {ticker: "MSFT", company: "Microsoft Corp", sector: "Technology", percent: 3.98, value: 29467.12},
+            {ticker: "AMZN", company: "Amazon.com Inc", sector: "Consumer Discretionary", percent: 3.43, value: 25428.37},
+            {ticker: "VTV", company: "Vanguard Value ETF", sector: "Broad Market", percent: 3.33, value: 24695.87},
+            {ticker: "SPY", company: "SPDR S&P 500 ETF", sector: "Broad Market", percent: 3.16, value: 23400.21},
+            {ticker: "ASML", company: "ASML Holding", sector: "Technology", percent: 2.84, value: 21066.60},
+            {ticker: "SNOW", company: "Snowflake Inc", sector: "Technology", percent: 2.21, value: 16404.52},
+            {ticker: "NUKZ", company: "Range Nuclear ETF", sector: "Utilities", percent: 2.15, value: 15955.89},
+            {ticker: "VRT", company: "Vertiv Holdings", sector: "Industrials", percent: 1.97, value: 14628.46},
+            {ticker: "COST", company: "Costco Wholesale", sector: "Consumer Staples", percent: 1.88, value: 13909.87},
+            {ticker: "IHI", company: "iShares Medical Devices ETF", sector: "Healthcare", percent: 1.83, value: 13589.84},
+            {ticker: "CEG", company: "Constellation Energy", sector: "Utilities", percent: 1.73, value: 12790.37},
+            {ticker: "JPM", company: "JPMorgan Chase", sector: "Financials", percent: 1.63, value: 12084.04},
+            {ticker: "PANW", company: "Palo Alto Networks", sector: "Technology", percent: 1.59, value: 11808.45},
+            {ticker: "BLD", company: "TopBuild Corp", sector: "Industrials", percent: 1.20, value: 8903.92},
+            {ticker: "FLUT", company: "Flutter Entertainment", sector: "Consumer Discretionary", percent: 1.18, value: 8760.60},
+            {ticker: "SCHW", company: "Charles Schwab", sector: "Financials", percent: 1.18, value: 8735.85},
+            {ticker: "HIMS", company: "Hims & Hers Health", sector: "Healthcare", percent: 1.11, value: 8190.44},
+            {ticker: "FCX", company: "Freeport-McMoRan", sector: "Materials", percent: 1.08, value: 7994.80},
+            {ticker: "DXCM", company: "DexCom Inc", sector: "Healthcare", percent: 1.07, value: 7928.17},
+            {ticker: "PSA", company: "Public Storage", sector: "Real Estate", percent: 0.84, value: 6228.38}
+        ];
+
+        // Proposed Portfolio Data (from SectorProposalsFinal1.csv)
+        // Note: These percentages will be multiplied by 0.40 for the actual portfolio weight
+        const proposedPortfolio = [
+            {ticker: "PLD", company: "Prologis", sector: "Real Estate", percent: 0.51, beta: 1.28},
+            {ticker: "DLR", company: "Digital Realty Trust", sector: "Real Estate", percent: 0.75, beta: 0.83},
+            {ticker: "VICI", company: "VICI Properties", sector: "Real Estate", percent: 0.78, beta: 0.72},
+            {ticker: "NUKZ", company: "Range Nuclear ETF", sector: "Utilities", percent: 0.91, beta: 1.00},
+            {ticker: "CEG", company: "Constellation Energy", sector: "Utilities", percent: 1.02, beta: 1.14},
+            {ticker: "SRE", company: "Sempra", sector: "Utilities", percent: 0.46, beta: 0.65},
+            {ticker: "UNH", company: "United Health Care", sector: "Healthcare", percent: 2.28, beta: 0.65},
+            {ticker: "NVO", company: "Novo Nordisk", sector: "Healthcare", percent: 1.82, beta: 0.55},
+            {ticker: "LLY", company: "Eli Lilly", sector: "Healthcare", percent: 1.82, beta: 0.70},
+            {ticker: "BSX", company: "Boston Scientific", sector: "Healthcare", percent: 1.82, beta: 0.48},
+            {ticker: "TMO", company: "Thermo Fisher", sector: "Healthcare", percent: 1.37, beta: 0.75},
+            {ticker: "AMZN", company: "Amazon", sector: "Consumer Discretionary", percent: 6.20, beta: 1.14},
+            {ticker: "FLUT", company: "Flutter", sector: "Consumer Discretionary", percent: 3.47, beta: 1.63},
+            {ticker: "PDD", company: "Pinduoduo", sector: "Consumer Discretionary", percent: 2.25, beta: 1.08},
+            {ticker: "COST", company: "Costco", sector: "Consumer Staples", percent: 2.94, beta: 0.45},
+            {ticker: "KO", company: "Coca-Cola", sector: "Consumer Staples", percent: 1.05, beta: 0.26},
+            {ticker: "TMUS", company: "T-Mobile", sector: "Technology", percent: 1.49, beta: 0.46},
+            {ticker: "MSFT", company: "Microsoft", sector: "Technology", percent: 8.80, beta: 1.01},
+            {ticker: "NFLX", company: "Netflix", sector: "Technology", percent: 10.15, beta: 1.37},
+            {ticker: "CSCO", company: "Cisco", sector: "Technology", percent: 5.57, beta: 0.47},
+            {ticker: "DDOG", company: "DataDog", sector: "Technology", percent: 5.57, beta: 1.81},
+            {ticker: "ACN", company: "Accenture", sector: "Technology", percent: 5.60, beta: 1.09},
+            {ticker: "GOOGL", company: "Google", sector: "Communication", percent: 4.33, beta: 0.94},
+            {ticker: "TSM", company: "Taiwan Semiconductor", sector: "Communication", percent: 4.74, beta: 1.57},
+            {ticker: "GE", company: "General Electric", sector: "Industrials", percent: 1.55, beta: 1.37},
+            {ticker: "STRL", company: "Sterling Infrastructure", sector: "Industrials", percent: 1.55, beta: 1.82},
+            {ticker: "AMAT", company: "Applied Materials", sector: "Industrials", percent: 2.07, beta: 1.54},
+            {ticker: "ECL", company: "Ecolab", sector: "Industrials", percent: 1.55, beta: 1.08},
+            {ticker: "VRT", company: "Vertiv", sector: "Industrials", percent: 1.04, beta: 1.85},
+            {ticker: "Gold", company: "Gold", sector: "Materials", percent: 1.04, beta: 0.46},
+            {ticker: "UUP", company: "Dollar", sector: "Materials", percent: 1.55, beta: 0.05},
+            {ticker: "JPM", company: "JP Morgan", sector: "Financials", percent: 3.49, beta: 1.20},
+            {ticker: "ICE", company: "Intercontinental Exchange", sector: "Financials", percent: 1.39, beta: 0.94},
+            {ticker: "BLK", company: "BlackRock", sector: "Financials", percent: 3.62, beta: 1.46},
+            {ticker: "BRK.B", company: "Berkshire Hathaway", sector: "Financials", percent: 2.51, beta: 0.51},
+            {ticker: "CB", company: "Chubb", sector: "Financials", percent: 1.39, beta: 0.44},
+            {ticker: "GS", company: "Goldman Sachs", sector: "Financials", percent: 1.53, beta: 1.30}
+        ].map(holding => ({
+            ...holding,
+            actualPercent: holding.percent * 0.40  // Apply 40% weighting
+        }));
+
+        // Calculate sector allocations
+        function calculateSectorAllocations(portfolio, useActualPercent = false) {
+            const sectors = {};
+            portfolio.forEach(holding => {
+                if (!sectors[holding.sector]) {
+                    sectors[holding.sector] = 0;
+                }
+                const percent = useActualPercent && holding.actualPercent !== undefined 
+                    ? holding.actualPercent 
+                    : holding.percent;
+                sectors[holding.sector] += percent;
+            });
+            return sectors;
+        }
+
+        const currentSectors = calculateSectorAllocations(currentPortfolio);
+        const proposedActiveSectors = calculateSectorAllocations(proposedPortfolio, true); // Use 40% weighted values
+
+        // Create sector comparison with three sections
+        function populateSectorComparison() {
+            const passiveBody = document.getElementById('passiveCoreBody');
+            const activeBody = document.getElementById('activeCoreBody');
+            const satelliteBody = document.getElementById('satelliteBody');
+            
+            // Calculate current Broad Market allocation (VOO + SPY + VTV)
+            const currentBroadMarket = currentSectors['Broad Market'] || 0;
+            const proposedBroadMarket = 40.0; // VOO Core
+            const broadMarketGap = proposedBroadMarket - currentBroadMarket;
+            
+            // Passive Core section
+            const passiveRow = document.createElement('tr');
+            const gapClass = broadMarketGap > 0 ? 'gap-positive' : broadMarketGap < 0 ? 'gap-negative' : 'gap-neutral';
+            passiveRow.innerHTML = `
+                <td class="sector-name">Broad Market (VOO)</td>
+                <td>${currentBroadMarket.toFixed(2)}%</td>
+                <td>${proposedBroadMarket.toFixed(2)}%</td>
+                <td class="${gapClass}">${broadMarketGap > 0 ? '+' : ''}${broadMarketGap.toFixed(2)}%</td>
+            `;
+            passiveBody.appendChild(passiveRow);
+            
+            // Active Core section - all proposed active sectors
+            const activeSectors = Object.keys(proposedActiveSectors).filter(s => s !== 'Broad Market');
+            activeSectors.sort();
+            
+            activeSectors.forEach(sector => {
+                const current = currentSectors[sector] || 0;
+                const proposed = proposedActiveSectors[sector] || 0;
+                const gap = proposed - current;
+                const gapClass = gap > 0 ? 'gap-positive' : gap < 0 ? 'gap-negative' : 'gap-neutral';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="sector-name">${sector}</td>
+                    <td>${current.toFixed(2)}%</td>
+                    <td>${proposed.toFixed(2)}%</td>
+                    <td class="${gapClass}">${gap > 0 ? '+' : ''}${gap.toFixed(2)}%</td>
+                `;
+                activeBody.appendChild(tr);
+            });
+            
+            // Satellite/Alpha section
+            const satelliteRow = document.createElement('tr');
+            satelliteRow.innerHTML = `
+                <td class="sector-name">Alpha/Satellite Reserve</td>
+                <td>0.00%</td>
+                <td>20.00%</td>
+                <td class="gap-positive">+20.00%</td>
+            `;
+            satelliteBody.appendChild(satelliteRow);
+        }
+
+        // Populate current holdings table
+        function populateCurrentHoldings() {
+            const tbody = document.getElementById('currentHoldingsBody');
+            currentPortfolio.forEach(holding => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="ticker">${holding.ticker}</td>
+                    <td>${holding.company}</td>
+                    <td>${holding.sector}</td>
+                    <td>${holding.percent.toFixed(2)}%</td>
+                    <td>$${holding.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Populate proposed holdings table
+        function populateProposedHoldings() {
+            const tbody = document.getElementById('proposedHoldingsBody');
+            proposedPortfolio.forEach(holding => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="ticker">${holding.ticker}</td>
+                    <td>${holding.company}</td>
+                    <td>${holding.sector}</td>
+                    <td>${holding.actualPercent.toFixed(2)}%</td>
+                    <td>${holding.beta.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Populate overlap analysis
+        function populateOverlapAnalysis() {
+            const overlapBody = document.getElementById('overlapHoldingsBody');
+            const newPositionsBody = document.getElementById('newPositionsBody');
+            const exitPositionsBody = document.getElementById('exitPositionsBody');
+            
+            const currentTickers = new Set(currentPortfolio.map(h => h.ticker));
+            const proposedTickers = new Set(proposedPortfolio.map(h => h.ticker));
+            
+            // Find overlapping tickers
+            const overlap = [...currentTickers].filter(t => proposedTickers.has(t));
+            const currentOnly = currentPortfolio.filter(h => !proposedTickers.has(h.ticker));
+            const proposedOnly = proposedPortfolio.filter(h => !currentTickers.has(h.ticker));
+            
+            // Update summary stats
+            document.getElementById('overlapCount').textContent = overlap.length;
+            document.getElementById('currentOnlyCount').textContent = currentOnly.length;
+            document.getElementById('proposedOnlyCount').textContent = proposedOnly.length;
+            
+            // Populate overlapping holdings
+            overlap.forEach(ticker => {
+                const current = currentPortfolio.find(h => h.ticker === ticker);
+                const proposed = proposedPortfolio.find(h => h.ticker === ticker);
+                const change = proposed.actualPercent - current.percent;
+                
+                const tr = document.createElement('tr');
+                const changeClass = change > 0 ? 'gap-positive' : change < 0 ? 'gap-negative' : 'gap-neutral';
+                
+                tr.innerHTML = `
+                    <td class="ticker">${ticker}</td>
+                    <td>${current.company}</td>
+                    <td>${current.sector}</td>
+                    <td>${current.percent.toFixed(2)}%</td>
+                    <td>${proposed.actualPercent.toFixed(2)}%</td>
+                    <td class="${changeClass}">${change > 0 ? '+' : ''}${change.toFixed(2)}%</td>
+                `;
+                overlapBody.appendChild(tr);
+            });
+
+            // Populate new positions
+            proposedOnly.forEach(holding => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="ticker">${holding.ticker}</td>
+                    <td>${holding.company}</td>
+                    <td>${holding.sector}</td>
+                    <td class="gap-positive">${holding.actualPercent.toFixed(2)}%</td>
+                    <td>${holding.beta.toFixed(2)}</td>
+                `;
+                newPositionsBody.appendChild(tr);
+            });
+
+            // Populate positions to exit (exclude Broad Market holdings: VOO, SPY, VTV)
+            const broadMarketTickers = new Set(['VOO', 'SPY', 'VTV']);
+            currentOnly.filter(h => !broadMarketTickers.has(h.ticker)).forEach(holding => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="ticker">${holding.ticker}</td>
+                    <td>${holding.company}</td>
+                    <td>${holding.sector}</td>
+                    <td class="gap-negative">${holding.percent.toFixed(2)}%</td>
+                    <td>$${holding.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+                exitPositionsBody.appendChild(tr);
+            });
+        }
+
+        // Create sector charts
+        function createSectorCharts() {
+            const sectorColors = {
+                'Technology': '#1e3c72',
+                'Financials': '#febc11',
+                'Healthcare': '#28a745',
+                'Consumer Discretionary': '#dc3545',
+                'Consumer Staples': '#ffc107',
+                'Industrials': '#6c757d',
+                'Communication': '#17a2b8',
+                'Materials': '#fd7e14',
+                'Real Estate': '#6f42c1',
+                'Utilities': '#20c997',
+                'Broad Market': '#007bff'
+            };
+
+            // Current Sector Chart
+            const currentCtx = document.getElementById('currentSectorChart').getContext('2d');
+            const currentLabels = Object.keys(currentSectors);
+            const currentData = Object.values(currentSectors);
+            
+            new Chart(currentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: currentLabels,
+                    datasets: [{
+                        data: currentData,
+                        backgroundColor: currentLabels.map(sector => sectorColors[sector] || '#999'),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Proposed Sector Chart - only active sectors
+            const proposedCtx = document.getElementById('proposedSectorChart').getContext('2d');
+            const proposedLabels = Object.keys(proposedActiveSectors);
+            const proposedData = Object.values(proposedActiveSectors);
+            
+            new Chart(proposedCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: proposedLabels,
+                    datasets: [{
+                        data: proposedData,
+                        backgroundColor: proposedLabels.map(sector => sectorColors[sector] || '#999'),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 10 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activate clicked button
+            event.target.classList.add('active');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            populateSectorComparison();
+            populateCurrentHoldings();
+            populateProposedHoldings();
+            populateOverlapAnalysis();
+            
+            // Wait for Chart.js to load
+            setTimeout(() => {
+                createSectorCharts();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
