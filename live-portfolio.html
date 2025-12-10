@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Portfolio Dashboard - UCSB Dean's Investment Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="portfolio-config.js"></script>
+    <script src="tearsheet-generator.js"></script>
+    <script src="individual-tearsheet-generator.js"></script>
+    <style>
+        /* ...existing code... (reset) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+            background: transparent;
+        }
+
+        /* Background + particles to match index.html */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f1419, #1e3c72, #2a3c5f, #0f1419);
+            background-size: 300% 300%;
+            animation: gradientShift 20s ease infinite;
+            z-index: -2;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 12s ease-in-out infinite;
+            opacity: 0.3;
+        }
+
+        .particle.gold {
+            background: radial-gradient(circle, rgba(254, 188, 17, 0.6), rgba(255, 215, 0, 0.3));
+            box-shadow: 0 0 10px rgba(254, 188, 17, 0.2);
+        }
+
+        .particle.blue {
+            background: radial-gradient(circle, rgba(30, 60, 114, 0.6), rgba(42, 60, 95, 0.3));
+            box-shadow: 0 0 10px rgba(30, 60, 114, 0.2);
+        }
+
+        .particle.white {
+            background: radial-gradient(circle, rgba(255,255,255,0.4), rgba(255,255,255,0.2));
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.3; }
+            25% { transform: translateY(-20px) rotate(45deg) scale(1.1); opacity: 0.5; }
+            50% { transform: translateY(-40px) rotate(90deg) scale(0.9); opacity: 0.2; }
+            75% { transform: translateY(-20px) rotate(135deg) scale(1.05); opacity: 0.4; }
+        }
+
+        /* Shared header/nav to match index.html */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(254, 188, 17, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .logo i {
+            color: #febc11;
+            font-size: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover i {
+            transform: scale(1.1);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: #febc11;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: #febc11;
+            transform: translateY(-2px);
+        }
+
+        .live-portfolio-link {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+            color: white !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 20px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .live-portfolio-link:hover {
+            background: linear-gradient(135deg, #20c997, #28a745) !important;
+            color: white !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3) !important;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .mobile-menu-toggle span {
+            width: 25px;
+            height: 3px;
+            background: #febc11;
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+
+        .mobile-menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 80px;
+                left: -100%;
+                width: 100%;
+                height: calc(100vh - 80px);
+                background: rgba(0, 0, 0, 0.95);
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                padding-top: 3rem;
+                transition: left 0.3s ease;
+                backdrop-filter: blur(20px);
+            }
+
+            .nav-links.active {
+                left: 0;
+            }
+
+            .nav-links li {
+                margin: 1rem 0;
+            }
+
+            .nav-links a {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Page shell similar to index (hero-like header + content) */
+        .page-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 7rem 2rem 3rem; /* top padding for fixed header */
+            color: white;
+        }
+
+        .dashboard-hero {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .dashboard-hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff, #febc11, #ffffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 6s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .dashboard-hero .subtitle {
+            font-size: 1.4rem;
+            opacity: 0.9;
+            margin-bottom: 0.75rem;
+        }
+
+        .dashboard-hero p {
+            font-size: 1rem;
+            opacity: 0.8;
+            max-width: 800px;
+            margin: 0.5rem auto 1.5rem;
+        }
+
+        .dashboard-tagline {
+            font-size: 0.9rem;
+            opacity: 0.75;
+        }
+
+        .cta-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 0.9rem 1.9rem;
+            background: linear-gradient(135deg, #febc11, #ffd700);
+            color: #1e3c72;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(254, 188, 17, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(254, 188, 17, 0.4);
+        }
+
+        .cta-secondary {
+            background: transparent;
+            border: 2px solid #febc11;
+            color: #febc11;
+        }
+
+        .cta-secondary:hover {
+            background: #febc11;
+            color: #1e3c72;
+        }
+
+        .section-separator {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            margin: 2.5rem 0;
+        }
+
+        /* Card system to echo index.html */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border-radius: 12px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+            border: 1px solid rgba(254, 188, 17, 0.2);
+            backdrop-filter: blur(16px);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #e5e5e5;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #febc11;
+            margin-bottom: 0.4rem;
+        }
+
+        .summary-card .change {
+            font-size: 0.9rem;
+            color: #c9d1d9;
+        }
+
+        .change.positive { color: #3fbf7f; }
+        .change.negative { color: #ff6b6b; }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-live {
+            background: rgba(40, 167, 69, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(40, 167, 69, 0.5);
+        }
+
+        .status-static {
+            background: rgba(255, 193, 7, 0.12);
+            color: #ffe27a;
+            border: 1px solid rgba(255, 193, 7, 0.5);
+        }
+
+        .controls-shell {
+            background: rgba(10, 14, 23, 0.85);
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 2.2rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .api-setup {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .api-setup input {
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.4);
+            color: #e5e5e5;
+            min-width: 260px;
+            font-size: 0.85rem;
+        }
+
+        .api-setup input::placeholder {
+            color: rgba(229,229,229,0.55);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            padding: 0.55rem 1.2rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #212529;
+        }
+
+        .controls-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .info-text {
+            font-size: 0.78rem;
+            color: #c9d1d9;
+            line-height: 1.4;
+        }
+
+        code.inline-code {
+            background: rgba(255,255,255,0.08);
+            padding: 0.05rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }
+
+        /* Main layout (holdings + charts) styled as glass cards */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .card-panel {
+            background: rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 1.8rem 1.6rem;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(18px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 0.8rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .section-stats {
+            font-size: 0.8rem;
+            color: #c9d1d9;
+        }
+
+        .portfolio-tabs {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 0.4rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #c9d1d9;
+            border-radius: 999px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.06);
+            color: #febc11;
+        }
+
+        .tab-btn.active {
+            background: rgba(254, 188, 17, 0.15);
+            color: #febc11;
+            font-weight: 600;
+        }
+
+        .holdings-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            color: #e5e5e5;
+        }
+
+        .holdings-table th,
+        .holdings-table td {
+            padding: 0.55rem 0.45rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .holdings-table th {
+            background: rgba(0,0,0,0.35);
+            font-weight: 600;
+            color: #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .holdings-table tr:hover {
+            background: rgba(255,255,255,0.04);
+        }
+
+        .symbol {
+            font-weight: 600;
+            color: #febc11;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .symbol:hover {
+            color: #ffd666;
+            text-decoration: underline;
+            transform: scale(1.04);
+        }
+
+        .last-updated {
+            font-size: 0.78rem;
+            color: #c9d1d9;
+            margin-top: 0.8rem;
+            text-align: right;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 260px;
+            max-height: 260px;
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 1.4rem;
+            overflow: hidden;
+        }
+
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .chart-info {
+            font-size: 0.8rem;
+            color: #c9d1d9;
+            text-align: center;
+            margin-bottom: 0.3rem;
+        }
+
+        .sector-breakdown {
+            margin-top: 1.2rem;
+            background: rgba(0,0,0,0.45);
+            border-radius: 14px;
+            padding: 1.3rem 1.1rem 1.4rem;
+            border: 1px solid rgba(254,188,17,0.25);
+            color: #ffffff; /* ensure text inside sector breakdown is white */
+        }
+
+        .sector-breakdown .section-title,
+        .sector-breakdown .chart-info,
+        .sector-breakdown .metric-card h4,
+        .sector-breakdown .metric-detail,
+        .sector-breakdown .metric-holdings {
+            color: #f8fafc;
+        }
+
+        .metrics-grid .metric-card {
+            color: #ffffff;
+        }
+
+        .sector-details-modal,
+        .sector-details-modal .modal-content,
+        .sector-details-modal .modal-body,
+        .sector-details-modal .sector-summary .stat span,
+        .sector-details-modal .sector-holdings-table th,
+        .sector-details-modal .sector-holdings-table td {
+            color: #ffffff;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.9rem;
+            margin-top: 0.9rem;
+            color: #ffffff; /* default white text in metric cards */
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #ffffff; /* improve readability */
+        }
+
+        .metric-card h4 {
+            font-size: 0.85rem;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #febc11;
+            margin-bottom: 0.2rem;
+        }
+
+        .metric-detail {
+            font-size: 0.78rem;
+            color: #e5e5e5;
+        }
+
+        .metric-holdings {
+            font-size: 0.72rem;
+            color: #d1d5db;
+            margin-top: 0.15rem;
+        }
+
+        /* Error + toast styles */
+        .error-message {
+            background: rgba(220, 53, 69, 0.14);
+            color: #ffb3c0;
+            padding: 0.9rem 1.1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            font-size: 0.85rem;
+        }
+
+        /* Sector details modal: dark glass */
+        .sector-details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+            color: #ffffff; /* base text white in modal */
+        }
+
+        .modal-content {
+            background: radial-gradient(circle at top left, rgba(30,60,114,0.9), rgba(15,20,25,0.98));
+            border-radius: 18px;
+            width: 92%;
+            max-width: 860px;
+            max-height: 82vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #ffffff;
+        }
+
+        .modal-body {
+            padding: 1.2rem 1.4rem 1.5rem;
+            color: #f5f5f5; /* slightly softer white for body copy */
+        }
+
+        .sector-summary .stat span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #febc11;
+        }
+
+        .sector-holdings-table th,
+        .sector-holdings-table td {
+            padding: 0.55rem 0.45rem;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            color: #f9fafb; /* light text in sector holdings table */
+        }
+
+        .sector-holdings-table th {
+            background: rgba(0,0,0,0.4);
+            color: #ffffff;
+        }
+
+        .sector-holdings-table .symbol {
+            color: #febc11;
+        }
+
+        .sector-detail-chart-title {
+            font-size: 0.9rem;
+            text-align: center;
+            color: #f5f5f5;
+            margin-bottom: 0.4rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            /* prevent charts from growing too tall on smaller screens */
+            .chart-container {
+                height: 220px;
+                max-height: 220px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-wrapper {
+                padding: 6.5rem 1.2rem 2.5rem;
+            }
+
+            .dashboard-hero h1 {
+                font-size: 2.3rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls-actions {
+                justify-content: flex-start;
+            }
+
+            /* slightly smaller charts on mobile */
+            .chart-container {
+                height: 200px;
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="bg-animation"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Shared Header/Nav -->
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>DIG</span>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#board">Advisory Board</a></li>
+                <li><a href="live-portfolio.html" class="live-portfolio-link">📊 Live Portfolio</a></li>
+            </ul>
+            <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-wrapper">
+        <!-- Dashboard Hero -->
+        <section class="dashboard-hero">
+            <h1>Live Portfolio Dashboard</h1>
+            <div class="subtitle">Real-Time View of DIG Holdings & Sector Positioning</div>
+            <p>Connect to the backend API to pull current market prices, sector weights, and risk metrics. This dashboard is the single source of truth for symbol-level exposure and live analytics.</p>
+            <div class="dashboard-tagline">Tip: Use Ctrl+R to refresh, Ctrl+S to toggle sector view, Ctrl+P for a tear sheet, and Ctrl+E to export CSV.</div>
+            <div class="cta-row">
+                <a href="index.html" class="cta-button cta-secondary"><i class="fas fa-arrow-left"></i> Back to Home Snapshot</a>
+            </div>
+        </section>
+
+        <div class="section-separator"></div>
+
+        <!-- Controls wrapped in glass card -->
+        <section class="controls-shell">
+            <div class="controls">
+                <div class="api-setup">
+                    <input id="apiBaseUrlInput" type="text" placeholder="Optional: API base URL (http://localhost:3001)" />
+                    <button class="btn" onclick="connectAPI()">
+                        <i class="fas fa-plug"></i> Connect to Live Data
+                    </button>
+                    <div class="status-indicator status-static" id="status">
+                        <i class="fas fa-database"></i>
+                        <span>Using Static Data</span>
+                    </div>
+                    <div class="info-text" id="serverHint">
+                        <div>For live data, ensure backend server is running and reachable. Default dev command: <code class="inline-code">npm start</code></div>
+                        <div>Click symbols for tear sheets • Click chart segments for sector analysis • Keyboard shortcuts: Ctrl+R, Ctrl+S, Ctrl+P, Ctrl+E</div>
+                    </div>
+                </div>
+                <div class="controls-actions">
+                    <button class="btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn btn-success" onclick="generateTearSheet()">
+                        <i class="fas fa-file-pdf"></i> Download Tear Sheet
+                    </button>
+                    <button class="btn btn-warning" onclick="exportCSV()">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Cards -->
+        <section id="summaryCards" class="summary-cards">
+            <!-- Populated by JS -->
+        </section>
+
+        <!-- Main Content -->
+        <section class="main-content">
+            <div class="card-panel">
+                <div class="portfolio-tabs">
+                    <button class="tab-btn active" onclick="showPortfolioSection('all', event)">All Holdings</button>
+                    <button class="tab-btn" onclick="showPortfolioSection('broad-market', event)">Broad Market ETFs (3)</button>
+                    <button class="tab-btn" onclick="showPortfolioSection('equity', event)">DIG Active Positions (20)</button>
+                </div>
+
+                <div class="section-header">
+                    <h2 class="section-title" id="sectionTitle">All Portfolio Holdings</h2>
+                    <div class="section-stats" id="sectionStats"></div>
+                </div>
+
+                <div style="overflow-x: auto; max-height: 520px;">
+                    <table class="holdings-table" id="holdingsTable">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Description</th>
+                                <th>GICS Sector</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Market Value</th>
+                                <th>% of Portfolio</th>
+                                <th>Day Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdingsBody"></tbody>
+                    </table>
+                </div>
+                <div class="last-updated">Last updated: <span id="updateTime">Static data from October 27, 2024</span></div>
+            </div>
+
+            <div class="card-panel">
+                <h3 class="section-title">Portfolio Composition</h3>
+                <div style="text-align:right; margin-bottom:0.7rem;">
+                    <button class="btn" onclick="toggleSectorView()">
+                        <i class="fas fa-layer-group"></i> Toggle Sector View: <span id="sectorViewLabel">Original</span>
+                    </button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="compositionChart"></canvas>
+                </div>
+                <div class="chart-info">Click Equity/Specialized ETFs slice for detailed sector allocation.</div>
+
+                <div id="sectorBreakdown" class="sector-breakdown" style="display:none;">
+                    <div class="section-header">
+                        <span class="section-title" id="sectorBreakdownTitle">Equity/Specialized ETFs - Sector Allocation</span>
+                        <button type="button" class="btn" style="padding:0.2rem 0.6rem; border-radius:999px;" onclick="closeSectorBreakdown()">×</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="sectorChart"></canvas>
+                    </div>
+                    <div id="sectorMetrics"></div>
+                </div>
+
+                <h3 class="section-title" style="margin-top:1.3rem;">Top Non-Index Holdings</h3>
+                <div class="chart-container">
+                    <canvas id="holdingsChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Single clean script block with working JS -->
+    <script>
+    // Aggregated sector mapping for DIG custom view
+    const aggregatedSectorMap = {
+        'Information Technology': 'Tech/Comm',
+        'Communication Services': 'Tech/Comm',
+        'Consumer Discretionary': 'Consumer',
+        'Consumer Staples': 'Consumer',
+        'Utilities': 'Utilities/Real Estate',
+        'Real Estate': 'Utilities/Real Estate',
+        'Industrials': 'Industrials/Materials',
+        'Materials': 'Industrials/Materials',
+        'Financials': 'Financials',
+        'Health Care': 'Health Care',
+        'Energy': 'Utilities/Real Estate'
+    };
+
+    let useAggregatedSectors = false;
+    let isLiveMode = false;
+    let lastUpdateTime = null;
+    let compositionChart = null;
+    let sectorChart = null;
+    let holdingsChart = null;
+    let sectorDetailChart = null;
+    let currentSectorBreakdown = null;
+    let currentSection = 'all';
+
+    const broadMarketETFs = [
+        { symbol: 'VOO', description: "Vanguard Index Funds S&P 500 ETF", quantity: 590.669, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 627.59, type: 'etf', change: 5.04, changePercent: 0.80 },
+        { symbol: 'VTV', description: 'Vanguard Value ETF', quantity: 131.11, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 188.36, type: 'etf', change: 0.23, changePercent: 0.12 },
+        { symbol: 'SPY', description: 'SPDR S&P 500 ETF Trust', quantity: 34.281, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 682.60, type: 'etf', change: 5.35, changePercent: 0.78 }
+    ];
+
+    const equityHoldings = [
+        { symbol: 'TSM', description: 'Taiwan Semiconductor Manufacturing Co Ltd ADR', quantity: 137.398, sector: 'Technology Hardware & Equipment', gicsSector: 'Information Technology', lastPrice: 295.72, type: 'stock', change: 0.76, changePercent: 0.25 },
+        { symbol: 'GOOGL', description: 'Alphabet Inc Class A', quantity: 137.343, sector: 'Interactive Media & Services', gicsSector: 'Communication Services', lastPrice: 265.09, type: 'stock', change: 5.17, changePercent: 1.98 },
+        { symbol: 'MSFT', description: 'Microsoft Corp', quantity: 55.274, sector: 'Systems Software', gicsSector: 'Information Technology', lastPrice: 533.11, type: 'stock', change: 9.50, changePercent: 1.81 },
+        { symbol: 'AMZN', description: 'Amazon.com Inc', quantity: 112.118, sector: 'Internet & Direct Marketing Retail', gicsSector: 'Consumer Discretionary', lastPrice: 226.80, type: 'stock', change: 2.59, changePercent: 1.15 },
+        { symbol: 'ASML', description: 'ASML Holding NV', quantity: 19.917, sector: 'Semiconductor Equipment', gicsSector: 'Information Technology', lastPrice: 1057.72, type: 'stock', change: 24.62, changePercent: 2.38 },
+        { symbol: 'SNOW', description: 'Snowflake Inc', quantity: 62.096, sector: 'Application Software', gicsSector: 'Information Technology', lastPrice: 264.18, type: 'stock', change: 6.24, changePercent: 2.41 },
+        { symbol: 'NUKZ', description: 'Range Nuclear Renaissance ETF', quantity: 226.815, sector: 'Nuclear Energy ETF', gicsSector: 'Energy', lastPrice: 70.35, type: 'etf', change: -0.26, changePercent: -0.38 },
+        { symbol: 'VRT', description: 'Vertiv Holdings Co', quantity: 77, sector: 'Electrical Components & Equipment', gicsSector: 'Industrials', lastPrice: 189.98, type: 'stock', change: 3.92, changePercent: 2.10 },
+        { symbol: 'COST', description: 'Costco Wholesale Corp', quantity: 15, sector: 'Hypermarkets & Super Centers', gicsSector: 'Consumer Staples', lastPrice: 927.33, type: 'stock', change: -4.82, changePercent: -0.52 },
+        { symbol: 'IHI', description: 'iShares U.S. Medical Devices ETF', quantity: 219.368, sector: 'Medical Devices ETF', gicsSector: 'Health Care', lastPrice: 61.95, type: 'etf', change: 0.08, changePercent: 0.12 },
+        { symbol: 'CEG', description: 'Constellation Energy Corp', quantity: 33.189, sector: 'Independent Power Producers & Energy Traders', gicsSector: 'Utilities', lastPrice: 385.38, type: 'stock', change: -3.81, changePercent: -0.98 },
+        { symbol: 'JPM', description: 'JPMorgan Chase & Co', quantity: 40, sector: 'Diversified Banks', gicsSector: 'Financials', lastPrice: 302.10, type: 'stock', change: 1.66, changePercent: 0.55 },
+        { symbol: 'PANW', description: 'Palo Alto Networks Inc', quantity: 54, sector: 'Systems Software', gicsSector: 'Information Technology', lastPrice: 218.68, type: 'stock', change: 1.57, changePercent: 0.72 },
+        { symbol: 'BLD', description: 'TopBuild Corp', quantity: 19.521, sector: 'Building Products', gicsSector: 'Industrials', lastPrice: 456.12, type: 'stock', change: 4.14, changePercent: 0.91 },
+        { symbol: 'FLUT', description: 'Flutter Entertainment PLC', quantity: 35.91, sector: 'Casinos & Gaming', gicsSector: 'Consumer Discretionary', lastPrice: 243.96, type: 'stock', change: 0.04, changePercent: 0.01 },
+        { symbol: 'SCHW', description: 'Charles Schwab Corp', quantity: 92.199, sector: 'Investment Banking & Brokerage', gicsSector: 'Financials', lastPrice: 94.75, type: 'stock', change: 0.33, changePercent: 0.34 },
+        { symbol: 'HIMS', description: 'Hims & Hers Health Inc', quantity: 166, sector: 'Health Care Services', gicsSector: 'Health Care', lastPrice: 49.34, type: 'stock', change: 0.56, changePercent: 1.14 },
+        { symbol: 'FCX', description: 'Freeport-McMoRan Inc', quantity: 195.831, sector: 'Copper', gicsSector: 'Materials', lastPrice: 40.83, type: 'stock', change: -0.55, changePercent: -1.32 },
+        { symbol: 'DXCM', description: 'DexCom Inc', quantity: 112.945, sector: 'Health Care Equipment', gicsSector: 'Health Care', lastPrice: 70.20, type: 'stock', change: -0.14, changePercent: -0.20 },
+        { symbol: 'PSA', description: 'Public Storage', quantity: 20.725, sector: 'Specialized REITs', gicsSector: 'Real Estate', lastPrice: 300.53, type: 'stock', change: -1.72, changePercent: -0.57 }
+    ];
+
+    const portfolioData = [...broadMarketETFs, ...equityHoldings];
+
+    function toggleSectorView() {
+        useAggregatedSectors = !useAggregatedSectors;
+        updateSectorViewLabel();
+        if (currentSectorBreakdown) updateSectorChart();
+    }
+
+    function updateSectorViewLabel() {
+        const label = document.getElementById('sectorViewLabel');
+        if (label) label.textContent = useAggregatedSectors ? 'DIG' : 'Original';
+    }
+
+    function normalizeBaseUrl(raw) {
+        if (!raw) return '';
+        let url = raw.trim();
+        if (!url) return '';
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'http://' + url;
+        }
+        try {
+            const u = new URL(url);
+            if (!u.port) {
+                u.port = '3001';
+            }
+            return u.origin;
+        } catch (e) {
+            console.warn('Invalid API base URL provided, falling back to relative requests.', e);
+            return '';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // particles + nav behavior
+        createParticles();
+        initMobileMenu();
+        initScrollHeader();
+
+        // charts + data
+        initializeCharts();
+        updateDashboard();
+        updateSectorViewLabel();
+
+        const apiBaseInput = document.getElementById('apiBaseUrlInput');
+        if (apiBaseInput) {
+            apiBaseInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') connectAPI();
+            });
+        }
+
+        // optional auto-connect in dev
+        setTimeout(() => {
+            const allowedHosts = ['localhost', '127.0.0.1'];
+            if (window.location.protocol.startsWith('http') && allowedHosts.includes(window.location.hostname)) {
+                try {
+                    updateStatus('static');
+                    testAPIConnection();
+                } catch (err) {
+                    console.warn('Auto API connection attempt failed:', err.message);
+                }
+            }
+        }, 600);
+
+        // periodic refresh when in live mode
+        setInterval(() => { if (isLiveMode) refreshData(); }, 5 * 60 * 1000);
+
+        // keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            if (!e.ctrlKey) return;
+            const key = e.key.toLowerCase();
+            if (key === 'r') {
+                e.preventDefault();
+                refreshData();
+            } else if (key === 's') {
+                e.preventDefault();
+                toggleSectorView();
+            } else if (key === 'p') {
+                e.preventDefault();
+                generateTearSheet();
+            } else if (key === 'e') {
+                e.preventDefault();
+                exportCSV();
+            }
+        });
+    });
+
+    function createParticles() {
+        const container = document.getElementById('particles');
+        if (!container) return;
+        container.innerHTML = '';
+        const colors = ['gold', 'blue', 'white'];
+        const count = window.innerWidth < 768 ? 25 : 45;
+        for (let i = 0; i < count; i++) {
+            const el = document.createElement('div');
+            el.className = `particle ${colors[Math.floor(Math.random() * colors.length)]}`;
+            const size = Math.random() * 6 + 4;
+            el.style.width = size + 'px';
+            el.style.height = size + 'px';
+            el.style.left = Math.random() * 100 + '%';
+            el.style.top = Math.random() * 100 + '%';
+            el.style.animationDelay = (Math.random() * 12) + 's';
+            el.style.animationDuration = (10 + Math.random() * 10) + 's';
+            container.appendChild(el);
+        }
+        window.addEventListener('resize', () => {
+            clearTimeout(window.__particleResizeTimer);
+            window.__particleResizeTimer = setTimeout(createParticles, 400);
+        }, { once: true });
+    }
+
+    function initMobileMenu() {
+        const toggle = document.getElementById('mobileMenuToggle');
+        const links = document.getElementById('navLinks');
+        if (!toggle || !links) return;
+        toggle.addEventListener('click', () => {
+            toggle.classList.toggle('active');
+            links.classList.toggle('active');
+        });
+        links.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', () => {
+                links.classList.remove('active');
+                toggle.classList.remove('active');
+            });
+        });
+    }
+
+    function initScrollHeader() {
+        const header = document.querySelector('header');
+        if (!header) return;
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                header.style.boxShadow = '0 6px 25px rgba(0,0,0,0.45)';
+                header.style.borderBottomColor = 'rgba(254,188,17,0.35)';
+            } else {
+                header.style.boxShadow = '0 2px 20px rgba(0,0,0,0.2)';
+                header.style.borderBottomColor = 'rgba(254,188,17,0.2)';
+            }
+        });
+    }
+
+    function updateStatus(mode) {
+        const statusEl = document.getElementById('status');
+        const hintEl = document.getElementById('serverHint');
+        if (!statusEl) return;
+        statusEl.classList.remove('status-live', 'status-static');
+        const icon = statusEl.querySelector('i');
+        const textSpan = statusEl.querySelector('span');
+        if (mode === 'live') {
+            statusEl.classList.add('status-live');
+            if (icon) icon.className = 'fas fa-bolt';
+            if (textSpan) textSpan.textContent = 'Live Data Connected';
+            if (hintEl) hintEl.style.display = 'none';
+        } else {
+            statusEl.classList.add('status-static');
+            if (icon) icon.className = 'fas fa-database';
+            if (textSpan) textSpan.textContent = 'Using Static Data';
+            if (hintEl) hintEl.style.display = 'block';
+        }
+    }
+
+    async function connectAPI() {
+        const input = document.getElementById('apiBaseUrlInput');
+        const base = input ? normalizeBaseUrl(input.value) : '';
+        window.apiBaseURL = base;
+        await testAPIConnection();
+    }
+
+    async function testAPIConnection() {
+        const attempted = [];
+        const provided = window.apiBaseURL;
+        const candidates = [];
+        if (provided) candidates.push(provided);
+        if (window.location.origin && window.location.origin !== 'null') {
+            candidates.push(window.location.origin.replace(/:\d+$/, ':3001'));
+        }
+        candidates.push('http://localhost:3001', 'http://127.0.0.1:3001');
+        let healthyBase = null;
+
+        for (const base of candidates) {
+            if (!base || attempted.includes(base)) continue;
+            attempted.push(base);
+            try {
+                const res = await fetch(base + '/api/health', { cache: 'no-store' });
+                if (!res.ok) continue;
+                const data = await res.json();
+                if (data && data.status === 'OK') {
+                    healthyBase = base;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+
+        if (!healthyBase) {
+            isLiveMode = false;
+            updateStatus('static');
+            showError('Could not connect to backend API. Tried: ' + attempted.join(', ') + '. Check that the dev server is running on port 3001 and that you are not opening this file directly via file://.');
+            return;
+        }
+
+        window.apiBaseURL = healthyBase;
+        isLiveMode = true;
+        updateStatus('live');
+        showSuccessMessage('Connected to live API at ' + healthyBase);
+        await refreshData();
+    }
+
+    async function refreshData() {
+        if (!isLiveMode) {
+            updateDashboard();
+            return;
+        }
+        const symbols = portfolioData.map(h => h.symbol);
+        showProgressIndicator('Refreshing market data for ' + symbols.length + ' holdings...');
+        let updatedCount = 0;
+        try {
+            let usedBatch = false;
+            if (window.apiBaseURL) {
+                try {
+                    const batchRes = await fetch(window.apiBaseURL + '/api/stocks/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ symbols })
+                    });
+                    if (batchRes.ok) {
+                        const batchData = await batchRes.json();
+                        const map = new Map(batchData.map(d => [d.symbol, d]));
+                        portfolioData.forEach(h => {
+                            const live = map.get(h.symbol);
+                            if (live && typeof live.price === 'number') {
+                                const prev = h.lastPrice;
+                                h.lastPrice = live.price;
+                                h.change = live.change ?? (live.price - prev);
+                                h.changePercent = live.changePercent ?? (h.change / prev * 100);
+                                updatedCount++;
+                            }
+                        });
+                        usedBatch = true;
+                    }
+                } catch (e) {
+                    console.warn('Batch request failed, falling back to per-symbol.', e);
+                }
+            }
+
+            if (!usedBatch && window.apiBaseURL) {
+                for (const h of portfolioData) {
+                    try {
+                        const res = await fetch(window.apiBaseURL + '/api/stock/' + h.symbol);
+                        if (!res.ok) continue;
+                        const data = await res.json();
+                        if (data && typeof data.price === 'number') {
+                            const prev = h.lastPrice;
+                            h.lastPrice = data.price;
+                            h.change = data.change ?? (data.price - prev);
+                            h.changePercent = data.changePercent ?? (h.change / prev * 100);
+                            updatedCount++;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+            }
+
+            lastUpdateTime = new Date();
+            updateDashboard();
+            showSuccessMessage(`Updated ${updatedCount} of ${symbols.length} holdings from live API.`);
+        } catch (err) {
+            console.error(err);
+            showError('Error while refreshing data from API. Falling back to static embedded prices.');
+            isLiveMode = false;
+            updateStatus('static');
+            updateDashboard();
+        } finally {
+            hideProgressIndicator();
+        }
+    }
+
+    function showProgressIndicator(message) {
+        let overlay = document.getElementById('progressOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'progressOverlay';
+            overlay.style.cssText = 'position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.55); z-index:1600;';
+            overlay.innerHTML = '<div style="background:rgba(15,20,25,0.96); padding:1.1rem 1.4rem; border-radius:12px; border:1px solid rgba(254,188,17,0.4); color:#fff; font-size:0.9rem; box-shadow:0 18px 45px rgba(0,0,0,0.6);"><span id="progressMessage"></span></div>';
+            document.body.appendChild(overlay);
+        }
+        const msgEl = document.getElementById('progressMessage');
+        if (msgEl) msgEl.textContent = message || 'Working...';
+        overlay.style.display = 'flex';
+    }
+
+    function updateProgressIndicator(message) {
+        const msgEl = document.getElementById('progressMessage');
+        if (msgEl && message) msgEl.textContent = message;
+    }
+
+    function hideProgressIndicator() {
+        const overlay = document.getElementById('progressOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    function updateDashboard() {
+        updateSummaryCards();
+        updateHoldingsTable(currentSection);
+        updateCharts();
+        updateLastUpdatedTime();
+    }
+
+    function updateSummaryCards() {
+        let totalValue = 0;
+        let totalDayChange = 0;
+        portfolioData.forEach(h => {
+            const mv = h.quantity * h.lastPrice;
+            totalValue += mv;
+            if (h.change) totalDayChange += h.quantity * h.change;
+        });
+        const base = totalValue - totalDayChange || 1;
+        const dayChangePercent = (totalDayChange / base) * 100;
+        const sortedBySize = [...portfolioData].sort((a, b) => (b.quantity * b.lastPrice) - (a.quantity * a.lastPrice));
+
+        const summaryData = [
+            {
+                title: 'Total Portfolio Value',
+                value: formatCurrency(totalValue),
+                change: `${formatCurrency(totalDayChange)} (${dayChangePercent >= 0 ? '+' : ''}${dayChangePercent.toFixed(2)}%)`,
+                changeClass: totalDayChange >= 0 ? 'positive' : 'negative'
+            },
+            {
+                title: 'Number of Holdings',
+                value: portfolioData.length.toString(),
+                change: 'Excluding cash positions',
+                changeClass: ''
+            },
+            {
+                title: 'Largest Position',
+                value: sortedBySize[0].symbol,
+                change: `${((sortedBySize[0].quantity * sortedBySize[0].lastPrice) / totalValue * 100).toFixed(1)}% of portfolio`,
+                changeClass: ''
+            },
+            {
+                title: 'Data Mode',
+                value: isLiveMode ? 'Live' : 'Static Snapshot',
+                change: isLiveMode ? 'Real-time prices via backend API' : 'Static prices embedded in dashboard',
+                changeClass: isLiveMode ? 'positive' : ''
+            }
+        ];
+
+        const html = summaryData.map(item => `
+            <div class="summary-card">
+                <h3>${item.title}</h3>
+                <div class="value">${item.value}</div>
+                <div class="change ${item.changeClass}">${item.change}</div>
+            </div>
+        `).join('');
+        document.getElementById('summaryCards').innerHTML = html;
+    }
+
+    function updateHoldingsTable(sectionFilter = 'all') {
+        const tbody = document.getElementById('holdingsBody');
+        const titleEl = document.getElementById('sectionTitle');
+        const statsEl = document.getElementById('sectionStats');
+        if (!tbody) return;
+
+        let data = portfolioData;
+        if (sectionFilter === 'broad-market') data = broadMarketETFs;
+        else if (sectionFilter === 'equity') data = equityHoldings;
+
+        const totalPortfolioValue = portfolioData.reduce((s, h) => s + (h.quantity * h.lastPrice), 0) || 1;
+        const rowsHtml = data.map(h => {
+            const mv = h.quantity * h.lastPrice;
+            const weight = mv / totalPortfolioValue * 100;
+            const dayChg = h.change ? h.quantity * h.change : 0;
+            const dayPct = h.changePercent || 0;
+            return `
+                <tr>
+                    <td><span class="symbol" onclick="generateIndividualTearSheet('${h.symbol}')">${h.symbol}</span></td>
+                    <td>${h.description}</td>
+                    <td>${h.gicsSector}</td>
+                    <td>${h.quantity.toFixed(3)}</td>
+                    <td>${formatCurrency(h.lastPrice)}</td>
+                    <td>${formatCurrency(mv)}</td>
+                    <td>${weight.toFixed(2)}%</td>
+                    <td class="${dayChg >= 0 ? 'change positive' : 'change negative'}">${formatCurrency(dayChg)} (${dayPct >= 0 ? '+' : ''}${dayPct.toFixed(2)}%)</td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rowsHtml;
+
+        if (titleEl && statsEl) {
+            if (sectionFilter === 'broad-market') {
+                titleEl.textContent = 'Broad Market ETFs';
+            } else if (sectionFilter === 'equity') {
+                titleEl.textContent = 'DIG Active Positions';
+            } else {
+                titleEl.textContent = 'All Portfolio Holdings';
+            }
+            const sectionValue = data.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+            const sectionWeight = sectionValue / totalPortfolioValue * 100;
+            statsEl.textContent = `${data.length} holdings • ${formatCurrency(sectionValue)} • ${sectionWeight.toFixed(1)}% of portfolio`;
+        }
+    }
+
+    function showPortfolioSection(section, ev) {
+        currentSection = section;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if (ev && ev.target) ev.target.classList.add('active');
+        updateHoldingsTable(section);
+    }
+
+    function initializeCharts() {
+        const compositionCtx = document.getElementById('compositionChart').getContext('2d');
+        compositionChart = new Chart(compositionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Index Funds', 'Equity/Specialized ETFs', 'Cash'],
+                datasets: [{
+                    data: [],
+                    backgroundColor: ['#febc11', '#4dabf7', '#20c997'],
+                    borderWidth: 3,
+                    borderColor: '#0f1419'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#e5e5e5',
+                            boxWidth: 16,
+                            padding: 12,
+                            font: { size: 11, weight: 'bold' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(1)}%`
+                        }
+                    }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const label = compositionChart.data.labels[idx];
+                        if (label === 'Equity/Specialized ETFs') showSectorBreakdown();
+                    }
+                },
+                onHover: (event, elements) => {
+                    if (!event || !event.native) return;
+                    const isEquitySlice = elements.length > 0 && compositionChart.data.labels[elements[0].index] === 'Equity/Specialized ETFs';
+                    event.native.target.style.cursor = isEquitySlice ? 'pointer' : 'default';
+                }
+            }
+        });
+
+        const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+        const sectorColors = [
+            '#ef4444', // red
+            '#f97316', // orange
+            '#facc15', // amber
+            '#22c55e', // green
+            '#16a34a', // darker green
+            '#0ea5e9', // cyan/blue accent if more sectors
+            '#6366f1',
+            '#8b5cf6',
+            '#ec4899',
+            '#f59e0b',
+            '#4ade80'
+        ];
+        sectorChart = new Chart(sectorCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: sectorColors,
+                    borderWidth: 2,
+                    borderColor: '#0f1419'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#f5f5f5',
+                            boxWidth: 14,
+                            padding: 10,
+                            font: { size: 10 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(1)}%`
+                        }
+                    }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const sectorName = sectorChart.data.labels[idx];
+                        showSectorDetails(sectorName);
+                    }
+                },
+                onHover: (event, elements) => {
+                    if (!event || !event.native) return;
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                }
+            }
+        });
+
+        const holdingsCtx = document.getElementById('holdingsChart').getContext('2d');
+        holdingsChart = new Chart(holdingsCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{ data: [], backgroundColor: '#4dabf7' }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#e5e5e5' } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: {
+                            color: '#e5e5e5',
+                            callback: v => v + '%'
+                        }
+                    }
+                }
+            }
+        });
+
+        updateCharts();
+    }
+
+    function updateCharts() {
+        updateCompositionChart();
+        updateHoldingsChart();
+        if (currentSectorBreakdown) updateSectorChart();
+    }
+
+    function updateCompositionChart() {
+        if (!compositionChart) return;
+        const totalValue = portfolioData.reduce((s, h) => s + (h.quantity * h.lastPrice), 0) || 1;
+        const indexValue = broadMarketETFs.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+        const equityValue = equityHoldings.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+        const cashValue = Math.max(totalValue - indexValue - equityValue, 0);
+        const pctIndex = indexValue / totalValue * 100;
+        const pctEquity = equityValue / totalValue * 100;
+        const pctCash = cashValue / totalValue * 100;
+        compositionChart.data.datasets[0].data = [pctIndex, pctEquity, pctCash];
+        compositionChart.update();
+    }
+
+    function showSectorBreakdown() {
+        currentSectorBreakdown = 'equity';
+        const el = document.getElementById('sectorBreakdown');
+        if (!el) return;
+        el.style.display = 'block';
+        document.getElementById('sectorBreakdownTitle').textContent = 'Equity/Specialized ETFs - Sector Allocation';
+        updateSectorChart();
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeSectorBreakdown() {
+        currentSectorBreakdown = null;
+        const el = document.getElementById('sectorBreakdown');
+        if (el) el.style.display = 'none';
+    }
+
+    function updateSectorChart() {
+        if (!currentSectorBreakdown) return;
+        const equityTotalValue = equityHoldings.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+        const sectorData = {};
+        equityHoldings.forEach(h => {
+            const mv = h.quantity * h.lastPrice;
+            let key;
+            if (useAggregatedSectors && h.type === 'etf' && h.symbol === 'NUKZ') {
+                key = aggregatedSectorMap[h.gicsSector] || aggregatedSectorMap[h.sector] || h.gicsSector || h.sector;
+            } else if (useAggregatedSectors) {
+                key = aggregatedSectorMap[h.gicsSector] || h.gicsSector;
+            } else {
+                key = h.gicsSector;
+            }
+            sectorData[key] = (sectorData[key] || 0) + mv;
+        });
+
+        Object.keys(sectorData).forEach(k => {
+            sectorData[k] = (sectorData[k] / equityTotalValue) * 100;
+        });
+
+        const sectors = Object.keys(sectorData).sort((a, b) => sectorData[b] - sectorData[a]);
+        const percentages = sectors.map(s => sectorData[s]);
+
+        sectorChart.data.labels = sectors;
+        sectorChart.data.datasets[0].data = percentages;
+        sectorChart.update();
+
+        updateSectorMetrics(sectorData);
+    }
+
+    function updateSectorMetrics(sectorData) {
+        const container = document.getElementById('sectorMetrics');
+        if (!container) return;
+        const equityTotalValue = equityHoldings.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+        let html = '<div class="metrics-grid">';
+
+        Object.keys(sectorData)
+            .sort((a, b) => sectorData[b] - sectorData[a])
+            .forEach(sector => {
+                const holdings = equityHoldings.filter(h => {
+                    if (useAggregatedSectors && h.type === 'etf' && h.symbol === 'NUKZ') {
+                        const key = aggregatedSectorMap[h.gicsSector] || aggregatedSectorMap[h.sector] || h.gicsSector || h.sector;
+                        return key === sector;
+                    } else if (useAggregatedSectors) {
+                        const key = aggregatedSectorMap[h.gicsSector] || h.gicsSector;
+                        return key === sector;
+                    }
+                    return h.gicsSector === sector;
+                });
+
+                const totalValue = holdings.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+                const avgChange = holdings.length
+                    ? holdings.reduce((s, h) => s + (h.changePercent || 0), 0) / holdings.length
+                    : 0;
+                const weight = (totalValue / equityTotalValue) * 100;
+
+                html += `
+                    <div class="metric-card" onclick="showSectorDetails('${sector.replace(/'/g, "\\'")}')">
+                        <h4>${sector}</h4>
+                        <div class="metric-value">${weight.toFixed(1)}%</div>
+                        <div class="metric-detail">Avg daily move: ${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%</div>
+                        <div class="metric-holdings">${holdings.length} holdings</div>
+                    </div>
+                `;
+            });
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function updateHoldingsChart() {
+        const totalValue = portfolioData.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+        const nonIndex = equityHoldings.filter(h => !(h.type === 'etf' && h.gicsSector === 'N/A'));
+        const sorted = [...nonIndex].sort((a, b) => (b.quantity * b.lastPrice) - (a.quantity * a.lastPrice)).slice(0, 10);
+        const labels = sorted.map(h => h.symbol);
+        const values = sorted.map(h => (h.quantity * h.lastPrice) / totalValue * 100);
+        holdingsChart.data.labels = labels;
+        holdingsChart.data.datasets[0].data = values;
+        holdingsChart.update();
+    }
+
+    function buildSectorDetailChart(canvasId, sectorName, holdings) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const labels = holdings.map(h => h.symbol);
+        const values = holdings.map(h => h.quantity * h.lastPrice);
+        const total = values.reduce((s, v) => s + v, 0) || 1;
+        const percents = values.map(v => (v / total) * 100);
+
+        if (sectorDetailChart) sectorDetailChart.destroy();
+
+        const detailColors = [
+            '#ef4444', '#f97316', '#facc15', '#22c55e',
+            '#16a34a', '#0ea5e9', '#6366f1', '#8b5cf6',
+            '#ec4899', '#f59e0b', '#4ade80'
+        ];
+
+        sectorDetailChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: percents,
+                    backgroundColor: detailColors,
+                    borderWidth: 2,
+                    borderColor: '#0f1419'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#f5f5f5', font: { size: 10 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(1)}% of sector`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function showSectorDetails(sectorName) {
+        // resolve which holdings belong in this sector under current view
+        const holdings = equityHoldings.filter(h => {
+            if (useAggregatedSectors && h.type === 'etf' && h.symbol === 'NUKZ') {
+                const key = aggregatedSectorMap[h.gicsSector] || aggregatedSectorMap[h.sector] || h.gicsSector || h.sector;
+                return key === sectorName;
+            } else if (useAggregatedSectors) {
+                const key = aggregatedSectorMap[h.gicsSector] || h.gicsSector;
+                return key === sectorName;
+            }
+            return h.gicsSector === sectorName;
+        });
+        if (!holdings.length) return;
+
+        const totalSectorValue = holdings.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
+        const avgChange = holdings.length
+            ? holdings.reduce((s, h) => s + (h.changePercent || 0), 0) / holdings.length
+            : 0;
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'sector-details-modal';
+        backdrop.innerHTML = `
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.2rem; border-bottom:1px solid rgba(255,255,255,0.12);">
+                    <h2 style="font-size:1.1rem;">${sectorName} – Sector Detail</h2>
+                    <button type="button" class="btn" style="padding:0.2rem 0.6rem; border-radius:999px;" onclick="this.closest('.sector-details-modal').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="sector-summary" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.8rem; margin-bottom:1rem;">
+                        <div class="stat" style="background:rgba(255,255,255,0.06); border-radius:10px; padding:0.8rem;">
+                            <div style="font-size:0.8rem; opacity:0.8;">Sector Market Value</div>
+                            <span>${formatCurrency(totalSectorValue)}</span>
+                        </div>
+                        <div class="stat" style="background:rgba(255,255,255,0.06); border-radius:10px; padding:0.8rem;">
+                            <div style="font-size:0.8rem; opacity:0.8;">Average Daily Move</div>
+                            <span>${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%</span>
+                        </div>
+                        <div class="stat" style="background:rgba(255,255,255,0.06); border-radius:10px; padding:0.8rem;">
+                            <div style="font-size:0.8rem; opacity:0.8;">Holdings in Sector</div>
+                            <span>${holdings.length}</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:1.1rem;">
+                        <div class="sector-detail-chart-title">Holdings Distribution within ${sectorName}</div>
+                        <div class="chart-container" style="height:220px; max-height:220px;">
+                            <canvas id="sectorDetailChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <table class="sector-holdings-table" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Market Value</th>
+                                <th>Day Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${holdings.map(h => {
+                                const mv = h.quantity * h.lastPrice;
+                                const dayChg = h.change ? h.quantity * h.change : 0;
+                                const dayPct = h.changePercent || 0;
+                                return `
+                                    <tr>
+                                        <td><span class="symbol" onclick="generateIndividualTearSheet('${h.symbol}')">${h.symbol}</span></td>
+                                        <td>${h.description}</td>
+                                        <td>${h.quantity.toFixed(3)}</td>
+                                        <td>${formatCurrency(h.lastPrice)}</td>
+                                        <td>${formatCurrency(mv)}</td>
+                                        <td class="${dayChg >= 0 ? 'change positive' : 'change negative'}">${formatCurrency(dayChg)} (${dayPct >= 0 ? '+' : ''}${dayPct.toFixed(2)}%)</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        backdrop.addEventListener('click', () => backdrop.remove());
+        document.body.appendChild(backdrop);
+
+        // build inner doughnut
+        setTimeout(() => buildSectorDetailChart('sectorDetailChartCanvas', sectorName, holdings), 0);
+    }
+
+    function updateLastUpdatedTime() {
+        const el = document.getElementById('updateTime');
+        if (!el) return;
+        if (!lastUpdateTime) {
+            el.textContent = 'Static data from October 27, 2024';
+        } else {
+            el.textContent = lastUpdateTime.toLocaleString();
+        }
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value || 0);
+    }
+
+    function showError(message) {
+        console.error(message);
+        let container = document.getElementById('errorContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'errorContainer';
+            container.style.marginTop = '1rem';
+            const controlsShell = document.querySelector('.controls-shell');
+            if (controlsShell) controlsShell.appendChild(container);
+        }
+        container.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+
+    function showSuccessMessage(message) {
+        console.log(message);
+        let toast = document.getElementById('successToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'successToast';
+            toast.style.cssText = 'position:fixed; bottom:20px; right:20px; background:rgba(40,167,69,0.95); color:white; padding:0.75rem 1rem; border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,0.4); z-index:2500; font-size:0.85rem;';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+    }
+
+    function exportCSV() {
+        const headers = ['Symbol','Description','GICS Sector','Quantity','Price','Market Value'];
+        const rows = portfolioData.map(h => {
+            const mv = h.quantity * h.lastPrice;
+            return [h.symbol, h.description, h.gicsSector, h.quantity.toFixed(3), h.lastPrice.toFixed(2), mv.toFixed(2)];
+        });
+        const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dig-portfolio.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showSuccessMessage('CSV export generated.');
+    }
+
+    async function generateTearSheet() {
+        try {
+            showProgressIndicator('Generating portfolio tear sheet...');
+            await TearSheetGenerator.generate(portfolioData, { isLiveMode });
+            hideProgressIndicator();
+            showSuccessMessage('Portfolio tear sheet downloaded.');
+        } catch (err) {
+            console.error(err);
+            hideProgressIndicator();
+            showError('Failed to generate portfolio tear sheet.');
+        }
+    }
+
+    async function generateIndividualTearSheet(symbol) {
+        const holding = portfolioData.find(h => h.symbol === symbol);
+        if (!holding) {
+            showError(`No holding data found for ${symbol}.`);
+            return;
+        }
+        
+        let enhanced = { ...holding };
+        try {
+            // Check if tear sheet generator is available
+            if (!window.IndividualTearSheetGenerator) {
+                throw new Error('IndividualTearSheetGenerator not loaded. Please refresh the page.');
+            }
+            
+            // Check if jsPDF is available
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                throw new Error('jsPDF library not loaded. Please refresh the page.');
+            }
+            
+            showProgressIndicator(`Generating tear sheet for ${symbol}...`);
+            
+            if (isLiveMode) {
+                updateProgressIndicator(`Fetching latest data for ${symbol}...`);
+                const url = window.apiBaseURL ? `${window.apiBaseURL}/api/stock/${symbol}` : `/api/stock/${symbol}`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    enhanced = { ...enhanced, ...data };
+                }
+            }
+            
+            updateProgressIndicator(`Creating PDF for ${symbol}...`);
+            await IndividualTearSheetGenerator.generate(enhanced);
+            hideProgressIndicator();
+            showSuccessMessage(`Tear sheet generated for ${symbol}.`);
+        } catch (err) {
+            console.error('Tear sheet generation error:', err);
+            hideProgressIndicator();
+            showError(`Failed to generate tear sheet for ${symbol}: ${err.message}`);
+        }
+    }
+    </script>
+</body>
+</html>
