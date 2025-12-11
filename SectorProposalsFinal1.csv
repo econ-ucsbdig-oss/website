@@ -1,0 +1,40 @@
+﻿Symbol,Sector,Relative Sector Weight,Equity Weight,Nominal Weight,Beta,Target Beta,Nominal Weighted Beta
+Prolongis (PLD),Real Estate,4.42%,11.45%,0.51%,1.28,0.9502,0.0065
+Digital Realty Trust (DLR),Real Estate,4.42%,16.95%,0.75%,0.83,0.9502,0.0062
+VICI Properties (VICI),Real Estate,4.42%,17.65%,0.78%,0.72,0.9502,0.0056
+Range Nuclear ETF (NUKZ),Utilities,4.42%,20.52%,0.91%,1.00,0.9502,0.0091
+Constellation Energy Corp (CEG),Utilities,4.42%,23.13%,1.02%,1.14,0.9502,0.0117
+Sempra (SRE),Utilities,4.42%,10.30%,0.46%,0.65,0.9502,0.0030
+United Health Care (UNH),Health Care,9.12%,25%,2.28%,0.65,0.6210,0.0148
+Novo Nordisk (NVO),Health Care,9.12%,20%,1.82%,0.55,0.6210,0.0100
+Eli Lilly (LLY),Health Care,9.12%,20%,1.82%,0.70,0.6210,0.0128
+Boston Scientific (BSX),Health Care,9.12%,20%,1.82%,0.48,0.6210,0.0088
+Thermo Fisher (TMO),Health Care,9.12%,15%,1.37%,0.75,0.6210,0.0103
+Amazon (AMZN),Cons. Disc.,15.91%,38.98%,6.20%,1.14,1.0528,0.0707
+Flutter (FLUT),Cons. Disc.,15.91%,21.82%,3.47%,1.63,1.0528,0.0566
+Pinduoduo (PDD),Cons. Disc.,15.91%,14.12%,2.25%,1.08,1.0528,0.0243
+Costco (COST),Cons. Staple,15.91%,18.46%,2.94%,0.45,1.0528,0.0132
+Coca-Cola (KO),Cons. Staple,15.91%,6.62%,1.05%,0.26,1.0528,0.0027
+T-Mobile (TMUS),Tech,46.25%,3.22%,1.49%,0.46,1.1630,0.0069
+Microsoft (MSFT),Tech,46.25%,19.02%,8.80%,1.01,1.1630,0.0888
+Netflix (NFLX),Tech,46.25%,21.94%,10.15%,1.37,1.1630,0.1390
+Cisco (CSCO),Tech,46.25%,12.05%,5.57%,0.47,1.1630,0.0262
+DataDog (DDOG),Tech,46.25%,12.05%,5.57%,1.81,1.1630,0.1009
+Accenture (ACN),Tech,46.25%,12.11%,5.60%,1.09,1.1630,0.0610
+Google (GOOGL),Comm,46.25%,9.36%,4.33%,0.94,1.1630,0.0407
+Taiwan Semiconductor (TSM),Comm,46.25%,10.24%,4.74%,1.57,1.1630,0.0744
+General Electric (GE),Industrials,10.36%,15.00%,1.55%,1.37,1.1870,0.0213
+Sterling Infrastructure (STRL),Industrials,10.36%,15.00%,1.55%,1.82,1.1870,0.0283
+Applied Materials (AMAT),Industrials,10.36%,20.00%,2.07%,1.54,1.1870,0.0319
+Ecolab (ECL),Industrials,10.36%,15.00%,1.55%,1.08,1.1870,0.0168
+Vertiv (VRT),Industrials,10.36%,10.00%,1.04%,1.85,1.1870,0.0192
+Gold,Materials,10.36%,10.00%,1.04%,0.46,1.1870,0.0048
+Dollar (UUP),Materials,10.36%,15.00%,1.55%,0.05,1.1870,0.0008
+JP Morgan (JPM),Financials,13.94%,25.00%,3.49%,1.2,1.0524,0.0418
+Intercontinental Exchancge (ICE),Financials,13.94%,10.00%,1.39%,0.94,1.0524,0.0131
+BlackRock (BLK),Financials,13.94%,26.00%,3.62%,1.46,1.0524,0.0529
+Berkshire Hathaway (BRK.B),Financials,13.94%,18.00%,2.51%,0.51,1.0524,0.0128
+Chubb (CB),Financials,13.94%,10.00%,1.39%,0.44,1.0524,0.0061
+Goldman Sachs (GS),Financials,13.94%,11.00%,1.53%,1.3,1.0524,0.0199
+,,,,,,,
+Total,,,,,,,1.0737
