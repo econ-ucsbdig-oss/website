@@ -823,6 +823,7 @@
                 <li><a href="index.html#home">Home</a></li>
                 <li><a href="index.html#board">Advisory Board</a></li>
                 <li><a href="live-portfolio.html" class="live-portfolio-link">📊 Live Portfolio</a></li>
+                <li><a href="tracking-error.html">📈 Tracking Error</a></li>
             </ul>
             <div class="mobile-menu-toggle" id="mobileMenuToggle">
                 <span></span>
@@ -1200,7 +1201,10 @@
         if (!healthyBase) {
             isLiveMode = false;
             updateStatus('static');
-            showError('Could not connect to backend API. Tried: ' + attempted.join(', ') + '. Check that the dev server is running on port 3001 and that you are not opening this file directly via file://.');
+            console.log('Running in offline mode with sample data. API tried:', attempted.join(', '));
+            // Display sample data instead of showing error
+            updateDashboard();
+            showSuccessMessage('📊 Running in Demo Mode with sample data. To use live data, access via http://localhost:3001/live-portfolio.html');
             return;
         }
 
