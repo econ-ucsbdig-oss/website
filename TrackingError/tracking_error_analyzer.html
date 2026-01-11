@@ -11,47 +11,75 @@
             box-sizing: border-box;
         }
 
+        /* DIG site palette */
+        :root {
+            --dig-bg-0: #0f1419;
+            --dig-bg-1: #1e3c72;
+            --dig-bg-2: #2a3c5f;
+            --dig-gold: #febc11;
+            --dig-text: rgba(255,255,255,0.92);
+            --dig-text-muted: rgba(255,255,255,0.72);
+            --dig-card: rgba(255,255,255,0.06);
+            --dig-card-2: rgba(0,0,0,0.22);
+            --dig-border: rgba(255,255,255,0.10);
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--dig-bg-0), var(--dig-bg-1), var(--dig-bg-2), var(--dig-bg-0));
+            background-size: 300% 300%;
+            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
             padding: 20px;
+            color: var(--dig-text);
+            padding-top: 88px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            background: var(--dig-card);
+            border-radius: 16px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            border: 1px solid var(--dig-border);
+            backdrop-filter: blur(18px);
             padding: 30px;
         }
 
         h1 {
-            color: #333;
+            color: #fff;
             margin-bottom: 10px;
             font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .subtitle {
-            color: #666;
+            color: var(--dig-text-muted);
             margin-bottom: 30px;
             font-size: 14px;
         }
 
         .input-section {
-            background: #f8f9fa;
+            background: var(--dig-card-2);
             padding: 25px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .section-title {
             font-size: 18px;
-            color: #333;
+            color: #fff;
             margin-bottom: 15px;
-            font-weight: 600;
-            border-bottom: 2px solid #667eea;
+            font-weight: 700;
+            border-bottom: 2px solid rgba(254, 188, 17, 0.55);
             padding-bottom: 5px;
         }
 
@@ -68,84 +96,100 @@
         }
 
         label {
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 5px;
-            color: #555;
+            color: var(--dig-text-muted);
             font-size: 14px;
         }
 
         input, select {
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 10px;
             font-size: 14px;
+            background: rgba(15, 20, 25, 0.80);
+            color: #fff;
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.55);
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: rgba(254,188,17,0.65);
+            box-shadow: 0 0 0 3px rgba(254,188,17,0.12);
         }
 
         .holdings-table {
             width: 100%;
             margin-top: 15px;
             border-collapse: collapse;
+            background: rgba(0,0,0,0.18);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .holdings-table th,
         .holdings-table td {
             padding: 10px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
         .holdings-table th {
-            background: #667eea;
-            color: white;
-            font-weight: 500;
+            background: rgba(254,188,17,0.16);
+            color: var(--dig-gold);
+            font-weight: 700;
+        }
+
+        .holdings-table td {
+            color: rgba(255,255,255,0.92);
         }
 
         .holdings-table input {
             width: 90%;
             padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 10px;
         }
 
         .holdings-table input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: rgba(254,188,17,0.65);
+            box-shadow: 0 0 0 3px rgba(254,188,17,0.12);
         }
 
         .btn {
             padding: 12px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: 999px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
+            font-weight: 700;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .btn-primary {
-            background: #667eea;
-            color: white;
+            background: rgba(254,188,17,0.95);
+            color: #0f1419;
         }
 
         .btn-primary:hover {
-            background: #5568d3;
+            background: rgba(254,188,17,1);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 6px 16px rgba(254,188,17,0.25);
         }
 
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: rgba(255,255,255,0.14);
+            color: #fff;
             margin-left: 10px;
+            border: 1px solid rgba(255,255,255,0.12);
         }
 
         .btn-secondary:hover {
-            background: #5a6268;
+            background: rgba(255,255,255,0.20);
         }
 
         .btn-small {
@@ -166,58 +210,62 @@
         }
 
         .metric-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgba(0,0,0,0.22);
             padding: 20px;
-            border-radius: 8px;
-            color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.10);
+            box-shadow: none;
         }
 
         .metric-label {
             font-size: 12px;
-            opacity: 0.9;
+            opacity: 0.85;
             margin-bottom: 5px;
+            color: var(--dig-text-muted);
         }
 
         .metric-value {
             font-size: 24px;
-            font-weight: 600;
+            font-weight: 800;
+            color: var(--dig-gold);
         }
 
         .results-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.18);
+            box-shadow: none;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .results-table th,
         .results-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
         .results-table th {
-            background: #667eea;
-            color: white;
-            font-weight: 500;
+            background: rgba(254,188,17,0.16);
+            color: var(--dig-gold);
+            font-weight: 700;
             position: sticky;
             top: 0;
         }
 
+        .results-table td {
+            color: rgba(255,255,255,0.92);
+        }
+
         .results-table tr:hover {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.06);
         }
 
-        .positive {
-            color: #28a745;
-        }
-
-        .negative {
-            color: #dc3545;
-        }
+        .positive { color: #8ee6b1; }
+        .negative { color: #ff9aa8; }
 
         .loading {
             display: none;
@@ -226,8 +274,8 @@
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid rgba(255,255,255,0.18);
+            border-top: 4px solid var(--dig-gold);
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -241,20 +289,22 @@
         }
 
         .error {
-            background: #f8d7da;
-            color: #721c24;
+            background: rgba(220, 53, 69, 0.14);
+            color: #ffb3c0;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 12px;
             margin-top: 15px;
             display: none;
+            border: 1px solid rgba(220, 53, 69, 0.5);
         }
 
         .success {
-            background: #d4edda;
-            color: #155724;
+            background: rgba(40, 167, 69, 0.14);
+            color: #b7f7cf;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 12px;
             margin-top: 15px;
+            border: 1px solid rgba(40, 167, 69, 0.45);
         }
 
         .table-container {
@@ -266,37 +316,45 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
 
         .summary-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.18);
+            box-shadow: none;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .summary-table th,
         .summary-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
 
         .summary-table th {
-            background: #667eea;
-            color: white;
-            font-weight: 500;
+            background: rgba(254,188,17,0.16);
+            color: var(--dig-gold);
+            font-weight: 700;
+        }
+
+        .summary-table td {
+            color: rgba(255,255,255,0.92);
         }
 
         .summary-table tr:hover {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.06);
         }
 
         .chart-card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.22);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+            box-shadow: none;
             padding: 16px;
         }
 
@@ -306,17 +364,18 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
         }
 
         .chart-title {
             font-size: 14px;
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: rgba(255,255,255,0.90);
         }
 
         .chart-subtitle {
             font-size: 12px;
-            color: #666;
+            color: rgba(255,255,255,0.72);
             margin-top: 2px;
         }
 
@@ -325,7 +384,7 @@
             gap: 14px;
             flex-wrap: wrap;
             font-size: 12px;
-            color: #444;
+            color: rgba(255,255,255,0.80);
         }
 
         .legend-item {
@@ -345,25 +404,118 @@
             width: 100%;
             height: 260px;
             display: block;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        .axis-label {
-            fill: #666;
-            font-size: 11px;
+        .axis-label { fill: rgba(255,255,255,0.72); font-size: 11px; }
+        .gridline { stroke: rgba(255,255,255,0.10); stroke-width: 1; }
+        .axis-line { stroke: rgba(255,255,255,0.18); stroke-width: 1; }
+
+        /* Ensure SVG chart background isn't hardcoded to white */
+        #equityCurveSvg rect { fill: rgba(15,20,25,0.55) !important; }
+
+        /* Site navbar (mirrors main website) */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(254, 188, 17, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .gridline {
-            stroke: rgba(0,0,0,0.08);
-            stroke-width: 1;
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
         }
 
-        .axis-line {
-            stroke: rgba(0,0,0,0.25);
-            stroke-width: 1;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .logo span { color: white; }
+
+        .logo-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: rgba(254, 188, 17, 0.12);
+            border: 1px solid rgba(254, 188, 17, 0.35);
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            color: #febc11;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: #febc11;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after { width: 100%; }
+        .nav-links a:hover { color: #febc11; transform: translateY(-2px); }
+
+        @media (max-width: 768px) {
+            .nav-links { gap: 1.2rem; }
+            .nav-links a { font-size: 1rem; }
+            nav { padding: 0 1.2rem; }
+            body { padding-top: 84px; }
         }
     </style>
 </head>
 <body>
+    <header>
+        <nav>
+            <div class="logo">
+                <div class="logo-badge">📈</div>
+                <span>DIG</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html#home">Home</a></li>
+                <li><a href="../index.html#board">Advisory Board</a></li>
+                <li><a href="../live-portfolio.html">📊 Live Portfolio</a></li>
+                <li><a href="tracking_error_analyzer.html">📈 Tracking Error</a></li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container">
         <h1>Portfolio Tracking Error Analyzer</h1>
         <p class="subtitle">Analyze tracking error contributions at equity and sector levels</p>
@@ -459,7 +611,7 @@
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p style="margin-top: 10px; color: #666;">Fetching data and calculating...</p>
+            <p style="margin-top: 10px; color: rgba(255,255,255,0.72);">Fetching data and calculating...</p>
         </div>
 
         <div class="error" id="error"></div>
@@ -546,7 +698,7 @@
                         <div class="chart-subtitle" id="equityCurveSubtitle">-</div>
                     </div>
                     <div class="legend" aria-label="Chart legend">
-                        <span class="legend-item"><span class="legend-swatch" style="background:#667eea"></span>Portfolio</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#febc11"></span>Portfolio</span>
                         <span class="legend-item"><span class="legend-swatch" style="background:#2ea44f"></span>Benchmark</span>
                     </div>
                 </div>
@@ -561,6 +713,39 @@
         // Store portfolio holdings and benchmark weights
         let holdings = [];
         let benchmarkWeights = {};
+
+        // Remove a holding
+        function removeHolding(index) {
+            holdings.splice(index, 1);
+            updateHoldingsTable();
+        }
+
+        // Update the holdings table
+        function updateHoldingsTable() {
+            const tbody = document.getElementById('holdingsBody');
+            tbody.innerHTML = '';
+
+            holdings.forEach((holding, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${holding.ticker}</td>
+                    <td><input type="number" value="${holding.weight.toFixed(2)}" step="0.01" onchange="updateWeight(${index}, this.value)"></td>
+                    <td>${holding.sector}</td>
+                    <td><button class="btn btn-secondary btn-small" onclick="removeHolding(${index})">Remove</button></td>
+                `;
+            });
+        }
+
+        // Normalize weights to 100%
+        function normalizeWeights() {
+            const total = holdings.reduce((sum, h) => sum + h.weight, 0);
+            if (total > 0) {
+                holdings.forEach(h => {
+                    h.weight = (h.weight / total) * 100;
+                });
+                updateHoldingsTable();
+            }
+        }
 
         // Set default date values
         const today = new Date();
@@ -651,92 +836,41 @@
             'CCJ': 'Energy'
         };
 
-        // Auto-detect sector
-        async function detectSector(ticker) {
-            // First check our local map
-            if (sectorMap[ticker.toUpperCase()]) {
-                return sectorMap[ticker.toUpperCase()];
-            }
-
-            // Try to fetch from Yahoo Finance using CORS proxy
-            try {
-                const url = `https://corsproxy.io/?https://query2.finance.yahoo.com/v10/finance/quoteSummary/${ticker}?modules=assetProfile`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.quoteSummary && data.quoteSummary.result && data.quoteSummary.result[0]) {
-                    const profile = data.quoteSummary.result[0].assetProfile;
-                    return profile.sector || 'Unknown';
-                }
-            } catch (error) {
-                console.log(`Could not fetch sector for ${ticker}, using Unknown`);
-            }
-
-            return 'Unknown';
-        }
-
-        // Add a holding to the portfolio
+        // Add a holding
         async function addHolding() {
             const ticker = document.getElementById('newTicker').value.trim().toUpperCase();
             const weight = parseFloat(document.getElementById('newWeight').value);
 
-            if (!ticker || isNaN(weight)) {
-                alert('Please enter ticker and weight');
+            if (!ticker || isNaN(weight) || weight <= 0) {
+                alert('Please enter a valid ticker and weight');
                 return;
             }
 
-            // Show loading
-            document.getElementById('loading').style.display = 'block';
-
-            // Auto-detect sector
             const sector = await detectSector(ticker);
 
             holdings.push({ ticker, weight, sector });
             updateHoldingsTable();
 
-            // Clear inputs
             document.getElementById('newTicker').value = '';
             document.getElementById('newWeight').value = '';
-
-            document.getElementById('loading').style.display = 'none';
         }
 
-        // Update weight from table input
+        // Update weight
         function updateWeight(index, newWeight) {
-            holdings[index].weight = parseFloat(newWeight);
-        }
-
-        // Remove a holding
-        function removeHolding(index) {
-            holdings.splice(index, 1);
-            updateHoldingsTable();
-        }
-
-        // Update the holdings table
-        function updateHoldingsTable() {
-            const tbody = document.getElementById('holdingsBody');
-            tbody.innerHTML = '';
-
-            holdings.forEach((holding, index) => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${holding.ticker}</td>
-                    <td><input type="number" value="${holding.weight.toFixed(2)}" step="0.01" onchange="updateWeight(${index}, this.value)"></td>
-                    <td>${holding.sector}</td>
-                    <td><button class="btn btn-secondary btn-small" onclick="removeHolding(${index})">Remove</button></td>
-                `;
-            });
-        }
-
-        // Normalize weights to 100%
-        function normalizeWeights() {
-            const total = holdings.reduce((sum, h) => sum + h.weight, 0);
-            if (total > 0) {
-                holdings.forEach(h => {
-                    h.weight = (h.weight / total) * 100;
-                });
-                updateHoldingsTable();
+            const weight = parseFloat(newWeight);
+            if (!isNaN(weight) && weight > 0) {
+                holdings[index].weight = weight;
             }
+        }
+
+        // Detect sector
+        async function detectSector(ticker) {
+            if (sectorMap[ticker]) {
+                return sectorMap[ticker];
+            }
+
+            // Fallback to live lookup (not implemented in this example)
+            return 'Unknown';
         }
 
         // Load sample portfolio
@@ -912,24 +1046,6 @@
             'IQV': 0.07, 'PRU': 0.07, 'ETR': 0.07, 'EBAY': 0.07, 'CTSH': 0.07,
             'MCHP': 0.07, 'XYZ': 0.07, 'GEHC': 0.07, 'PEG': 0.07, 'VMC': 0.07,
             'DHI': 0.07, 'HIG': 0.07, 'UAL': 0.07, 'MLM': 0.07, 'NUE': 0.07,
-            'STT': 0.06, 'CCI': 0.06, 'FISV': 0.06, 'KDP': 0.06, 'FICO': 0.06,
-            'WAB': 0.06, 'FIX': 0.06, 'KEYS': 0.06, 'DELL': 0.06, 'PAYX': 0.06,
-            'RMD': 0.06, 'KR': 0.06, 'ED': 0.06, 'VTR': 0.06, 'ARES': 0.06,
-            'CCL': 0.06, 'EXPE': 0.06, 'TER': 0.06, 'FIS': 0.06, 'SYY': 0.06,
-            'OTIS': 0.06, 'ACGL': 0.06, 'GRMN': 0.06, 'WEC': 0.06, 'PCG': 0.06,
-            'CPRT': 0.06, 'XYL': 0.06, 'HUM': 0.06, 'FITB': 0.06, 'KMB': 0.06,
-            'MTB': 0.06, 'KVUE': 0.06, 'IBKR': 0.06, 'WTW': 0.06, 'DG': 0.05,
-            'SYF': 0.05, 'VRSK': 0.05, 'ODFL': 0.05, 'MTD': 0.05, 'HPE': 0.05,
-            'VICI': 0.05, 'IR': 0.05, 'ULTA': 0.05, 'RJF': 0.05, 'EME': 0.05,
-            'HBAN': 0.05, 'NRG': 0.05, 'EXR': 0.05, 'ADM': 0.05, 'DOV': 0.05,
-            'BIIB': 0.05, 'DXCM': 0.05, 'NTRS': 0.05, 'AEE': 0.05, 'TPR': 0.05,
-            'CBOE': 0.05, 'DTE': 0.05, 'HSY': 0.05, 'ATO': 0.05, 'TSCO': 0.05,
-            'CFG': 0.05, 'CSGP': 0.05, 'EFX': 0.05, 'EL': 0.05, 'FSLR': 0.04,
-            'IRM': 0.04, 'BR': 0.04, 'PPL': 0.04, 'AVB': 0.04, 'STE': 0.04,
-            'CINF': 0.04, 'LDOS': 0.04, 'HUBB': 0.04, 'RF': 0.04, 'ON': 0.04,
-            'DLTR': 0.04, 'VLTO': 0.04, 'AWK': 0.04, 'TDY': 0.04, 'OMC': 0.04,
-            'CNP': 0.04, 'ES': 0.04, 'JBL': 0.04, 'WAT': 0.04, 'WSM': 0.04,
-            'PPG': 0.04, 'DRI': 0.04, 'TROW': 0.04, 'BRO': 0.04, 'FE': 0.04,
             'STLD': 0.04, 'PHM': 0.04, 'GIS': 0.04, 'LULU': 0.04, 'LYV': 0.04,
             'EIX': 0.04, 'CPAY': 0.04, 'LEN': 0.04, 'LUV': 0.04, 'NVR': 0.04,
             'EQR': 0.04, 'CNC': 0.04, 'CMS': 0.04, 'EXPD': 0.04, 'LH': 0.04,
