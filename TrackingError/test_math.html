@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TE Math Verification Test</title>
+</head>
+<body>
+    <h1>Tracking Error Math Verification</h1>
+    <pre id="output"></pre>
+
+    <script>
+        // Simple 2-stock, 2-period example to verify math
+
+        // Portfolio: 60% Stock A, 40% Stock B
+        const portfolioWeights = { A: 0.60, B: 0.40 };
+
+        // Benchmark: 50% Stock A, 50% Stock B
+        const benchmarkWeights = { A: 0.50, B: 0.50 };
+
+        // Active weights
+        const activeWeights = {
+            A: portfolioWeights.A - benchmarkWeights.A,  // 0.10
+            B: portfolioWeights.B - benchmarkWeights.B   // -0.10
+        };
+
+        // Returns for 3 periods
+        const returns = {
+            A: [0.01, -0.02, 0.03],
+            B: [0.02, 0.01, -0.01]
+        };
+
+        // Calculate benchmark returns (weighted average)
+        const benchmarkReturns = [];
+        for (let i = 0; i < returns.A.length; i++) {
+            benchmarkReturns[i] = benchmarkWeights.A * returns.A[i] +
+                                  benchmarkWeights.B * returns.B[i];
+        }
+
+        // Calculate portfolio returns (weighted average)
+        const portfolioReturns = [];
+        for (let i = 0; i < returns.A.length; i++) {
+            portfolioReturns[i] = portfolioWeights.A * returns.A[i] +
+                                  portfolioWeights.B * returns.B[i];
+        }
+
+        // Calculate portfolio active returns
+        const portfolioActiveReturns = [];
+        for (let i = 0; i < returns.A.length; i++) {
+            portfolioActiveReturns[i] = portfolioReturns[i] - benchmarkReturns[i];
+        }
+
+        // Calculate active returns for each stock
+        const activeReturns = {
+            A: returns.A.map((r, i) => r - benchmarkReturns[i]),
+            B: returns.B.map((r, i) => r - benchmarkReturns[i])
+        };
+
+        // Helper functions
+        function mean(arr) {
+            return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+        }
+
+        function variance(arr) {
+            const m = mean(arr);
+            return arr.reduce((sum, val) => sum + Math.pow(val - m, 2), 0) / arr.length;
+        }
+
+        function stdDev(arr) {
+            return Math.sqrt(variance(arr));
+        }
+
+        function covariance(arr1, arr2) {
+            const mean1 = mean(arr1);
+            const mean2 = mean(arr2);
+            let sum = 0;
+            for (let i = 0; i < arr1.length; i++) {
+                sum += (arr1[i] - mean1) * (arr2[i] - mean2);
+            }
+            return sum / arr1.length;
+        }
+
+        // Calculate Portfolio TE (not annualized for simplicity)
+        const portfolioTE = stdDev(portfolioActiveReturns);
+
+        // METHOD 1: Use Cov(R_active,i, R_p,active)
+        function testMethod1() {
+            const cteA_1 = activeWeights.A * covariance(activeReturns.A, portfolioActiveReturns) / stdDev(portfolioActiveReturns);
+            const cteB_1 = activeWeights.B * covariance(activeReturns.B, portfolioActiveReturns) / stdDev(portfolioActiveReturns);
+            const sumCTE_1 = cteA_1 + cteB_1;
+
+            return { cteA: cteA_1, cteB: cteB_1, sumCTE: sumCTE_1 };
+        }
+
+        // METHOD 2: Use Cov(R_i, R_p,active)
+        function testMethod2() {
+            const cteA_2 = activeWeights.A * covariance(returns.A, portfolioActiveReturns) / stdDev(portfolioActiveReturns);
+            const cteB_2 = activeWeights.B * covariance(returns.B, portfolioActiveReturns) / stdDev(portfolioActiveReturns);
+            const sumCTE_2 = cteA_2 + cteB_2;
+
+            return { cteA: cteA_2, cteB: cteB_2, sumCTE: sumCTE_2 };
+        }
+
+        // METHOD 3: Direct calculation using variance formula
+        function testMethod3() {
+            // TE² = Var(w_a,A * R_A + w_a,B * R_B)
+            const directActiveReturns = [];
+            for (let i = 0; i < returns.A.length; i++) {
+                directActiveReturns[i] = activeWeights.A * returns.A[i] + activeWeights.B * returns.B[i];
+            }
+            const directTE = stdDev(directActiveReturns);
+
+            return { directTE };
+        }
+
+        const method1 = testMethod1();
+        const method2 = testMethod2();
+        const method3 = testMethod3();
+
+        let output = '';
+        output += '=== INPUT DATA ===\n';
+        output += `Portfolio Weights: A=${portfolioWeights.A}, B=${portfolioWeights.B}\n`;
+        output += `Benchmark Weights: A=${benchmarkWeights.A}, B=${benchmarkWeights.B}\n`;
+        output += `Active Weights: A=${activeWeights.A.toFixed(4)}, B=${activeWeights.B.toFixed(4)}\n`;
+        output += `\nReturns A: [${returns.A.join(', ')}]\n`;
+        output += `Returns B: [${returns.B.join(', ')}]\n`;
+        output += `Benchmark Returns: [${benchmarkReturns.map(r => r.toFixed(4)).join(', ')}]\n`;
+        output += `Portfolio Returns: [${portfolioReturns.map(r => r.toFixed(4)).join(', ')}]\n`;
+        output += `Portfolio Active Returns: [${portfolioActiveReturns.map(r => r.toFixed(6)).join(', ')}]\n`;
+        output += `\n=== PORTFOLIO TE ===\n`;
+        output += `Portfolio TE (StDev of active returns): ${portfolioTE.toFixed(8)}\n`;
+
+        output += `\n=== METHOD 1: Cov(R_active,i, R_p,active) ===\n`;
+        output += `CTE_A: ${method1.cteA.toFixed(8)}\n`;
+        output += `CTE_B: ${method1.cteB.toFixed(8)}\n`;
+        output += `Sum of CTEs: ${method1.sumCTE.toFixed(8)}\n`;
+        output += `Portfolio TE: ${portfolioTE.toFixed(8)}\n`;
+        output += `Match? ${Math.abs(method1.sumCTE - portfolioTE) < 0.0000001 ? 'YES ✓' : 'NO ✗'}\n`;
+        output += `Error: ${Math.abs(method1.sumCTE - portfolioTE).toFixed(10)}\n`;
+
+        output += `\n=== METHOD 2: Cov(R_i, R_p,active) ===\n`;
+        output += `CTE_A: ${method2.cteA.toFixed(8)}\n`;
+        output += `CTE_B: ${method2.cteB.toFixed(8)}\n`;
+        output += `Sum of CTEs: ${method2.sumCTE.toFixed(8)}\n`;
+        output += `Portfolio TE: ${portfolioTE.toFixed(8)}\n`;
+        output += `Match? ${Math.abs(method2.sumCTE - portfolioTE) < 0.0000001 ? 'YES ✓' : 'NO ✗'}\n`;
+        output += `Error: ${Math.abs(method2.sumCTE - portfolioTE).toFixed(10)}\n`;
+
+        output += `\n=== METHOD 3: Direct Calculation ===\n`;
+        output += `Direct TE (from Var(w_a,A*R_A + w_a,B*R_B)): ${method3.directTE.toFixed(8)}\n`;
+        output += `Should equal Portfolio TE: ${portfolioTE.toFixed(8)}\n`;
+        output += `Match? ${Math.abs(method3.directTE - portfolioTE) < 0.0000001 ? 'YES ✓' : 'NO ✗'}\n`;
+        output += `Error: ${Math.abs(method3.directTE - portfolioTE).toFixed(10)}\n`;
+
+        document.getElementById('output').textContent = output;
+    </script>
+</body>
+</html>
