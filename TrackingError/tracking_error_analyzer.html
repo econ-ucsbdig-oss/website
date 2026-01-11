@@ -644,9 +644,8 @@
                             <th>Portfolio Weight (%)</th>
                             <th>Benchmark Weight (%)</th>
                             <th>Active Weight (%)</th>
-                            <th>Start Price ($)</th>
-                            <th>End Price ($)</th>
                             <th>Return (%)</th>
+                            <th>Active Return (%)</th>
                             <th>MCTE (%)</th>
                             <th>CTE (%)</th>
                         </tr>
@@ -663,6 +662,7 @@
                         <tr>
                             <th>Sector</th>
                             <th>Return (%)</th>
+                            <th>Active Return (%)</th>
                             <th>Total CTE (%)</th>
                             <th>% of Total TE</th>
                         </tr>
@@ -1219,6 +1219,7 @@
 
             // Calculate total return for each equity (annualized)
             const equityTotalReturns = {};
+            const equityActiveReturns = {};
             const equityPrices = {};
             normalizedHoldings.forEach(holding => {
                 const ticker = holding.ticker;
@@ -1234,7 +1235,13 @@
 
                 equityTotalReturns[ticker] = annualizedReturn * 100; // Convert to percentage
 
-                // Capture start and end prices
+                // Equity active return (annualized): equity return - benchmark return
+                const equityActiveReturnSeries = tickerReturns.map((r, i) => r - benchmarkReturns[i]);
+                const equityActiveCumulativeReturn = equityActiveReturnSeries.reduce((acc, r) => acc + r, 0);
+                const equityAnnualizedActiveReturn = equityActiveCumulativeReturn * annualizationFactor;
+                equityActiveReturns[ticker] = equityAnnualizedActiveReturn * 100;
+
+                // Capture start and end prices (kept for internal/debug use; no longer shown in table)
                 equityPrices[ticker] = {
                     startPrice: prices[0],
                     endPrice: prices[prices.length - 1]
@@ -1263,9 +1270,8 @@
                     portfolioWeight: portfolioWeight,
                     benchmarkWeight: benchmarkWeight,
                     activeWeight: activeWeightPct,
-                    startPrice: equityPrices[ticker].startPrice,
-                    endPrice: equityPrices[ticker].endPrice,
                     return: equityTotalReturns[ticker], // Annualized return
+                    activeReturn: equityActiveReturns[ticker], // Annualized active return
                     mcte: mcte * 100, // Convert to percentage
                     cte: cte * 100 // Convert to percentage
                 };
@@ -1521,17 +1527,20 @@
                     sectors[sectorKey] = {
                         cte: 0,
                         totalWeightedReturn: 0,
+                        totalWeightedActiveReturn: 0,
                         totalWeight: 0
                     };
                 }
                 sectors[sectorKey].cte += eq.cte;
                 sectors[sectorKey].totalWeightedReturn += eq.return * eq.portfolioWeight;
+                sectors[sectorKey].totalWeightedActiveReturn += eq.activeReturn * eq.portfolioWeight;
                 sectors[sectorKey].totalWeight += eq.portfolioWeight;
             });
 
             return Object.entries(sectors).map(([sector, data]) => ({
                 sector,
                 return: data.totalWeight > 0 ? data.totalWeightedReturn / data.totalWeight : 0,
+                activeReturn: data.totalWeight > 0 ? data.totalWeightedActiveReturn / data.totalWeight : 0,
                 cte: data.cte
             })).sort((a, b) => Math.abs(b.cte) - Math.abs(a.cte));
         }
@@ -1563,9 +1572,8 @@
                     <td>${eq.portfolioWeight.toFixed(2)}</td>
                     <td>${eq.benchmarkWeight.toFixed(2)}</td>
                     <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}">${eq.activeWeight.toFixed(2)}</td>
-                    <td>${eq.startPrice.toFixed(2)}</td>
-                    <td>${eq.endPrice.toFixed(2)}</td>
                     <td class="${eq.return >= 0 ? 'positive' : 'negative'}">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}">${eq.activeReturn.toFixed(2)}</td>
                     <td>${eq.mcte.toFixed(2)}</td>
                     <td class="${eq.cte >= 0 ? 'positive' : 'negative'}">${eq.cte.toFixed(2)}</td>
                 `;
@@ -1581,6 +1589,7 @@
                 row.innerHTML = `
                     <td>${sector.sector}</td>
                     <td class="${sector.return >= 0 ? 'positive' : 'negative'}">${sector.return.toFixed(2)}</td>
+                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
                     <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
                     <td>${pctOfTotal.toFixed(1)}%</td>
                 `;
