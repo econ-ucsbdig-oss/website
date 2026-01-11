@@ -3,18 +3,270 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0; url=TrackingError/tracking_error_analyzer.html" />
-    <title>Redirecting…</title>
+    <title>📈 Tracking Error - UCSB Dean's Investment Group</title>
+
+    <!-- Canonical points to the underlying tool -->
     <link rel="canonical" href="TrackingError/tracking_error_analyzer.html" />
+
+    <!-- Fast fallback if iframe is blocked -->
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=TrackingError/tracking_error_analyzer.html" />
+    </noscript>
+
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 2rem; }
-        a { color: #1e3c72; }
+        /* Match website visual language (dark gradient + glass cards) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #fff;
+            overflow-x: hidden;
+            background: transparent;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f1419, #1e3c72, #2a3c5f, #0f1419);
+            background-size: 300% 300%;
+            animation: gradientShift 20s ease infinite;
+            z-index: -2;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(254, 188, 17, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .logo span { color: white; }
+        .logo-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: rgba(254, 188, 17, 0.12);
+            border: 1px solid rgba(254, 188, 17, 0.35);
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            color: #febc11;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: #febc11;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after { width: 100%; }
+        .nav-links a:hover { color: #febc11; transform: translateY(-2px); }
+
+        .page-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 7rem 2rem 3rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff, #febc11, #ffffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 6s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .hero p {
+            margin-top: 0.6rem;
+            opacity: 0.85;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(18px);
+        }
+
+        .card-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-header .hint {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .btn-link {
+            display: inline-block;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(254,188,17,0.4);
+            color: #febc11;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: transform 0.2s ease;
+            background: rgba(0,0,0,0.25);
+        }
+
+        .btn-link:hover { transform: translateY(-2px); }
+
+        .iframe-wrap {
+            width: 100%;
+            height: min(78vh, 980px);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(0,0,0,0.25);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #ffffff;
+        }
+
+        .fallback {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .fallback a { color: #febc11; }
+
+        @media (max-width: 768px) {
+            .nav-links { gap: 1.2rem; }
+            .nav-links a { font-size: 1rem; }
+            .hero h1 { font-size: 2rem; }
+            .page-wrapper { padding: 6.5rem 1.2rem 2.5rem; }
+            .iframe-wrap { height: 80vh; }
+        }
     </style>
 </head>
 <body>
-    <p>Redirecting to <a href="TrackingError/tracking_error_analyzer.html">Tracking Error Analyzer</a>…</p>
-    <script>
-        window.location.replace('TrackingError/tracking_error_analyzer.html');
-    </script>
+    <div class="bg-animation"></div>
+
+    <header>
+        <nav>
+            <div class="logo">
+                <div class="logo-badge">DIG</div>
+                <span>DIG</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#board">Advisory Board</a></li>
+                <li><a href="live-portfolio.html">📊 Live Portfolio</a></li>
+                <li><a href="TrackingError/tracking_error_analyzer.html">📈 Tracking Error</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="page-wrapper">
+        <section class="hero">
+            <h1>Tracking Error</h1>
+            <p>Embedded Tracking Error Analyzer. If tools like CORS blockers prevent data loads, open the analyzer in a new tab.</p>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div class="hint">Tool: <strong>TrackingError/tracking_error_analyzer.html</strong></div>
+                <a class="btn-link" href="TrackingError/tracking_error_analyzer.html" target="_blank" rel="noopener">Open Fullscreen</a>
+            </div>
+            <div class="iframe-wrap">
+                <iframe
+                    src="TrackingError/tracking_error_analyzer.html"
+                    title="Tracking Error Analyzer"
+                    loading="eager"
+                    referrerpolicy="no-referrer"
+                ></iframe>
+            </div>
+            <div class="fallback">
+                If the embedded tool doesn’t load, <a href="TrackingError/tracking_error_analyzer.html">click here</a>.
+            </div>
+        </section>
+    </div>
 </body>
 </html>
