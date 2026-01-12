@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -51,7 +51,7 @@
             color: #333;
             margin-bottom: 15px;
             font-weight: 600;
-            border-bottom: 2px solid #1e3c72;
+            border-bottom: 2px solid #667eea;
             padding-bottom: 5px;
         }
 
@@ -83,7 +83,7 @@
 
         input:focus, select:focus {
             outline: none;
-            border-color: #1e3c72;
+            border-color: #667eea;
         }
 
         .holdings-table {
@@ -114,7 +114,7 @@
 
         .holdings-table input:focus {
             outline: none;
-            border-color: #1e3c72;
+            border-color: #667eea;
         }
 
         .btn {
@@ -128,14 +128,14 @@
         }
 
         .btn-primary {
-            background: #1e3c72;
+            background: #667eea;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #2a5298;
+            background: #5568d3;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(30, 60, 114, 0.3);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
         }
 
         .btn-secondary {
@@ -166,7 +166,7 @@
         }
 
         .metric-card {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
             border-radius: 8px;
             color: white;
@@ -200,7 +200,7 @@
         }
 
         .results-table th {
-            background: #1e3c72;
+            background: #667eea;
             color: white;
             font-weight: 500;
             position: sticky;
@@ -361,226 +361,6 @@
             stroke: rgba(0,0,0,0.25);
             stroke-width: 1;
         }
-
-        /* Multi-Sleeve Portfolio Styles */
-        .sleeve-allocation {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 2px solid #dee2e6;
-        }
-
-        .sleeve-row {
-            display: grid;
-            grid-template-columns: 200px 120px 80px 1fr;
-            gap: 15px;
-            align-items: center;
-            padding: 12px;
-            background: white;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border-left: 4px solid transparent;
-        }
-
-        .sleeve-row.managed-core {
-            border-left-color: #1e3c72;
-        }
-
-        .sleeve-row.passive-index {
-            border-left-color: #28a745;
-        }
-
-        .sleeve-row.alpha-sleeve {
-            border-left-color: #fd7e14;
-        }
-
-        .sleeve-label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .sleeve-weight-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .sleeve-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sleeve-toggle input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .sleeve-details {
-            display: none;
-            margin-top: 10px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
-        }
-
-        .sleeve-details.visible {
-            display: block;
-        }
-
-        .weight-summary {
-            padding: 12px;
-            background: white;
-            border-radius: 6px;
-            margin-top: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-        }
-
-        .weight-total {
-            font-size: 18px;
-        }
-
-        .weight-total.valid {
-            color: #28a745;
-        }
-
-        .weight-total.invalid {
-            color: #dc3545;
-        }
-
-        .sleeve-attribution {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-
-        .attribution-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .attribution-card {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
-        }
-
-        .attribution-card.passive {
-            border-left-color: #28a745;
-        }
-
-        .attribution-card.alpha {
-            border-left-color: #fd7e14;
-        }
-
-        .attribution-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            margin: 10px 0;
-        }
-
-        .attribution-label {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Sleeve Badge Styles */
-        .sleeve-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .sleeve-badge.sleeve-managed-core {
-            background-color: #e8eef7;
-            color: #1e3c72;
-        }
-
-        .sleeve-badge.sleeve-passive-index {
-            background-color: #d4edda;
-            color: #28a745;
-        }
-
-        .sleeve-badge.sleeve-alpha-sleeve {
-            background-color: #ffe5d0;
-            color: #fd7e14;
-        }
-
-        /* Sleeve Attribution Section */
-        .sleeve-attribution {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 2px solid #dee2e6;
-        }
-
-        .sleeve-attribution-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .sleeve-attribution-item {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #1e3c72;
-        }
-
-        .sleeve-attribution-item.passive {
-            border-left-color: #28a745;
-        }
-
-        .sleeve-attribution-item.alpha {
-            border-left-color: #fd7e14;
-        }
-
-        .sleeve-attribution-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
-        .sleeve-attribution-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3c72;
-            margin-bottom: 4px;
-        }
-
-        .sleeve-attribution-item.passive .sleeve-attribution-value {
-            color: #28a745;
-        }
-
-        .sleeve-attribution-item.alpha .sleeve-attribution-value {
-            color: #fd7e14;
-        }
-
-        .sleeve-attribution-percent {
-            font-size: 14px;
-            color: #666;
-        }
     </style>
 </head>
 <body>
@@ -588,99 +368,8 @@
         <h1>Portfolio Tracking Error Analyzer</h1>
         <p class="subtitle">Analyze tracking error contributions at equity and sector levels</p>
 
-        <!-- Sleeve Allocation Section -->
-        <div class="sleeve-allocation">
-            <h2 class="section-title">Portfolio Structure</h2>
-            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Configure your portfolio sleeves. Weights must sum to 100%.</p>
-
-            <!-- Managed Core Sleeve -->
-            <div class="sleeve-row managed-core">
-                <div class="sleeve-label">Managed Core</div>
-                <div>
-                    <input type="number" id="managedCoreWeight" class="sleeve-weight-input" value="100" min="0" max="100" step="0.1" onchange="updateSleeveWeights()">
-                </div>
-                <div class="sleeve-toggle">
-                    <input type="checkbox" id="managedCoreEnabled" checked disabled>
-                    <label style="margin: 0; font-size: 13px;">Active</label>
-                </div>
-                <div style="color: #666; font-size: 13px;">Core portfolio holdings (always enabled)</div>
-            </div>
-
-            <!-- Passive Index Sleeve -->
-            <div class="sleeve-row passive-index">
-                <div class="sleeve-label">Passive Index</div>
-                <div>
-                    <input type="number" id="passiveIndexWeight" class="sleeve-weight-input" value="0" min="0" max="100" step="0.1" onchange="updateSleeveWeights()" disabled>
-                </div>
-                <div class="sleeve-toggle">
-                    <input type="checkbox" id="passiveIndexEnabled" onchange="toggleSleeve('passiveIndex')">
-                    <label style="margin: 0; font-size: 13px;">Enable</label>
-                </div>
-                <div>
-                    <select id="passiveIndexHolding" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%;" disabled>
-                        <option value="">Select Index</option>
-                        <option value="VOO">VOO (S&P 500 ETF)</option>
-                        <option value="SPXE">SPXE (S&P 500 ex-Energy)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Alpha Sleeve -->
-            <div class="sleeve-row alpha-sleeve">
-                <div class="sleeve-label">Alpha Sleeve</div>
-                <div>
-                    <input type="number" id="alphaWeight" class="sleeve-weight-input" value="0" min="0" max="100" step="0.1" onchange="updateSleeveWeights()" disabled>
-                </div>
-                <div class="sleeve-toggle">
-                    <input type="checkbox" id="alphaEnabled" onchange="toggleSleeve('alpha')">
-                    <label style="margin: 0; font-size: 13px;">Enable</label>
-                </div>
-                <div style="color: #666; font-size: 13px;">Custom high-conviction holdings</div>
-            </div>
-
-            <!-- Weight Summary -->
-            <div class="weight-summary">
-                <span>Total Portfolio Weight:</span>
-                <span id="totalWeight" class="weight-total valid">100.0%</span>
-            </div>
-        </div>
-
-        <!-- Alpha Sleeve Holdings Section (Initially Hidden) -->
-        <div id="alphaSleeveSection" class="input-section" style="display: none;">
-            <h2 class="section-title">Alpha Sleeve Holdings</h2>
-            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Add holdings for your alpha sleeve. Weights should sum to 100% within this sleeve.</p>
-
-            <div style="margin-bottom: 15px;">
-                <button class="btn btn-secondary" onclick="loadAlphaSamplePortfolio()">Load Sample Alpha Holdings</button>
-                <button class="btn btn-secondary" onclick="clearAlphaHoldings()">Clear Alpha Holdings</button>
-            </div>
-
-            <table class="holdings-table" id="alphaHoldingsTable">
-                <thead>
-                    <tr>
-                        <th>Ticker</th>
-                        <th>Weight (%)</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="alphaHoldingsBody">
-                    <!-- Alpha holdings will be added here -->
-                </tbody>
-            </table>
-
-            <div style="margin-top: 15px;">
-                <input type="text" id="newAlphaTicker" placeholder="Ticker (e.g., AAPL)" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-right: 10px; width: 150px;">
-                <input type="number" id="newAlphaWeight" placeholder="Weight %" min="0" max="100" step="0.1" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-right: 10px; width: 120px;">
-                <button class="btn btn-primary" onclick="addAlphaHolding()">Add Holding</button>
-            </div>
-
-            <div style="margin-top: 10px;">
-                <strong>Alpha Sleeve Internal Weight Total:</strong> <span id="alphaInternalTotal">0.0%</span>
-            </div>
-        </div>
-
         <div class="input-section">
-            <h2 class="section-title">Managed Core Holdings</h2>
+            <h2 class="section-title">1. Portfolio Holdings</h2>
             <div style="margin-bottom: 15px;">
                 <label>Add Holdings (Ticker and Weight - Sector auto-detected):</label>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -704,20 +393,10 @@
                 </tbody>
             </table>
 
-            <div style="margin-top: 10px; margin-bottom: 15px;">
-                <strong>Managed Core Internal Weight Total:</strong> <span id="managedCoreInternalTotal">0.0%</span>
-            </div>
-
             <div class="btn-group">
                 <button class="btn btn-secondary btn-small" onclick="loadSamplePortfolio()">Load Sample Portfolio</button>
                 <button class="btn btn-secondary btn-small" onclick="loadShadowPortfolio()">Load Shadow Portfolio</button>
                 <button class="btn btn-secondary btn-small" onclick="normalizeWeights()">Normalize to 100%</button>
-                <button class="btn btn-secondary btn-small" onclick="clearAllHoldings()">Clear All Holdings</button>
-            </div>
-            <div class="btn-group" style="margin-top: 10px;">
-                <button class="btn btn-secondary btn-small" onclick="downloadHoldingsCSV()">Download Holdings CSV</button>
-                <button class="btn btn-secondary btn-small" onclick="document.getElementById('csvUpload').click()">Upload Holdings CSV</button>
-                <input type="file" id="csvUpload" accept=".csv" style="display: none;" onchange="uploadHoldingsCSV(event)">
             </div>
         </div>
 
@@ -728,6 +407,7 @@
                     <label for="benchmark">Benchmark:</label>
                     <select id="benchmark">
                         <option value="^GSPC">S&P 500 (SPX)</option>
+                        <option value="SPY">SPY ETF</option>
                         <option value="SPXE">S&P 500 ex-Energy (SPXE)</option>
                     </select>
                 </div>
@@ -779,8 +459,7 @@
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p style="margin-top: 10px; color: #666;">Fetching data via proxy server...</p>
-            <p style="margin-top: 5px; color: #999; font-size: 0.9em;">This may take a few minutes depending on number of holdings</p>
+            <p style="margin-top: 10px; color: #666;">Fetching data and calculating...</p>
         </div>
 
         <div class="error" id="error"></div>
@@ -810,12 +489,12 @@
                         <tr>
                             <th>Ticker</th>
                             <th>Sector</th>
-                            <th>Sleeve</th>
                             <th>Portfolio Weight (%)</th>
                             <th>Benchmark Weight (%)</th>
                             <th>Active Weight (%)</th>
+                            <th>Start Price ($)</th>
+                            <th>End Price ($)</th>
                             <th>Return (%)</th>
-                            <th>Active Return (%)</th>
                             <th>MCTE (%)</th>
                             <th>CTE (%)</th>
                         </tr>
@@ -832,7 +511,6 @@
                         <tr>
                             <th>Sector</th>
                             <th>Return (%)</th>
-                            <th>Active Return (%)</th>
                             <th>Total CTE (%)</th>
                             <th>% of Total TE</th>
                         </tr>
@@ -842,28 +520,8 @@
                 </table>
             </div>
 
-            <!-- Sleeve Attribution Table (only shown for multi-sleeve portfolios) -->
-            <div id="sleeveAttributionSection" style="display: none;">
-                <h3 class="section-title">Sleeve Attribution to Tracking Error</h3>
-                <div class="table-container">
-                    <table class="results-table" id="sleeveAttributionTable">
-                        <thead>
-                            <tr>
-                                <th>Sleeve</th>
-                                <th>Portfolio Weight (%)</th>
-                                <th>Return (%)</th>
-                                <th>Active Return (%)</th>
-                                <th>CTE (%)</th>
-                                <th>% of Total TE</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sleeveAttributionBody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <h3 class="section-title">Portfolio Summary</h3>
+            <div class="table-container">
                 <table class="summary-table" id="portfolioSummary">
                     <thead>
                         <tr>
@@ -901,30 +559,8 @@
 
     <script>
         // Store portfolio holdings and benchmark weights
-        let holdings = [];  // Managed Core holdings
+        let holdings = [];
         let benchmarkWeights = {};
-
-        // Multi-Sleeve Portfolio Structure
-        const portfolio = {
-            managedCore: {
-                enabled: true,
-                weight: 100,
-                holdings: []  // This will reference 'holdings' array
-            },
-            passiveIndex: {
-                enabled: false,
-                weight: 0,
-                holding: null  // 'VOO' or 'SPXE'
-            },
-            alpha: {
-                enabled: false,
-                weight: 0,
-                holdings: []  // Separate array for alpha holdings
-            }
-        };
-
-        // Alpha sleeve holdings (separate from managed core)
-        let alphaHoldings = [];
 
         // Set default date values
         const today = new Date();
@@ -1068,9 +704,6 @@
         // Update weight from table input
         function updateWeight(index, newWeight) {
             holdings[index].weight = parseFloat(newWeight);
-            // Update the managed core internal weight total
-            const managedCoreTotal = holdings.reduce((sum, h) => sum + h.weight, 0);
-            document.getElementById('managedCoreInternalTotal').textContent = managedCoreTotal.toFixed(1) + '%';
         }
 
         // Remove a holding
@@ -1093,10 +726,6 @@
                     <td><button class="btn btn-secondary btn-small" onclick="removeHolding(${index})">Remove</button></td>
                 `;
             });
-
-            // Update managed core internal weight total
-            const managedCoreTotal = holdings.reduce((sum, h) => sum + h.weight, 0);
-            document.getElementById('managedCoreInternalTotal').textContent = managedCoreTotal.toFixed(1) + '%';
         }
 
         // Normalize weights to 100%
@@ -1109,320 +738,6 @@
                 updateHoldingsTable();
             }
         }
-
-        // Clear all holdings
-        function clearAllHoldings() {
-            if (holdings.length === 0) {
-                alert('No holdings to clear.');
-                return;
-            }
-
-            if (confirm('Are you sure you want to clear all holdings from the Managed Core? This cannot be undone.')) {
-                holdings = [];
-                updateHoldingsTable();
-            }
-        }
-
-        // Download holdings as CSV
-        function downloadHoldingsCSV() {
-            if (holdings.length === 0) {
-                alert('No holdings to export. Add some holdings first.');
-                return;
-            }
-
-            // Create CSV content
-            const header = 'Ticker,Weight (%),Sector\n';
-            const rows = holdings.map(h => `${h.ticker},${h.weight.toFixed(2)},${h.sector}`);
-            const csv = header + rows.join('\n');
-
-            // Create download link
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `portfolio_holdings_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // Upload holdings from CSV
-        function uploadHoldingsCSV(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csv = e.target.result;
-                    const lines = csv.split('\n').filter(line => line.trim());
-
-                    if (lines.length < 2) {
-                        alert('CSV file is empty or invalid');
-                        return;
-                    }
-
-                    // Parse CSV (expecting: Ticker,Weight,Sector)
-                    for (let i = 1; i < lines.length; i++) { // Skip header
-                        const line = lines[i].trim();
-                        if (!line) continue;
-
-                        const parts = line.split(',').map(s => s.trim());
-                        if (parts.length >= 2) {
-                            const ticker = parts[0].toUpperCase();
-                            const weight = parseFloat(parts[1]);
-                            const sector = parts[2] || 'Unknown';
-
-                            if (ticker && !isNaN(weight)) {
-                                holdings.push({ ticker, weight, sector });
-                            }
-                        }
-                    }
-
-                    updateHoldingsTable();
-                    alert('Holdings loaded successfully!');
-                } catch (error) {
-                    alert('Error parsing CSV: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // ========== MULTI-SLEEVE MANAGEMENT FUNCTIONS ==========
-
-        function toggleSleeve(sleeveName) {
-            const enabled = document.getElementById(`${sleeveName}Enabled`).checked;
-            const weightInput = document.getElementById(`${sleeveName}Weight`);
-
-            if (sleeveName === 'passiveIndex') {
-                portfolio.passiveIndex.enabled = enabled;
-                weightInput.disabled = !enabled;
-                document.getElementById('passiveIndexHolding').disabled = !enabled;
-
-                if (!enabled) {
-                    portfolio.passiveIndex.weight = 0;
-                    weightInput.value = 0;
-                }
-            } else if (sleeveName === 'alpha') {
-                portfolio.alpha.enabled = enabled;
-                weightInput.disabled = !enabled;
-                document.getElementById('alphaSleeveSection').style.display = enabled ? 'block' : 'none';
-
-                if (!enabled) {
-                    portfolio.alpha.weight = 0;
-                    weightInput.value = 0;
-                }
-            }
-
-            updateSleeveWeights();
-        }
-
-        function updateSleeveWeights() {
-            // Get weights from inputs
-            const managedCoreWeight = parseFloat(document.getElementById('managedCoreWeight').value) || 0;
-            const passiveIndexWeight = parseFloat(document.getElementById('passiveIndexWeight').value) || 0;
-            const alphaWeight = parseFloat(document.getElementById('alphaWeight').value) || 0;
-
-            // Update portfolio structure
-            portfolio.managedCore.weight = managedCoreWeight;
-            portfolio.passiveIndex.weight = passiveIndexWeight;
-            portfolio.alpha.weight = alphaWeight;
-
-            // Calculate total
-            const total = managedCoreWeight + passiveIndexWeight + alphaWeight;
-
-            // Update display
-            const totalElement = document.getElementById('totalWeight');
-            totalElement.textContent = total.toFixed(1) + '%';
-
-            // Update validity styling
-            const isValid = Math.abs(total - 100) < 0.01;
-            totalElement.className = 'weight-total ' + (isValid ? 'valid' : 'invalid');
-
-            return isValid;
-        }
-
-        // Alpha Sleeve Management Functions
-        function addAlphaHolding() {
-            const ticker = document.getElementById('newAlphaTicker').value.trim().toUpperCase();
-            const weight = parseFloat(document.getElementById('newAlphaWeight').value);
-
-            if (!ticker || isNaN(weight) || weight <= 0) {
-                alert('Please enter a valid ticker and weight');
-                return;
-            }
-
-            alphaHoldings.push({ ticker, weight });
-            updateAlphaHoldingsTable();
-
-            // Clear inputs
-            document.getElementById('newAlphaTicker').value = '';
-            document.getElementById('newAlphaWeight').value = '';
-        }
-
-        function removeAlphaHolding(index) {
-            alphaHoldings.splice(index, 1);
-            updateAlphaHoldingsTable();
-        }
-
-        function updateAlphaHoldingsTable() {
-            const tbody = document.getElementById('alphaHoldingsBody');
-            tbody.innerHTML = '';
-
-            let total = 0;
-            alphaHoldings.forEach((holding, index) => {
-                total += holding.weight;
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${holding.ticker}</td>
-                    <td><input type="number" value="${holding.weight}" step="0.1" min="0"
-                        onchange="updateAlphaWeight(${index}, this.value)"
-                        style="width: 100px; padding: 5px;"></td>
-                    <td><button class="btn btn-secondary" onclick="removeAlphaHolding(${index})">Remove</button></td>
-                `;
-            });
-
-            // Update internal total
-            document.getElementById('alphaInternalTotal').textContent = total.toFixed(1) + '%';
-            document.getElementById('alphaInternalTotal').style.color = Math.abs(total - 100) < 0.01 ? '#28a745' : '#dc3545';
-        }
-
-        function updateAlphaWeight(index, newWeight) {
-            alphaHoldings[index].weight = parseFloat(newWeight) || 0;
-            updateAlphaHoldingsTable();
-        }
-
-        function clearAlphaHoldings() {
-            alphaHoldings = [];
-            updateAlphaHoldingsTable();
-        }
-
-        function loadAlphaSamplePortfolio() {
-            alphaHoldings = [
-                { ticker: 'NVDA', weight: 30 },
-                { ticker: 'TSLA', weight: 25 },
-                { ticker: 'AVGO', weight: 20 },
-                { ticker: 'AMD', weight: 15 },
-                { ticker: 'PLTR', weight: 10 }
-            ];
-            updateAlphaHoldingsTable();
-        }
-
-        // ========== END MULTI-SLEEVE FUNCTIONS ==========
-
-        // ========== HOLDINGS AGGREGATION FUNCTION ==========
-
-        function aggregatePortfolioHoldings() {
-            const aggregated = [];
-
-            // Validate sleeve weights sum to 100%
-            if (!updateSleeveWeights()) {
-                alert('Sleeve weights must sum to 100% before calculating. Please adjust your portfolio structure.');
-                return null;
-            }
-
-            // 1. Managed Core Sleeve
-            if (portfolio.managedCore.enabled && portfolio.managedCore.weight > 0) {
-                const sleeveWeight = portfolio.managedCore.weight / 100;
-                const internalSum = holdings.reduce((sum, h) => sum + h.weight, 0);
-
-                if (internalSum > 0) {
-                    holdings.forEach(h => {
-                        aggregated.push({
-                            ticker: h.ticker,
-                            weight: (h.weight / internalSum) * sleeveWeight * 100,
-                            sector: h.sector,
-                            sleeve: 'Managed Core',
-                            sleeveWeight: portfolio.managedCore.weight
-                        });
-                    });
-                }
-            }
-
-            // 2. Passive Index Sleeve
-            if (portfolio.passiveIndex.enabled && portfolio.passiveIndex.weight > 0) {
-                const holding = document.getElementById('passiveIndexHolding').value;
-                if (!holding) {
-                    alert('Please select an index (VOO or SPXE) for the Passive Index sleeve.');
-                    return null;
-                }
-
-                portfolio.passiveIndex.holding = holding;
-
-                // For index funds like VOO and SPXE, we'll use their price data directly
-                // Mark them as index funds so they're handled correctly in the calculation
-                const indexHolding = {
-                    ticker: holding,
-                    weight: portfolio.passiveIndex.weight,
-                    sector: 'Index Fund',
-                    sleeve: 'Passive Index',
-                    sleeveWeight: portfolio.passiveIndex.weight,
-                    isIndexFund: true  // Flag to handle differently in calculations
-                };
-                console.log('🚨🚨🚨 ADDING PASSIVE INDEX HOLDING 🚨🚨🚨', indexHolding);
-                alert('CODE IS UPDATED! Adding passive index: ' + holding);
-                aggregated.push(indexHolding);
-            }
-
-            // 3. Alpha Sleeve
-            if (portfolio.alpha.enabled && portfolio.alpha.weight > 0) {
-                const sleeveWeight = portfolio.alpha.weight / 100;
-                const internalSum = alphaHoldings.reduce((sum, h) => sum + h.weight, 0);
-
-                if (internalSum === 0) {
-                    alert('Alpha sleeve is enabled but has no holdings. Please add holdings or disable the alpha sleeve.');
-                    return null;
-                }
-
-                // Validate alpha internal weights sum to ~100%
-                if (Math.abs(internalSum - 100) > 1.0) {
-                    const proceed = confirm(`Alpha sleeve holdings sum to ${internalSum.toFixed(1)}% instead of 100%. Continue anyway?`);
-                    if (!proceed) return null;
-                }
-
-                alphaHoldings.forEach(h => {
-                    aggregated.push({
-                        ticker: h.ticker,
-                        weight: (h.weight / internalSum) * sleeveWeight * 100,
-                        sector: 'Alpha',  // Will be auto-detected later
-                        sleeve: 'Alpha Sleeve',
-                        sleeveWeight: portfolio.alpha.weight
-                    });
-                });
-            }
-
-            // Validate we have at least some holdings
-            if (aggregated.length === 0) {
-                alert('Portfolio has no holdings. Please add holdings to at least one sleeve.');
-                return null;
-            }
-
-            // Combine duplicate tickers by summing their weights
-            const tickerMap = {};
-            aggregated.forEach(holding => {
-                if (tickerMap[holding.ticker]) {
-                    // Ticker already exists, add to its weight
-                    tickerMap[holding.ticker].weight += holding.weight;
-                    // Preserve isIndexFund flag if either holding has it
-                    if (holding.isIndexFund) {
-                        tickerMap[holding.ticker].isIndexFund = true;
-                    }
-                } else {
-                    // New ticker, add it to the map
-                    tickerMap[holding.ticker] = { ...holding };
-                }
-            });
-
-            // Convert back to array
-            const consolidatedHoldings = Object.values(tickerMap);
-
-            console.log('Aggregated Portfolio Holdings (before consolidation):', aggregated.length);
-            console.log('Consolidated Portfolio Holdings (after merging duplicates):', consolidatedHoldings);
-            return consolidatedHoldings;
-        }
-
-        // ========== END HOLDINGS AGGREGATION ==========
 
         // Load sample portfolio
         async function loadSamplePortfolio() {
@@ -1656,16 +971,8 @@
 
         // Calculate tracking error
         async function calculateTrackingError() {
-            // Aggregate holdings from all sleeves
-            const aggregatedHoldings = aggregatePortfolioHoldings();
-
-            if (!aggregatedHoldings) {
-                // Error messages handled in aggregatePortfolioHoldings()
-                return;
-            }
-
-            if (aggregatedHoldings.length === 0) {
-                alert('Please add at least one holding to any sleeve');
+            if (holdings.length === 0) {
+                alert('Please add at least one holding');
                 return;
             }
 
@@ -1685,8 +992,8 @@
                 benchmarkWeights = await fetchBenchmarkWeights(benchmark);
                 console.log('Benchmark weights loaded:', Object.keys(benchmarkWeights).length, 'constituents');
 
-                // Fetch data from Yahoo Finance - use aggregated holdings
-                const results = await fetchDataAndCalculate(aggregatedHoldings, benchmark, period, frequency);
+                // Fetch data from Yahoo Finance
+                const results = await fetchDataAndCalculate(holdings, benchmark, period, frequency);
 
                 // store for export
                 lastResults = results;
@@ -1707,35 +1014,21 @@
 
         // Fetch data and perform calculations
         async function fetchDataAndCalculate(holdings, benchmark, period, frequency) {
-            // NEW APPROACH: Use SPY as proxy for S&P 500 and SPXE benchmarks
-            // This avoids fetching 400+ constituents
+            // Determine which tickers we need
+            let tickersToFetch = [...holdings.map(h => h.ticker)];
 
-            // Determine which tickers we need - only actual holdings
-            let tickersToFetch = [...holdings.map(h => h.ticker).filter(t => t !== 'SPXE')];
-
-            // Add benchmark ticker - use SPY as proxy for SPXE
             if (benchmark === 'SPXE') {
-                // Use SPY as a proxy for SPXE (highly correlated, <0.5% tracking error)
-                tickersToFetch.push('SPY');
-                console.log('Using SPY as proxy for SPXE benchmark');
-            } else if (benchmark === '^GSPC') {
-                // For SPX, try ^GSPC first, fallback to SPY
-                tickersToFetch.push('^GSPC', 'SPY');
-                console.log('Fetching ^GSPC with SPY as fallback');
+                // For SPXE, fetch all constituent tickers to calculate true SPXE returns
+                const spxeConstituents = Object.keys(benchmarkWeights);
+                tickersToFetch = [...new Set([...tickersToFetch, ...spxeConstituents])];
+                console.log(`Fetching ${spxeConstituents.length} SPXE constituents for true benchmark returns...`);
             } else {
+                // For regular benchmarks, just add the benchmark ticker
                 tickersToFetch.push(benchmark);
-            }
-
-            // If portfolio contains SPXE as a holding, use SPY as its proxy too
-            const hasSPXEInHoldings = holdings.some(h => h.ticker === 'SPXE');
-            if (hasSPXEInHoldings) {
-                tickersToFetch.push('SPY');
-                console.log('Using SPY as proxy for SPXE holding');
             }
 
             // Remove duplicates
             const tickers = [...new Set(tickersToFetch)];
-            console.log(`Total tickers to fetch: ${tickers.length} (portfolio holdings + benchmark)`);
 
             // Fetch price data
             const priceData = await fetchPriceData(tickers, period, frequency);
@@ -1743,35 +1036,15 @@
             // Calculate returns (log returns)
             const returns = calculateReturns(priceData);
 
-            // If SPXE is in holdings, use SPY as proxy
-            if (hasSPXEInHoldings) {
-                returns['SPXE'] = returns['SPY'];
-                console.log('Using SPY returns as proxy for SPXE holding');
-            }
-
             // Get benchmark returns
             let benchmarkReturns;
             if (benchmark === 'SPXE') {
-                // Use SPY as proxy for SPXE benchmark
-                benchmarkReturns = returns['SPY'];
-                console.log('Using SPY returns as proxy for SPXE benchmark');
-            } else if (benchmark === '^GSPC') {
-                // For SPX, try ^GSPC first, fallback to SPY
-                benchmarkReturns = returns['^GSPC'];
-                if (!benchmarkReturns || benchmarkReturns.length === 0) {
-                    console.warn('^GSPC data not available, using SPY as fallback...');
-                    benchmarkReturns = returns['SPY'];
-                    console.log('Using SPY as SPX proxy');
-                }
+                // Calculate true SPXE returns as weighted average of constituents
+                benchmarkReturns = calculateSPXEReturns(returns, benchmarkWeights);
+                console.log('Calculated true SPXE returns from constituent data');
             } else {
                 benchmarkReturns = returns[benchmark];
             }
-
-            // Validate benchmark returns
-            if (!benchmarkReturns || benchmarkReturns.length === 0) {
-                throw new Error(`Failed to calculate benchmark returns for ${benchmark}. Please check that the benchmark data is available.`);
-            }
-            console.log(`Benchmark returns calculated: ${benchmarkReturns.length} periods`);
 
             // Normalize portfolio weights
             const totalWeight = holdings.reduce((sum, h) => sum + h.weight, 0);
@@ -1786,56 +1059,15 @@
 
             normalizedHoldings.forEach(holding => {
                 const ticker = holding.ticker;
+                const benchmarkWeight = benchmarkWeights[ticker] || 0;
+                const activeWeightPct = holding.weight - benchmarkWeight;
+                const activeWeight = activeWeightPct / 100; // Convert to decimal
 
-                console.log(`Processing ${ticker}: isIndexFund=${holding.isIndexFund}, weight=${holding.weight.toFixed(2)}%`);
+                // Active returns: stock return - benchmark return
+                activeReturns[ticker] = returns[ticker].map((ret, i) => ret - benchmarkReturns[i]);
 
-                // Special handling for index funds - use actual fund returns vs benchmark
-                if (holding.isIndexFund) {
-                    console.log(`  -> Using index fund logic for ${ticker}`);
-                    const fundWeight = holding.weight / 100; // Convert to decimal
-                    const fundReturns = returns[ticker];
-
-                    // Validate that we have returns data for this fund
-                    if (!fundReturns || fundReturns.length === 0) {
-                        console.error(`Missing price data for index fund ${ticker}!`);
-                        throw new Error(`Missing price data for ${ticker}. Please check that the ticker is valid and try again.`);
-                    }
-
-                    console.log(`  -> ${ticker} returns sample:`, fundReturns.slice(0, 3));
-                    console.log(`  -> Benchmark returns sample:`, benchmarkReturns.slice(0, 3));
-
-                    // Active returns for index fund: fund return - benchmark return
-                    activeReturns[ticker] = fundReturns.map((ret, i) => ret - benchmarkReturns[i]);
-
-                    console.log(`  -> Active returns sample for ${ticker}:`, activeReturns[ticker].slice(0, 3));
-
-                    // Weighted active returns: fund weight * active returns
-                    weightedActiveReturns[ticker] = activeReturns[ticker].map(ret => fundWeight * ret);
-                } else {
-                    // Regular stock handling - uses active weight
-                    const benchmarkWeight = benchmarkWeights[ticker] || 0;
-                    const activeWeightPct = holding.weight - benchmarkWeight;
-                    const activeWeight = activeWeightPct / 100; // Convert to decimal
-
-                    // Special case: if ticker matches benchmark, use benchmark returns directly
-                    let tickerReturns;
-                    if (ticker === benchmark || (benchmark === 'SPXE' && ticker === 'SPXE')) {
-                        tickerReturns = benchmarkReturns;
-                    } else {
-                        tickerReturns = returns[ticker];
-                    }
-
-                    // Validate that we have returns data for this ticker
-                    if (!tickerReturns || tickerReturns.length === 0) {
-                        throw new Error(`Missing price data for ${ticker}. Please check that the ticker is valid.`);
-                    }
-
-                    // Active returns: stock return - benchmark return
-                    activeReturns[ticker] = tickerReturns.map((ret, i) => ret - benchmarkReturns[i]);
-
-                    // Weighted active returns: active weight * active returns
-                    weightedActiveReturns[ticker] = activeReturns[ticker].map(ret => activeWeight * ret);
-                }
+                // Weighted active returns: active weight * active returns
+                weightedActiveReturns[ticker] = activeReturns[ticker].map(ret => activeWeight * ret);
             });
 
             // Calculate portfolio active returns = sum of weighted active returns
@@ -1859,12 +1091,7 @@
                 let pr = 0;
                 normalizedHoldings.forEach(holding => {
                     const w = holding.weight / 100;
-                    const ticker = holding.ticker;
-                    // Use benchmark returns if ticker matches benchmark
-                    const tickerReturns = (ticker === benchmark || (benchmark === 'SPXE' && ticker === 'SPXE'))
-                        ? benchmarkReturns
-                        : returns[ticker];
-                    pr += w * tickerReturns[i];
+                    pr += w * returns[holding.ticker][i];
                 });
                 portfolioReturnSeries.push(pr);
             }
@@ -1874,27 +1101,13 @@
             const portfolioAnnualizationFactor = 252 / portfolioActiveReturnSeries.length;
             const portfolioAnnualizedActiveReturnPct = portfolioActiveCumulativeReturn * portfolioAnnualizationFactor * 100;
 
-            // Calculate benchmark annualized return
-            const benchmarkCumulativeReturn = benchmarkReturns.reduce((acc, ret) => acc + ret, 0);
-            const benchmarkAnnualizationFactor = 252 / benchmarkReturns.length;
-            const benchmarkAnnualizedReturn = benchmarkCumulativeReturn * benchmarkAnnualizationFactor * 100; // Convert to percentage
-
             // Calculate total return for each equity (annualized)
             const equityTotalReturns = {};
             const equityPrices = {};
             normalizedHoldings.forEach(holding => {
                 const ticker = holding.ticker;
-
-                // Special case: if the ticker matches the benchmark, use benchmark returns directly
-                let tickerReturns;
-                let prices;
-                if (ticker === benchmark || (benchmark === 'SPXE' && ticker === 'SPXE')) {
-                    tickerReturns = benchmarkReturns;
-                    prices = priceData[ticker] || [100, 100]; // Use benchmark data or placeholder
-                } else {
-                    tickerReturns = returns[ticker];
-                    prices = priceData[ticker];
-                }
+                const tickerReturns = returns[ticker];
+                const prices = priceData[ticker];
 
                 // Calculate cumulative return over the period
                 const cumulativeReturn = tickerReturns.reduce((acc, ret) => acc + ret, 0);
@@ -1928,18 +1141,15 @@
                 const activeWeight = activeWeightPct / 100;
                 const mcte = activeWeight !== 0 ? cte / activeWeight : 0;
 
-                // Calculate active return (equity return - benchmark return)
-                const activeReturn = equityTotalReturns[ticker] - benchmarkAnnualizedReturn;
-
                 return {
                     ticker,
                     sector: holding.sector,
-                    sleeve: holding.sleeve || 'Managed Core', // Add sleeve information
                     portfolioWeight: portfolioWeight,
                     benchmarkWeight: benchmarkWeight,
                     activeWeight: activeWeightPct,
+                    startPrice: equityPrices[ticker].startPrice,
+                    endPrice: equityPrices[ticker].endPrice,
                     return: equityTotalReturns[ticker], // Annualized return
-                    activeReturn: activeReturn, // Active return vs benchmark
                     mcte: mcte * 100, // Convert to percentage
                     cte: cte * 100 // Convert to percentage
                 };
@@ -1993,13 +1203,8 @@
             return tickerMap[ticker] || ticker;
         }
 
-        // Fetch price data using proxy server
+        // Fetch price data using CORS proxy
         async function fetchPriceData(tickers, period, frequency) {
-            // PROXY SERVER URL - Vercel deployment
-            // For local testing: 'http://localhost:3000'
-            // For production: Use Vercel URL
-            const PROXY_URL = 'https://tracking-error-proxy.vercel.app';
-
             const priceData = {};
 
             // Calculate date range
@@ -2007,6 +1212,7 @@
             let startDate = new Date();
 
             if (period === 'custom') {
+                // Use custom date range
                 const startInput = document.getElementById('startDate').value;
                 const endInput = document.getElementById('endDate').value;
 
@@ -2028,55 +1234,73 @@
                 startDate.setFullYear(startDate.getFullYear() - 3);
             }
 
-            // Format dates for Polygon (YYYY-MM-DD)
-            const formatDate = (date) => date.toISOString().split('T')[0];
-            const fromDate = formatDate(startDate);
-            const toDate = formatDate(endDate);
+            // Format dates
+            const period1 = Math.floor(startDate.getTime() / 1000);
+            const period2 = Math.floor(endDate.getTime() / 1000);
 
-            // Map frequency to Polygon timespan
-            const timespanMap = { '1d': 'day', '1wk': 'week', '1mo': 'month' };
-            const timespan = timespanMap[frequency] || 'day';
-
+            // Fetch in parallel batches for better performance
+            const batchSize = 20; // Fetch 20 tickers at a time
             const failedTickers = [];
 
-            console.log(`Fetching ${tickers.length} tickers via proxy server...`);
-            console.log(`Proxy will handle rate limiting automatically`);
+            for (let i = 0; i < tickers.length; i += batchSize) {
+                const batch = tickers.slice(i, i + batchSize);
+                console.log(`Fetching batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(tickers.length / batchSize)} (${batch.length} tickers)...`);
 
-            // Fetch all tickers in parallel - proxy server handles rate limiting
-            const fetchPromises = tickers.map(async (ticker, i) => {
-                try {
-                    console.log(`[${i + 1}/${tickers.length}] Fetching ${ticker}...`);
+                // Fetch all tickers in this batch in parallel
+                const promises = batch.map(async (ticker) => {
+                    try {
+                        // Map ticker to Yahoo Finance format
+                        const yahooTicker = mapTickerForYahoo(ticker);
 
-                    // Call proxy server endpoint
-                    const proxyUrl = `${PROXY_URL}/api/polygon?ticker=${ticker}&timespan=${timespan}&from=${fromDate}&to=${toDate}`;
+                        const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?period1=${period1}&period2=${period2}&interval=${frequency}`;
+                        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
 
-                    const response = await fetch(proxyUrl);
+                        const response = await fetch(proxyUrl);
+                        const data = await response.json();
 
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.error || `Proxy returned ${response.status}`);
-                    }
+                        if (data.chart && data.chart.result && data.chart.result[0]) {
+                            const result = data.chart.result[0];
+                            const quotes = result.indicators.quote[0];
+                            const closes = quotes.close;
 
-                    const data = await response.json();
+                            // Filter out null values
+                            const validPrices = closes.filter(price => price !== null);
 
-                    if (data.results && data.results.length > 0) {
-                        // Extract closing prices
-                        const prices = data.results.map(bar => bar.c);
-                        priceData[ticker] = prices;
-                        console.log(`✓ ${ticker}: ${prices.length} data points`);
-                    } else {
-                        console.warn(`No data for ${ticker}`);
+                            if (validPrices.length === 0) {
+                                console.warn(`No valid price data for ${ticker}`);
+                                failedTickers.push(ticker);
+                                return null;
+                            }
+
+                            // Store with original ticker name
+                            return { ticker, prices: validPrices };
+                        } else {
+                            console.warn(`No data received for ${ticker}`);
+                            failedTickers.push(ticker);
+                            return null;
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to fetch ${ticker}: ${error.message}`);
                         failedTickers.push(ticker);
+                        return null;
                     }
+                });
 
-                } catch (error) {
-                    console.error(`Failed to fetch ${ticker}: ${error.message}`);
-                    failedTickers.push(ticker);
+                // Wait for all in batch to complete
+                const results = await Promise.all(promises);
+
+                // Store successful results
+                results.forEach(result => {
+                    if (result) {
+                        priceData[result.ticker] = result.prices;
+                    }
+                });
+
+                // Small delay between batches
+                if (i + batchSize < tickers.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
-            });
-
-            // Wait for all requests to complete (proxy handles rate limiting)
-            await Promise.all(fetchPromises);
+            }
 
             if (failedTickers.length > 0) {
                 console.warn(`Failed to fetch ${failedTickers.length} tickers:`, failedTickers.slice(0, 10).join(', '), failedTickers.length > 10 ? '...' : '');
@@ -2085,7 +1309,7 @@
             console.log(`Successfully fetched ${Object.keys(priceData).length}/${tickers.length} tickers`);
 
             if (Object.keys(priceData).length === 0) {
-                throw new Error('Failed to fetch any price data. Make sure the proxy server is running.');
+                throw new Error('Failed to fetch any price data');
             }
 
             return priceData;
@@ -2121,17 +1345,22 @@
             const spxeReturns = [];
             for (let i = 0; i < numPeriods; i++) {
                 let weightedReturn = 0;
+                let totalWeight = 0;
 
                 constituents.forEach(ticker => {
                     if (returns[ticker] && returns[ticker][i] !== undefined) {
                         const weight = weights[ticker] / 100; // Convert percentage to decimal
                         weightedReturn += weight * returns[ticker][i];
+                        totalWeight += weight;
                     }
                 });
 
-                // Don't normalize - missing constituents just contribute 0
-                // The weights already sum to ~100%, so this gives the correct index return
-                spxeReturns.push(weightedReturn);
+                // Normalize by actual total weight (in case some constituents are missing)
+                if (totalWeight > 0) {
+                    spxeReturns.push(weightedReturn / totalWeight);
+                } else {
+                    spxeReturns.push(0);
+                }
             }
 
             return spxeReturns;
@@ -2176,88 +1405,19 @@
                     sectors[sectorKey] = {
                         cte: 0,
                         totalWeightedReturn: 0,
-                        totalWeightedActiveReturn: 0,
                         totalWeight: 0
                     };
                 }
                 sectors[sectorKey].cte += eq.cte;
                 sectors[sectorKey].totalWeightedReturn += eq.return * eq.portfolioWeight;
-                sectors[sectorKey].totalWeightedActiveReturn += eq.activeReturn * eq.portfolioWeight;
                 sectors[sectorKey].totalWeight += eq.portfolioWeight;
             });
 
             return Object.entries(sectors).map(([sector, data]) => ({
                 sector,
                 return: data.totalWeight > 0 ? data.totalWeightedReturn / data.totalWeight : 0,
-                activeReturn: data.totalWeight > 0 ? data.totalWeightedActiveReturn / data.totalWeight : 0,
                 cte: data.cte
             })).sort((a, b) => Math.abs(b.cte) - Math.abs(a.cte));
-        }
-
-        // Display sleeve attribution
-        function displaySleeveAttribution(results) {
-            const section = document.getElementById('sleeveAttributionSection');
-            const tbody = document.getElementById('sleeveAttributionBody');
-
-            // Check if multiple sleeves are enabled
-            const hasMultipleSleeves = portfolio.passiveIndex.enabled || portfolio.alpha.enabled;
-
-            if (!hasMultipleSleeves) {
-                section.style.display = 'none';
-                return;
-            }
-
-            section.style.display = 'block';
-            tbody.innerHTML = '';
-
-            // Calculate sleeve-level metrics by grouping equity data
-            const sleeveContributions = {};
-
-            results.equityResults.forEach(eq => {
-                const sleeve = eq.sleeve || 'Managed Core';
-                if (!sleeveContributions[sleeve]) {
-                    sleeveContributions[sleeve] = {
-                        cte: 0,
-                        totalWeightedReturn: 0,
-                        totalWeightedActiveReturn: 0,
-                        totalWeight: 0
-                    };
-                }
-                sleeveContributions[sleeve].cte += eq.cte;
-                sleeveContributions[sleeve].totalWeightedReturn += eq.return * eq.portfolioWeight;
-                sleeveContributions[sleeve].totalWeightedActiveReturn += eq.activeReturn * eq.portfolioWeight;
-                sleeveContributions[sleeve].totalWeight += eq.portfolioWeight;
-            });
-
-            // Calculate percentage of total TE for each sleeve
-            const totalTE = results.portfolioTE;
-
-            // Display each sleeve's contribution
-            const sleeves = [
-                { name: 'Managed Core', enabled: portfolio.managedCore.enabled, weight: portfolio.managedCore.weight },
-                { name: 'Passive Index', enabled: portfolio.passiveIndex.enabled, weight: portfolio.passiveIndex.weight },
-                { name: 'Alpha Sleeve', enabled: portfolio.alpha.enabled, weight: portfolio.alpha.weight }
-            ];
-
-            sleeves.forEach(sleeve => {
-                if (!sleeve.enabled) return;
-
-                const sleeveData = sleeveContributions[sleeve.name] || { cte: 0, totalWeightedReturn: 0, totalWeightedActiveReturn: 0, totalWeight: 0 };
-                const cte = sleeveData.cte;
-                const sleeveReturn = sleeveData.totalWeight > 0 ? sleeveData.totalWeightedReturn / sleeveData.totalWeight : 0;
-                const sleeveActiveReturn = sleeveData.totalWeight > 0 ? sleeveData.totalWeightedActiveReturn / sleeveData.totalWeight : 0;
-                const percentOfTotal = totalTE > 0 ? (Math.abs(cte) / totalTE) * 100 : 0;
-
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td><span class="sleeve-badge sleeve-${sleeve.name.toLowerCase().replace(' ', '-')}">${sleeve.name}</span></td>
-                    <td>${sleeve.weight.toFixed(1)}</td>
-                    <td class="${sleeveReturn >= 0 ? 'positive' : 'negative'}">${sleeveReturn.toFixed(2)}</td>
-                    <td class="${sleeveActiveReturn >= 0 ? 'positive' : 'negative'}">${sleeveActiveReturn.toFixed(2)}</td>
-                    <td class="${cte >= 0 ? 'positive' : 'negative'}">${cte.toFixed(2)}</td>
-                    <td>${percentOfTotal.toFixed(1)}</td>
-                `;
-            });
         }
 
         // Display results
@@ -2275,9 +1435,6 @@
                 document.getElementById('analysisPeriod').textContent = results.period.toUpperCase();
             }
 
-            // ========== SLEEVE ATTRIBUTION SECTION ==========
-            displaySleeveAttribution(results);
-
             // Populate equity results table
             const equityTbody = document.getElementById('equityResultsBody');
             equityTbody.innerHTML = '';
@@ -2287,12 +1444,12 @@
                 row.innerHTML = `
                     <td>${eq.ticker}</td>
                     <td>${eq.sector}</td>
-                    <td><span class="sleeve-badge sleeve-${(eq.sleeve || 'Managed Core').toLowerCase().replace(' ', '-')}">${eq.sleeve || 'Managed Core'}</span></td>
                     <td>${eq.portfolioWeight.toFixed(2)}</td>
                     <td>${eq.benchmarkWeight.toFixed(2)}</td>
                     <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}">${eq.activeWeight.toFixed(2)}</td>
+                    <td>${eq.startPrice.toFixed(2)}</td>
+                    <td>${eq.endPrice.toFixed(2)}</td>
                     <td class="${eq.return >= 0 ? 'positive' : 'negative'}">${eq.return.toFixed(2)}</td>
-                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}">${eq.activeReturn.toFixed(2)}</td>
                     <td>${eq.mcte.toFixed(2)}</td>
                     <td class="${eq.cte >= 0 ? 'positive' : 'negative'}">${eq.cte.toFixed(2)}</td>
                 `;
@@ -2308,7 +1465,6 @@
                 row.innerHTML = `
                     <td>${sector.sector}</td>
                     <td class="${sector.return >= 0 ? 'positive' : 'negative'}">${sector.return.toFixed(2)}</td>
-                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
                     <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
                     <td>${pctOfTotal.toFixed(1)}%</td>
                 `;
