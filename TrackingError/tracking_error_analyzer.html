@@ -2040,10 +2040,12 @@
             const failedTickers = [];
 
             console.log(`Fetching ${tickers.length} tickers via proxy server...`);
-            console.log(`Proxy will handle rate limiting automatically`);
+            console.log(`This will take approximately ${Math.ceil(tickers.length / 5)} minutes on free tier (5 calls/minute)`);
 
-            // Fetch all tickers in parallel - proxy server handles rate limiting
-            const fetchPromises = tickers.map(async (ticker, i) => {
+            // Fetch tickers sequentially - proxy server handles rate limiting
+            for (let i = 0; i < tickers.length; i++) {
+                const ticker = tickers[i];
+
                 try {
                     console.log(`[${i + 1}/${tickers.length}] Fetching ${ticker}...`);
 
@@ -2073,10 +2075,7 @@
                     console.error(`Failed to fetch ${ticker}: ${error.message}`);
                     failedTickers.push(ticker);
                 }
-            });
-
-            // Wait for all requests to complete (proxy handles rate limiting)
-            await Promise.all(fetchPromises);
+            }
 
             if (failedTickers.length > 0) {
                 console.warn(`Failed to fetch ${failedTickers.length} tickers:`, failedTickers.slice(0, 10).join(', '), failedTickers.length > 10 ? '...' : '');
