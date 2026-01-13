@@ -2042,7 +2042,10 @@
             console.log(`Fetching ${tickers.length} tickers via proxy server...`);
             console.log(`This will take approximately ${Math.ceil(tickers.length / 5)} minutes on free tier (5 calls/minute)`);
 
-            // Fetch tickers sequentially - proxy server handles rate limiting
+            // Free tier: 5 calls per minute = 12 second delay between requests
+            const DELAY_MS = 12000;
+
+            // Fetch tickers sequentially with client-side rate limiting
             for (let i = 0; i < tickers.length; i++) {
                 const ticker = tickers[i];
 
@@ -2074,6 +2077,12 @@
                 } catch (error) {
                     console.error(`Failed to fetch ${ticker}: ${error.message}`);
                     failedTickers.push(ticker);
+                }
+
+                // Rate limiting: wait 12 seconds between calls (except after last ticker)
+                if (i < tickers.length - 1) {
+                    console.log(`Waiting 12 seconds before next request...`);
+                    await new Promise(resolve => setTimeout(resolve, DELAY_MS));
                 }
             }
 
