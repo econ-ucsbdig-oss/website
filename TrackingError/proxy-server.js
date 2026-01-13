@@ -216,7 +216,7 @@ async function processPolygonQueue() {
     isProcessingPolygon = false;
 }
 
-// Polygon proxy endpoint
+// Polygon proxy endpoint - simple passthrough (no server-side rate limiting)
 app.get('/api/polygon', async (req, res) => {
     const { ticker, timespan, from, to } = req.query;
 
@@ -232,12 +232,26 @@ app.get('/api/polygon', async (req, res) => {
         });
     }
 
-    // Add to queue
-    polygonQueue.push({ ticker, timespan, from, to, res, retryCount: 0 });
-    console.log(`[${new Date().toISOString()}] Queued Polygon: ${ticker} (Queue size: ${polygonQueue.length})`);
+    try {
+        const polygonUrl = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/${timespan}/${from}/${to}?adjusted=true&sort=asc&apiKey=${POLYGON_API_KEY}`;
 
-    // Start processing if not already running
-    processPolygonQueue();
+        console.log(`[${new Date().toISOString()}] Fetching: ${ticker}`);
+
+        const response = await fetch(polygonUrl);
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(`[${new Date().toISOString()}] Failed: ${ticker} - ${response.status}`);
+            return res.status(response.status).json(data);
+        }
+
+        console.log(`[${new Date().toISOString()}] Success: ${ticker}`);
+        res.json(data);
+
+    } catch (error) {
+        console.error(`[${new Date().toISOString()}] Error: ${ticker} - ${error.message}`);
+        res.status(500).json({ error: error.message, ticker: ticker });
+    }
 });
 
 // Health check endpoint
