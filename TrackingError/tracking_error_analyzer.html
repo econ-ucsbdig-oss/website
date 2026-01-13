@@ -1707,30 +1707,16 @@
 
         // Fetch data and perform calculations
         async function fetchDataAndCalculate(holdings, benchmark, period, frequency) {
-            // NEW APPROACH: Use SPY as proxy for S&P 500 and SPXE benchmarks
-            // This avoids fetching 400+ constituents
+            // Determine which tickers we need - all actual holdings
+            let tickersToFetch = [...holdings.map(h => h.ticker)];
 
-            // Determine which tickers we need - only actual holdings
-            let tickersToFetch = [...holdings.map(h => h.ticker).filter(t => t !== 'SPXE')];
-
-            // Add benchmark ticker - use SPY as proxy for SPXE
-            if (benchmark === 'SPXE') {
-                // Use SPY as a proxy for SPXE (highly correlated, <0.5% tracking error)
-                tickersToFetch.push('SPY');
-                console.log('Using SPY as proxy for SPXE benchmark');
-            } else if (benchmark === '^GSPC') {
+            // Add benchmark ticker
+            if (benchmark === '^GSPC') {
                 // For SPX, try ^GSPC first, fallback to SPY
                 tickersToFetch.push('^GSPC', 'SPY');
                 console.log('Fetching ^GSPC with SPY as fallback');
             } else {
                 tickersToFetch.push(benchmark);
-            }
-
-            // If portfolio contains SPXE as a holding, use SPY as its proxy too
-            const hasSPXEInHoldings = holdings.some(h => h.ticker === 'SPXE');
-            if (hasSPXEInHoldings) {
-                tickersToFetch.push('SPY');
-                console.log('Using SPY as proxy for SPXE holding');
             }
 
             // Remove duplicates
@@ -1743,19 +1729,9 @@
             // Calculate returns (log returns)
             const returns = calculateReturns(priceData);
 
-            // If SPXE is in holdings, use SPY as proxy
-            if (hasSPXEInHoldings) {
-                returns['SPXE'] = returns['SPY'];
-                console.log('Using SPY returns as proxy for SPXE holding');
-            }
-
             // Get benchmark returns
             let benchmarkReturns;
-            if (benchmark === 'SPXE') {
-                // Use SPY as proxy for SPXE benchmark
-                benchmarkReturns = returns['SPY'];
-                console.log('Using SPY returns as proxy for SPXE benchmark');
-            } else if (benchmark === '^GSPC') {
+            if (benchmark === '^GSPC') {
                 // For SPX, try ^GSPC first, fallback to SPY
                 benchmarkReturns = returns['^GSPC'];
                 if (!benchmarkReturns || benchmarkReturns.length === 0) {
