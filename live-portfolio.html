@@ -587,12 +587,58 @@
             cursor: pointer;
             text-decoration: none;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         .symbol:hover {
             color: #ffd666;
             text-decoration: underline;
             transform: scale(1.04);
+        }
+
+        /* Hover tooltip for symbol actions */
+        .symbol-tooltip {
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 10px;
+            background: linear-gradient(135deg, #003660 0%, #004d8a 100%);
+            border: 2px solid #febc11;
+            border-radius: 8px;
+            padding: 8px;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+            min-width: 180px;
+            white-space: nowrap;
+        }
+
+        .symbol:hover .symbol-tooltip {
+            display: block;
+        }
+
+        .tooltip-option {
+            display: block;
+            padding: 6px 12px;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            margin: 2px 0;
+            text-align: left;
+        }
+
+        .tooltip-option:hover {
+            background: rgba(254, 188, 17, 0.2);
+            transform: translateX(3px);
+        }
+
+        .tooltip-option i {
+            margin-right: 8px;
+            width: 16px;
+            display: inline-block;
         }
 
         .last-updated {
@@ -838,8 +884,8 @@
         <section class="dashboard-hero">
             <h1>Live Portfolio Dashboard</h1>
             <div class="subtitle">Real-Time View of DIG Holdings & Sector Positioning</div>
-            <p>Connect to the backend API to pull current market prices, sector weights, and risk metrics. This dashboard is the single source of truth for symbol-level exposure and live analytics.</p>
-            <div class="dashboard-tagline">Tip: Use Ctrl+R to refresh, Ctrl+S to toggle sector view, Ctrl+P for a tear sheet, and Ctrl+E to export CSV.</div>
+            <p>Live market prices, sector weights, and risk metrics automatically updated from Polygon.io. This dashboard is the single source of truth for symbol-level exposure and live analytics.</p>
+            <div class="dashboard-tagline">Tip: Hover over symbols for PDF/CSV/JSON downloads • Ctrl+R to refresh • Ctrl+S to toggle sector view • Ctrl+E to export portfolio CSV</div>
             <div class="cta-row">
                 <a href="index.html" class="cta-button cta-secondary"><i class="fas fa-arrow-left"></i> Back to Home Snapshot</a>
             </div>
@@ -850,20 +896,6 @@
         <!-- Controls wrapped in glass card -->
         <section class="controls-shell">
             <div class="controls">
-                <div class="api-setup">
-                    <input id="apiBaseUrlInput" type="text" placeholder="Optional: API base URL (http://localhost:3001)" />
-                    <button class="btn" onclick="connectAPI()">
-                        <i class="fas fa-plug"></i> Connect to Live Data
-                    </button>
-                    <div class="status-indicator status-static" id="status">
-                        <i class="fas fa-database"></i>
-                        <span>Using Static Data</span>
-                    </div>
-                    <div class="info-text" id="serverHint">
-                        <div>For live data, ensure backend server is running and reachable. Default dev command: <code class="inline-code">npm start</code></div>
-                        <div>Click symbols for tear sheets • Click chart segments for sector analysis • Keyboard shortcuts: Ctrl+R, Ctrl+S, Ctrl+P, Ctrl+E</div>
-                    </div>
-                </div>
                 <div class="controls-actions">
                     <button class="btn" onclick="refreshData()">
                         <i class="fas fa-sync-alt"></i> Refresh
@@ -897,7 +929,7 @@
                     <div class="section-stats" id="sectionStats"></div>
                 </div>
 
-                <div style="overflow-x: auto; max-height: 520px;">
+                <div style="overflow-x: visible; overflow-y: auto; max-height: 520px;">
                     <table class="holdings-table" id="holdingsTable">
                         <thead>
                             <tr>
@@ -1036,6 +1068,10 @@
         }
     }
 
+    function attachTooltipListeners() {
+        // No-op - CSS handles tooltip display now
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         // particles + nav behavior
         createParticles();
@@ -1046,6 +1082,9 @@
         initializeCharts();
         updateDashboard();
         updateSectorViewLabel();
+
+        // Attach tooltip listeners after initial render
+        setTimeout(() => attachTooltipListeners(), 100);
 
         const apiBaseInput = document.getElementById('apiBaseUrlInput');
         if (apiBaseInput) {
@@ -1233,7 +1272,8 @@
                         body: JSON.stringify({ symbols })
                     });
                     if (batchRes.ok) {
-                        const batchData = await batchRes.json();
+                        const batchResponse = await batchRes.json();
+                        const batchData = batchResponse.results || batchResponse; // Handle both old and new format
                         const map = new Map(batchData.map(d => [d.symbol, d]));
                         portfolioData.forEach(h => {
                             const live = map.get(h.symbol);
@@ -1342,16 +1382,21 @@
                 changeClass: ''
             },
             {
-                title: 'Largest Position',
-                value: sortedBySize[0].symbol,
-                change: `${((sortedBySize[0].quantity * sortedBySize[0].lastPrice) / totalValue * 100).toFixed(1)}% of portfolio`,
+                title: 'Largest Non-Index Position',
+                value: (() => {
+                    // Exclude common index funds/ETFs
+                    const indexFunds = ['SPY', 'QQQ', 'IWM', 'DIA', 'VOO', 'VTI', 'IVV'];
+                    const nonIndexPositions = sortedBySize.filter(h => !indexFunds.includes(h.symbol));
+                    return nonIndexPositions.length > 0 ? nonIndexPositions[0].symbol : 'N/A';
+                })(),
+                change: (() => {
+                    const indexFunds = ['SPY', 'QQQ', 'IWM', 'DIA', 'VOO', 'VTI', 'IVV'];
+                    const nonIndexPositions = sortedBySize.filter(h => !indexFunds.includes(h.symbol));
+                    if (nonIndexPositions.length === 0) return 'No non-index positions';
+                    const largest = nonIndexPositions[0];
+                    return `${((largest.quantity * largest.lastPrice) / totalValue * 100).toFixed(1)}% of portfolio`;
+                })(),
                 changeClass: ''
-            },
-            {
-                title: 'Data Mode',
-                value: isLiveMode ? 'Live' : 'Static Snapshot',
-                change: isLiveMode ? 'Real-time prices via backend API' : 'Static prices embedded in dashboard',
-                changeClass: isLiveMode ? 'positive' : ''
             }
         ];
 
@@ -1383,7 +1428,22 @@
             const dayPct = h.changePercent || 0;
             return `
                 <tr>
-                    <td><span class="symbol" onclick="generateIndividualTearSheet('${h.symbol}')">${h.symbol}</span></td>
+                    <td>
+                        <span class="symbol">
+                            ${h.symbol}
+                            <div class="symbol-tooltip">
+                                <a href="javascript:void(0)" class="tooltip-option" onclick="event.stopPropagation(); generateIndividualTearSheet('${h.symbol}')">
+                                    <i class="fas fa-file-pdf"></i>PDF Tear Sheet
+                                </a>
+                                <a href="javascript:void(0)" class="tooltip-option" onclick="event.stopPropagation(); downloadTearSheetData('${h.symbol}')">
+                                    <i class="fas fa-download"></i>JSON Data
+                                </a>
+                                <a href="javascript:void(0)" class="tooltip-option" onclick="event.stopPropagation(); downloadSymbolCSV('${h.symbol}')">
+                                    <i class="fas fa-file-csv"></i>CSV Data
+                                </a>
+                            </div>
+                        </span>
+                    </td>
                     <td>${h.description}</td>
                     <td>${h.gicsSector}</td>
                     <td>${h.quantity.toFixed(3)}</td>
@@ -1396,6 +1456,9 @@
         }).join('');
 
         tbody.innerHTML = rowsHtml;
+
+        // Add tooltip positioning logic
+        attachTooltipListeners();
 
         if (titleEl && statsEl) {
             if (sectionFilter === 'broad-market') {
@@ -1782,7 +1845,22 @@
                                 const dayPct = h.changePercent || 0;
                                 return `
                                     <tr>
-                                        <td><span class="symbol" onclick="generateIndividualTearSheet('${h.symbol}')">${h.symbol}</span></td>
+                                        <td>
+                                            <span class="symbol">
+                                                ${h.symbol}
+                                                <div class="symbol-tooltip">
+                                                    <a href="javascript:void(0)" class="tooltip-option" onclick="event.stopPropagation(); generateIndividualTearSheet('${h.symbol}')">
+                                                        <i class="fas fa-file-pdf"></i>PDF Tear Sheet
+                                                    </a>
+                                                    <a href="javascript:void(0)" class="tooltip-option" onclick="event.stopPropagation(); downloadTearSheetData('${h.symbol}')">
+                                                        <i class="fas fa-download"></i>JSON Data
+                                                    </a>
+                                                    <a href="javascript:void(0)" class="tooltip-option" onclick="event.stopPropagation(); downloadSymbolCSV('${h.symbol}')">
+                                                        <i class="fas fa-file-csv"></i>CSV Data
+                                                    </a>
+                                                </div>
+                                            </span>
+                                        </td>
                                         <td>${h.description}</td>
                                         <td>${h.quantity.toFixed(3)}</td>
                                         <td>${formatCurrency(h.lastPrice)}</td>
@@ -1801,7 +1879,10 @@
         document.body.appendChild(backdrop);
 
         // build inner doughnut
-        setTimeout(() => buildSectorDetailChart('sectorDetailChartCanvas', sectorName, holdings), 0);
+        setTimeout(() => {
+            buildSectorDetailChart('sectorDetailChartCanvas', sectorName, holdings);
+            attachTooltipListeners(); // Attach tooltip positioning for sector modal
+        }, 0);
     }
 
     function updateLastUpdatedTime() {
@@ -1916,6 +1997,192 @@
             console.error('Tear sheet generation error:', err);
             hideProgressIndicator();
             showError(`Failed to generate tear sheet for ${symbol}: ${err.message}`);
+        }
+    }
+
+    async function downloadTearSheetData(symbol) {
+        const holding = portfolioData.find(h => h.symbol === symbol);
+        if (!holding) {
+            showError(`No holding data found for ${symbol}.`);
+            return;
+        }
+
+        try {
+            showProgressIndicator(`Fetching tear sheet data for ${symbol}...`);
+
+            const apiBaseUrl = window.apiBaseURL || 'http://localhost:3001';
+
+            // Fetch all the data that goes into the tear sheet
+            const [comprehensive, historical, analytics, financials, news, valuationHistory, valueCreation] = await Promise.all([
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/comprehensive`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/historical?days=365`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/analytics`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/financials?limit=8`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/news?limit=10`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/valuation-history?quarters=12`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/value-creation?quarters=12`).then(r => r.json())
+            ]);
+
+            const tearSheetData = {
+                holding: holding,
+                comprehensive: comprehensive,
+                historical: historical,
+                analytics: analytics,
+                financials: financials,
+                news: news,
+                valuationHistory: valuationHistory,
+                valueCreation: valueCreation,
+                timestamp: new Date().toISOString()
+            };
+
+            // Download as JSON
+            const blob = new Blob([JSON.stringify(tearSheetData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${symbol}_TearSheet_Data_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            hideProgressIndicator();
+            showSuccessMessage(`Tear sheet data for ${symbol} downloaded as JSON`);
+        } catch (err) {
+            console.error(err);
+            hideProgressIndicator();
+            showError(`Failed to download tear sheet data for ${symbol}: ${err.message}`);
+        }
+    }
+
+    async function downloadSymbolCSV(symbol) {
+        const holding = portfolioData.find(h => h.symbol === symbol);
+        if (!holding) {
+            showError(`No holding data found for ${symbol}.`);
+            return;
+        }
+
+        try {
+            showProgressIndicator(`Generating CSV for ${symbol}...`);
+
+            const apiBaseUrl = window.apiBaseURL || 'http://localhost:3001';
+
+            // Fetch all the data that goes into the tear sheet
+            const [comprehensive, historical, analytics, financials, news, valuationHistory, valueCreation] = await Promise.all([
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/comprehensive`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/historical?days=365`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/analytics`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/financials?limit=8`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/news?limit=10`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/valuation-history?quarters=12`).then(r => r.json()),
+                fetch(`${apiBaseUrl}/api/stock/${symbol}/value-creation?quarters=12`).then(r => r.json())
+            ]);
+
+            // Build CSV structure
+            const csvLines = [];
+
+            // Header section
+            csvLines.push(`Symbol,${symbol}`);
+            csvLines.push(`Description,${holding.description || 'N/A'}`);
+            csvLines.push(`Sector,${holding.gicsSector || 'N/A'}`);
+            csvLines.push(`Quantity,${holding.quantity}`);
+            csvLines.push(`Last Price,${holding.lastPrice}`);
+            csvLines.push(`Market Value,${holding.quantity * holding.lastPrice}`);
+            csvLines.push(`Generated,${new Date().toISOString()}`);
+            csvLines.push('');
+
+            // Quote data
+            if (comprehensive.quote) {
+                csvLines.push('QUOTE DATA');
+                csvLines.push('Field,Value');
+                csvLines.push(`Price,${comprehensive.quote.price || 'N/A'}`);
+                csvLines.push(`Change,${comprehensive.quote.change || 'N/A'}`);
+                csvLines.push(`Change %,${comprehensive.quote.changePercent || 'N/A'}`);
+                csvLines.push(`Volume,${comprehensive.quote.volume || 'N/A'}`);
+                csvLines.push(`Market Cap,${comprehensive.details?.marketCap || 'N/A'}`);
+                csvLines.push('');
+            }
+
+            // Analytics
+            if (analytics.analytics) {
+                csvLines.push('ANALYTICS');
+                csvLines.push('Metric,Value');
+                csvLines.push(`Beta,${analytics.analytics.beta || 'N/A'}`);
+                csvLines.push(`Volatility,${analytics.analytics.volatility || 'N/A'}`);
+                csvLines.push(`52W High,${analytics.analytics.high52Week || 'N/A'}`);
+                csvLines.push(`52W Low,${analytics.analytics.low52Week || 'N/A'}`);
+                csvLines.push(`Avg Volume (20d),${analytics.analytics.avgVolume20 || 'N/A'}`);
+                csvLines.push('');
+            }
+
+            // Financials
+            if (financials.length > 0) {
+                csvLines.push('FINANCIALS (Quarterly)');
+                csvLines.push('Date,Period,Revenues,Net Income,EPS,Assets,Liabilities,Equity');
+                financials.forEach(f => {
+                    csvLines.push(`${f.filingDate || 'N/A'},${f.fiscalPeriod || 'N/A'},${f.revenues || 0},${f.netIncome || 0},${f.eps || 0},${f.assets || 0},${f.liabilities || 0},${f.equity || 0}`);
+                });
+                csvLines.push('');
+            }
+
+            // Value Creation Metrics
+            if (valueCreation && valueCreation.length > 0) {
+                csvLines.push('VALUE CREATION METRICS');
+                csvLines.push('Date,Period,ROE,Profit Margin,Asset Turnover,Equity Multiplier,Gross Margin,Operating Margin,ROIC,Debt/Equity');
+                valueCreation.forEach(v => {
+                    csvLines.push(`${v.date || 'N/A'},${v.fiscalPeriod || 'N/A'},${v.roe || 'N/A'},${v.profitMargin || 'N/A'},${v.assetTurnover || 'N/A'},${v.equityMultiplier || 'N/A'},${v.grossMargin || 'N/A'},${v.operatingMargin || 'N/A'},${v.roic || 'N/A'},${v.debtToEquity || 'N/A'}`);
+                });
+                csvLines.push('');
+            }
+
+            // Valuation History
+            if (valuationHistory.stockValuations && valuationHistory.stockValuations.length > 0) {
+                csvLines.push('VALUATION HISTORY');
+                csvLines.push('Date,Period,P/E Ratio,P/B Ratio,EPS');
+                valuationHistory.stockValuations.forEach(v => {
+                    csvLines.push(`${v.date || 'N/A'},${v.fiscalPeriod || 'N/A'},${v.peRatio || 'N/A'},${v.pbRatio || 'N/A'},${v.eps || 'N/A'}`);
+                });
+                csvLines.push('');
+            }
+
+            // Historical prices (last 30 days only to keep file size reasonable)
+            if (historical.prices && historical.prices.length > 0) {
+                csvLines.push('HISTORICAL PRICES (Last 30 Days)');
+                csvLines.push('Date,Open,High,Low,Close,Volume');
+                historical.prices.slice(-30).forEach(p => {
+                    csvLines.push(`${p.date || 'N/A'},${p.open || 'N/A'},${p.high || 'N/A'},${p.low || 'N/A'},${p.close || 'N/A'},${p.volume || 'N/A'}`);
+                });
+                csvLines.push('');
+            }
+
+            // News headlines
+            if (news.length > 0) {
+                csvLines.push('NEWS HEADLINES');
+                csvLines.push('Date,Headline,Publisher');
+                news.forEach(n => {
+                    const headline = (n.headline || '').replace(/,/g, ';'); // Replace commas to avoid CSV issues
+                    csvLines.push(`${n.published || 'N/A'},${headline},${n.publisher || 'N/A'}`);
+                });
+            }
+
+            // Create and download CSV
+            const csvContent = csvLines.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${symbol}_TearSheet_Data_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            hideProgressIndicator();
+            showSuccessMessage(`CSV data for ${symbol} downloaded successfully`);
+        } catch (err) {
+            console.error(err);
+            hideProgressIndicator();
+            showError(`Failed to download CSV for ${symbol}: ${err.message}`);
         }
     }
     </script>
