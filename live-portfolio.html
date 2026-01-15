@@ -883,9 +883,9 @@
         <!-- Dashboard Hero -->
         <section class="dashboard-hero">
             <h1>Live Portfolio Dashboard</h1>
-            <div class="subtitle">Real-Time View of DIG Holdings & Sector Positioning</div>
-            <p>Live market prices, sector weights, and risk metrics automatically updated from Polygon.io. This dashboard is the single source of truth for symbol-level exposure and live analytics.</p>
-            <div class="dashboard-tagline">Tip: Hover over symbols for PDF/CSV/JSON downloads • Ctrl+R to refresh • Ctrl+S to toggle sector view • Ctrl+E to export portfolio CSV</div>
+            <div class="subtitle">Current View of DIG Holdings & Sector Positioning</div>
+            <p>Portfolio dashboard with current market prices from Polygon.io. Click "Refresh" to update prices on demand. Single source of truth for symbol-level exposure and analytics.</p>
+            <div class="dashboard-tagline">Tip: Hover over symbols for PDF/CSV/JSON downloads • Click Refresh or Ctrl+R to update prices • Ctrl+S to toggle sector view • Ctrl+E to export CSV</div>
             <div class="cta-row">
                 <a href="index.html" class="cta-button cta-secondary"><i class="fas fa-arrow-left"></i> Back to Home Snapshot</a>
             </div>
@@ -1069,7 +1069,60 @@
     }
 
     function attachTooltipListeners() {
-        // No-op - CSS handles tooltip display now
+        // Add delayed hide behavior to tooltips - only one open at a time
+        let currentlyOpenTooltip = null;
+        let hideTimeout;
+
+        const symbols = document.querySelectorAll('.symbol');
+        symbols.forEach(symbol => {
+            symbol.addEventListener('mouseenter', () => {
+                clearTimeout(hideTimeout);
+
+                // Hide any currently open tooltip
+                if (currentlyOpenTooltip && currentlyOpenTooltip !== symbol) {
+                    const oldTooltip = currentlyOpenTooltip.querySelector('.symbol-tooltip');
+                    if (oldTooltip) {
+                        oldTooltip.style.display = 'none';
+                    }
+                }
+
+                // Show this tooltip
+                const tooltip = symbol.querySelector('.symbol-tooltip');
+                if (tooltip) {
+                    tooltip.style.display = 'block';
+                    currentlyOpenTooltip = symbol;
+                }
+            });
+
+            symbol.addEventListener('mouseleave', () => {
+                const tooltip = symbol.querySelector('.symbol-tooltip');
+                if (tooltip) {
+                    hideTimeout = setTimeout(() => {
+                        tooltip.style.display = 'none';
+                        if (currentlyOpenTooltip === symbol) {
+                            currentlyOpenTooltip = null;
+                        }
+                    }, 500); // Keep visible for 0.5 seconds
+                }
+            });
+
+            // If mouse re-enters tooltip, keep it visible
+            const tooltip = symbol.querySelector('.symbol-tooltip');
+            if (tooltip) {
+                tooltip.addEventListener('mouseenter', () => {
+                    clearTimeout(hideTimeout);
+                });
+
+                tooltip.addEventListener('mouseleave', () => {
+                    hideTimeout = setTimeout(() => {
+                        tooltip.style.display = 'none';
+                        if (currentlyOpenTooltip === symbol) {
+                            currentlyOpenTooltip = null;
+                        }
+                    }, 500);
+                });
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -1105,9 +1158,6 @@
                 }
             }
         }, 600);
-
-        // periodic refresh when in live mode
-        setInterval(() => { if (isLiveMode) refreshData(); }, 5 * 60 * 1000);
 
         // keyboard shortcuts
         document.addEventListener('keydown', e => {

@@ -96,3 +96,5 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
+.vercel
+.env*.local
