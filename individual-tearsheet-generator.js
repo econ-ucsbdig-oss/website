@@ -1318,11 +1318,21 @@ class IndividualTearSheetGenerator {
             return;
         }
 
-        // Chart title
+        // Chart title (left-aligned)
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(60, 60, 60);
-        doc.text(metricLabel, x + width/2, y + 4, { align: 'center' });
+        doc.text(metricLabel, x + 2, y + 4);
+
+        // Current value (top right, next to title)
+        const latestValue = metrics[metrics.length - 1];
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 54, 96);
+        const displayLatest = metric.includes('Margin') || metric === 'roic' || metric === 'roe'
+            ? latestValue.toFixed(1) + '%'
+            : latestValue.toFixed(2);
+        doc.text(displayLatest, x + width - 2, y + 4, { align: 'right' });
 
         // Chart dimensions
         const marginLeft = 12;
@@ -1393,15 +1403,18 @@ class IndividualTearSheetGenerator {
             doc.text(displayVal, x + 2, yPos + 1.5);
         }
 
-        // Current value
-        const latestValue = metrics[metrics.length - 1];
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 54, 96);
-        const displayLatest = metric.includes('Margin') || metric === 'roic' || metric === 'roe'
-            ? latestValue.toFixed(1) + '%'
-            : latestValue.toFixed(2);
-        doc.text(`Latest: ${displayLatest}`, x + width - 3, y + height - 2, { align: 'right' });
+        // X-axis date labels (first, middle, last quarters)
+        doc.setFontSize(5);
+        doc.setTextColor(120, 120, 120);
+        const dateIndices = [0, Math.floor(valueCreation.length / 2), valueCreation.length - 1];
+        dateIndices.forEach(idx => {
+            if (valueCreation[idx] && valueCreation[idx].date) {
+                const date = new Date(valueCreation[idx].date);
+                const label = date.toLocaleDateString('en-US', { year: '2-digit', month: 'short' });
+                const xPos = chartX + (idx / (metrics.length - 1)) * chartW;
+                doc.text(label, xPos, chartY + chartH + 6, { align: 'center' });
+            }
+        });
     }
 
     static drawValueCreationInsights(doc, x, y, width, valueCreation, symbol, darkColor, lightColor, accentColor) {

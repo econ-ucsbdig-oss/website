@@ -1069,7 +1069,42 @@
     }
 
     function attachTooltipListeners() {
-        // No-op - CSS handles tooltip display now
+        // Add delayed hide behavior to tooltips
+        const symbols = document.querySelectorAll('.symbol');
+        symbols.forEach(symbol => {
+            let hideTimeout;
+
+            symbol.addEventListener('mouseenter', () => {
+                clearTimeout(hideTimeout);
+                const tooltip = symbol.querySelector('.symbol-tooltip');
+                if (tooltip) {
+                    tooltip.style.display = 'block';
+                }
+            });
+
+            symbol.addEventListener('mouseleave', () => {
+                const tooltip = symbol.querySelector('.symbol-tooltip');
+                if (tooltip) {
+                    hideTimeout = setTimeout(() => {
+                        tooltip.style.display = 'none';
+                    }, 1000); // Keep visible for 1 second
+                }
+            });
+
+            // If mouse re-enters tooltip, keep it visible
+            const tooltip = symbol.querySelector('.symbol-tooltip');
+            if (tooltip) {
+                tooltip.addEventListener('mouseenter', () => {
+                    clearTimeout(hideTimeout);
+                });
+
+                tooltip.addEventListener('mouseleave', () => {
+                    hideTimeout = setTimeout(() => {
+                        tooltip.style.display = 'none';
+                    }, 500);
+                });
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {

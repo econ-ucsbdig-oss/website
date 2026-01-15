@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const WebSocket = require('ws');
 require('dotenv').config();
 
 const app = express();
@@ -35,7 +34,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.options('*', cors(corsOptions));
-app.use(express.static(path.resolve(__dirname, '..')));
+app.use(express.static(__dirname));
 
 // Debug middleware
 app.use((req, res, next) => {
@@ -953,79 +952,87 @@ app.use((error, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start HTTP server
-const server = app.listen(PORT, () => {
-    console.log(`🚀 DIG Portfolio Server running on port ${PORT}`);
-    console.log(`📊 Access live portfolio at: http://localhost:${PORT}`);
-    console.log(`🧪 Access Tracking Error dashboard at: http://localhost:${PORT}/te`);
-    console.log(`🔁 TE API proxy at: http://localhost:${PORT}/api/te/calculate`);
-    console.log(`🔑 Polygon.io API Key configured: ${!!POLYGON_API_KEY}`);
+// Vercel/serverless note:
+// - Do NOT call app.listen() in serverless. Vercel will invoke the exported handler.
+// - Do NOT start WebSockets / setInterval jobs in serverless.
+const isServerless = !!process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NOW_REGION;
 
-    if (!POLYGON_API_KEY) {
-        console.log('⚠️  Warning: POLYGON_API_KEY not set. Live data will not work.');
-        console.log('   Create a .env file with: POLYGON_API_KEY=your_key_here');
-    }
-});
+if (!isServerless) {
+    // Start HTTP server (local/dev)
+    const server = app.listen(PORT, () => {
+        console.log(`🚀 DIG Portfolio Server running on port ${PORT}`);
+        console.log(`📊 Access live portfolio at: http://localhost:${PORT}`);
+        console.log(`🧪 Access Tracking Error dashboard at: http://localhost:${PORT}/te`);
+        console.log(`🔁 TE API proxy at: http://localhost:${PORT}/api/te/calculate`);
+        console.log(`🔑 Polygon.io API Key configured: ${!!POLYGON_API_KEY}`);
 
-// WebSocket server for real-time updates
-const wss = new WebSocket.Server({ server });
-
-const activeSubscriptions = new Map();
-
-wss.on('connection', (ws) => {
-    console.log('📡 WebSocket client connected');
-
-    ws.on('message', async (message) => {
-        try {
-            const data = JSON.parse(message);
-
-            if (data.type === 'subscribe') {
-                const { symbols } = data;
-                activeSubscriptions.set(ws, symbols);
-                console.log(`📊 Client subscribed to: ${symbols.join(', ')}`);
-
-                // Send initial data
-                const quotes = await Promise.all(
-                    symbols.map(symbol => fetchStockQuote(symbol).catch(e => null))
-                );
-
-                ws.send(JSON.stringify({
-                    type: 'quotes',
-                    data: quotes.filter(q => q !== null)
-                }));
-            } else if (data.type === 'unsubscribe') {
-                activeSubscriptions.delete(ws);
-                console.log('📊 Client unsubscribed');
-            }
-        } catch (error) {
-            console.error('WebSocket message error:', error);
+        if (!POLYGON_API_KEY) {
+            console.log('⚠️  Warning: POLYGON_API_KEY not set. Live data will not work.');
+            console.log('   Create a .env file with: POLYGON_API_KEY=your_key_here');
         }
     });
 
-    ws.on('close', () => {
-        activeSubscriptions.delete(ws);
-        console.log('📡 WebSocket client disconnected');
-    });
-});
+    // WebSocket server for real-time updates (local/dev only)
+    const WebSocket = require('ws');
+    const wss = new WebSocket.Server({ server });
 
-// Broadcast updates to subscribed clients every 5 seconds
-setInterval(async () => {
-    for (const [ws, symbols] of activeSubscriptions.entries()) {
-        try {
-            if (ws.readyState === WebSocket.OPEN) {
-                const quotes = await Promise.all(
-                    symbols.map(symbol => fetchStockQuote(symbol).catch(e => null))
-                );
+    const activeSubscriptions = new Map();
 
-                ws.send(JSON.stringify({
-                    type: 'quotes',
-                    data: quotes.filter(q => q !== null)
-                }));
+    wss.on('connection', (ws) => {
+        console.log('📡 WebSocket client connected');
+
+        ws.on('message', async (message) => {
+            try {
+                const data = JSON.parse(message);
+
+                if (data.type === 'subscribe') {
+                    const { symbols } = data;
+                    activeSubscriptions.set(ws, symbols);
+                    console.log(`📊 Client subscribed to: ${symbols.join(', ')}`);
+
+                    // Send initial data
+                    const quotes = await Promise.all(
+                        symbols.map(symbol => fetchStockQuote(symbol).catch(e => null))
+                    );
+
+                    ws.send(JSON.stringify({
+                        type: 'quotes',
+                        data: quotes.filter(q => q !== null)
+                    }));
+                } else if (data.type === 'unsubscribe') {
+                    activeSubscriptions.delete(ws);
+                    console.log('📊 Client unsubscribed');
+                }
+            } catch (error) {
+                console.error('WebSocket message error:', error);
             }
-        } catch (error) {
-            console.error('Error broadcasting updates:', error);
+        });
+
+        ws.on('close', () => {
+            activeSubscriptions.delete(ws);
+            console.log('📡 WebSocket client disconnected');
+        });
+    });
+
+    // Broadcast updates to subscribed clients every 5 seconds (local/dev only)
+    setInterval(async () => {
+        for (const [ws, symbols] of activeSubscriptions.entries()) {
+            try {
+                if (ws.readyState === WebSocket.OPEN) {
+                    const quotes = await Promise.all(
+                        symbols.map(symbol => fetchStockQuote(symbol).catch(e => null))
+                    );
+
+                    ws.send(JSON.stringify({
+                        type: 'quotes',
+                        data: quotes.filter(q => q !== null)
+                    }));
+                }
+            } catch (error) {
+                console.error('Error broadcasting updates:', error);
+            }
         }
-    }
-}, 5000);
+    }, 5000);
+}
 
 module.exports = app;
