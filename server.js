@@ -971,68 +971,6 @@ if (!isServerless) {
             console.log('   Create a .env file with: POLYGON_API_KEY=your_key_here');
         }
     });
-
-    // WebSocket server for real-time updates (local/dev only)
-    const WebSocket = require('ws');
-    const wss = new WebSocket.Server({ server });
-
-    const activeSubscriptions = new Map();
-
-    wss.on('connection', (ws) => {
-        console.log('📡 WebSocket client connected');
-
-        ws.on('message', async (message) => {
-            try {
-                const data = JSON.parse(message);
-
-                if (data.type === 'subscribe') {
-                    const { symbols } = data;
-                    activeSubscriptions.set(ws, symbols);
-                    console.log(`📊 Client subscribed to: ${symbols.join(', ')}`);
-
-                    // Send initial data
-                    const quotes = await Promise.all(
-                        symbols.map(symbol => fetchStockQuote(symbol).catch(e => null))
-                    );
-
-                    ws.send(JSON.stringify({
-                        type: 'quotes',
-                        data: quotes.filter(q => q !== null)
-                    }));
-                } else if (data.type === 'unsubscribe') {
-                    activeSubscriptions.delete(ws);
-                    console.log('📊 Client unsubscribed');
-                }
-            } catch (error) {
-                console.error('WebSocket message error:', error);
-            }
-        });
-
-        ws.on('close', () => {
-            activeSubscriptions.delete(ws);
-            console.log('📡 WebSocket client disconnected');
-        });
-    });
-
-    // Broadcast updates to subscribed clients every 5 seconds (local/dev only)
-    setInterval(async () => {
-        for (const [ws, symbols] of activeSubscriptions.entries()) {
-            try {
-                if (ws.readyState === WebSocket.OPEN) {
-                    const quotes = await Promise.all(
-                        symbols.map(symbol => fetchStockQuote(symbol).catch(e => null))
-                    );
-
-                    ws.send(JSON.stringify({
-                        type: 'quotes',
-                        data: quotes.filter(q => q !== null)
-                    }));
-                }
-            } catch (error) {
-                console.error('Error broadcasting updates:', error);
-            }
-        }
-    }, 5000);
 }
 
 module.exports = app;
