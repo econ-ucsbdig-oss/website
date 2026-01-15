@@ -1268,7 +1268,7 @@
         if (window.location.origin && window.location.origin !== 'null') {
             candidates.push(window.location.origin.replace(/:\d+$/, ':3001'));
         }
-        candidates.push('http://localhost:3001', 'http://127.0.0.1:3001');
+        candidates.push(window.location.origin, 'http://127.0.0.1:3001');
         let healthyBase = null;
 
         for (const base of candidates) {
@@ -2060,7 +2060,7 @@
         try {
             showProgressIndicator(`Fetching tear sheet data for ${symbol}...`);
 
-            const apiBaseUrl = window.apiBaseURL || 'http://localhost:3001';
+            const apiBaseUrl = window.apiBaseURL || window.location.origin;
 
             // Fetch all the data that goes into the tear sheet
             const [comprehensive, historical, analytics, financials, news, valuationHistory, valueCreation] = await Promise.all([
@@ -2115,7 +2115,7 @@
         try {
             showProgressIndicator(`Generating CSV for ${symbol}...`);
 
-            const apiBaseUrl = window.apiBaseURL || 'http://localhost:3001';
+            const apiBaseUrl = window.apiBaseURL || window.location.origin;
 
             // Fetch all the data that goes into the tear sheet
             const [comprehensive, historical, analytics, financials, news, valuationHistory, valueCreation] = await Promise.all([

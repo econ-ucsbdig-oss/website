@@ -5,7 +5,7 @@
  */
 
 class IndividualTearSheetGenerator {
-    static async generate(holding, apiBaseUrl = 'http://localhost:3001') {
+    static async generate(holding, apiBaseUrl = window.location.origin) {
         try {
             if (!holding || !holding.symbol) {
                 throw new Error('No holding data provided');
