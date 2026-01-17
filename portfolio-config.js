@@ -15,6 +15,7 @@ const PORTFOLIO_CONFIG = {
     
     // Sector color mapping for charts
     SECTOR_COLORS: {
+        // GICS 11 Sectors
         'Technology': '#003660',
         'Broad Market': '#0056b3',
         'Healthcare': '#007bff',
@@ -26,7 +27,12 @@ const PORTFOLIO_CONFIG = {
         'Utilities': '#20c997',
         'Consumer Staples': '#ffc107',
         'Materials': '#fd7e14',
-        'Real Estate': '#dc3545'
+        'Real Estate': '#dc3545',
+        // Custom 6-sector aggregations
+        'Tech & Communication': '#003660',
+        'Consumer': '#ffc107',
+        'Utilities & Real Estate': '#20c997',
+        'Materials & Industrials': '#fd7e14'
     },
     
     // Tear sheet template settings

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Dashboard - UCSB Dean's Investment Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="load-env.js"></script>
+    <script src="portfolio-config.js"></script>
+    <script src="tearsheet-generator.js"></script>
+    <script src="simple-tearsheet-generator.js"></script>
+    <script src="portfolio-tearsheet-generator.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            overflow-x: hidden;
+            background: transparent;
+        }
+
+        /* Background Animation */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f1419, #1e3c72, #2a3c5f, #0f1419);
+            background-size: 300% 300%;
+            animation: gradientShift 20s ease infinite;
+            z-index: -2;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 12s ease-in-out infinite;
+            opacity: 0.3;
+        }
+
+        .particle.gold {
+            background: radial-gradient(circle, rgba(254, 188, 17, 0.6), rgba(255, 215, 0, 0.3));
+            box-shadow: 0 0 10px rgba(254, 188, 17, 0.2);
+        }
+
+        .particle.blue {
+            background: radial-gradient(circle, rgba(30, 60, 114, 0.6), rgba(42, 60, 95, 0.3));
+            box-shadow: 0 0 10px rgba(30, 60, 114, 0.2);
+        }
+
+        .particle.white {
+            background: radial-gradient(circle, rgba(255,255,255,0.4), rgba(255,255,255,0.2));
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); opacity: 0.3; }
+            25% { transform: translateY(-20px) rotate(45deg) scale(1.1); opacity: 0.5; }
+            50% { transform: translateY(-40px) rotate(90deg) scale(0.9); opacity: 0.2; }
+            75% { transform: translateY(-20px) rotate(135deg) scale(1.05); opacity: 0.4; }
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(254, 188, 17, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: #febc11;
+            font-size: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover i {
+            transform: scale(1.1);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 3rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: #febc11;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a:hover {
+            color: #febc11;
+            transform: translateY(-2px);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px 2rem 4rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #febc11, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 6s ease-in-out infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .hero-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .last-updated {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #febc11, #ffd700);
+            color: #0f1419;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(254, 188, 17, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(254, 188, 17, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(254, 188, 17, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(254, 188, 17, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(254, 188, 17, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .card-icon.blue {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+        }
+
+        .card-icon.green {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .card-icon.gold {
+            background: linear-gradient(135deg, #febc11, #ffd700);
+            color: #0f1419;
+        }
+
+        .card-icon.purple {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .card-title {
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-change {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .card-change.positive {
+            color: #28a745;
+        }
+
+        .card-change.negative {
+            color: #dc3545;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .dashboard-panel {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(254, 188, 17, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(254, 188, 17, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        /* Time Selector */
+        .time-selector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .time-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(254, 188, 17, 0.2);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(254, 188, 17, 0.4);
+            color: white;
+        }
+
+        .time-btn.active {
+            background: linear-gradient(135deg, #febc11, #ffd700);
+            border-color: #febc11;
+            color: #0f1419;
+        }
+
+        /* Holdings Table */
+        .holdings-section {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(254, 188, 17, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin-bottom: 3rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(30, 60, 114, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            background: rgba(30, 60, 114, 0.5);
+        }
+
+        th i {
+            margin-left: 0.5rem;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        td {
+            padding: 1rem;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .symbol-cell {
+            font-weight: 700;
+            color: #febc11;
+            cursor: pointer;
+        }
+
+        .symbol-cell:hover {
+            text-decoration: underline;
+        }
+
+        .positive-value {
+            color: #28a745;
+        }
+
+        .negative-value {
+            color: #dc3545;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 20, 25, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(254, 188, 17, 0.2);
+            border-top-color: #febc11;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .disclaimer strong {
+            color: #ffc107;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+
+            .time-selector {
+                justify-content: center;
+            }
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb {
+            background: rgba(254, 188, 17, 0.3);
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(254, 188, 17, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <i class="fas fa-chart-line"></i>
+                <span>DIG</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#board">Advisory Board</a></li>
+                <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="../TrackingError/tracking_error_analyzer.html">Tracking Error</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Portfolio Data...</div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">Portfolio Dashboard</h1>
+            <p class="hero-subtitle">UCSB Dean's Investment Group</p>
+            <p class="last-updated" id="lastUpdated">Last Updated: Loading...</p>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="refreshData()" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+                <button class="btn btn-secondary" onclick="generatePortfolioTearsheet()" id="portfolioTearsheetBtn">
+                    <i class="fas fa-file-pdf"></i> Portfolio Tearsheet
+                </button>
+                <button class="btn btn-secondary" onclick="exportToCSV()" id="exportBtn">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <strong>Note:</strong> Portfolio performance is currently calculated using synthetic history based on current holdings.
+            Historical transaction data integration coming soon for true inception-to-date performance tracking.
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="card-header">
+                    <div class="card-icon blue">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="card-title">Total Value</div>
+                </div>
+                <div class="card-value" id="totalValue">$0.00</div>
+                <div class="card-change" id="totalValueChange">+$0.00 (0.00%)</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-header">
+                    <div class="card-icon green">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div class="card-title">Index vs Equity</div>
+                </div>
+                <div class="card-value" id="indexPercent">0.00%</div>
+                <div class="card-change" id="equityPercent">Equity: 0.00%</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-header">
+                    <div class="card-icon gold">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="card-title">Holdings</div>
+                </div>
+                <div class="card-value" id="numHoldings">0</div>
+                <div class="card-change" id="cashPosition">Cash: $0.00</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="card-header">
+                    <div class="card-icon purple">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="card-title">Top Holding</div>
+                </div>
+                <div class="card-value" id="topHoldingSymbol">---</div>
+                <div class="card-change" id="topHoldingPercent">0.00% of portfolio</div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Performance Chart -->
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Portfolio Performance</h2>
+                    <div class="time-selector">
+                        <button class="time-btn" onclick="changeTimeRange('1Y')">1Y</button>
+                        <button class="time-btn active" onclick="changeTimeRange('3Y')">3Y</button>
+                        <button class="time-btn" onclick="changeTimeRange('MAX')">Inception</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Composition Panel -->
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Sector Allocation</h2>
+                    <div class="time-selector">
+                        <button class="time-btn active" onclick="changeSectorGrouping('gics11')">11 Sectors</button>
+                        <button class="time-btn" onclick="changeSectorGrouping('custom6')">6 Sectors</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="holdings-section">
+            <div class="panel-header">
+                <h2 class="panel-title">Portfolio Holdings</h2>
+            </div>
+            <div class="table-container">
+                <table id="holdingsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Symbol <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(1)">Company <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(2)">Sector <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(3)">Quantity <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(4)">Price <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(5)">Value <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(6)">Weight % <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(7)">Day Change <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(8)">Total Return <i class="fas fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdingsTableBody">
+                        <!-- Data loaded via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="portfolio-data.js"></script>
+    <script src="portfolio-charts.js"></script>
+</body>
+</html>
