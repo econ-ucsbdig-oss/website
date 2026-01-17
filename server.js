@@ -350,7 +350,7 @@ async function calculateAnalytics(symbol, prices) {
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'live-portfolio.html'));
+    res.sendFile(path.join(__dirname, 'portfolio.html'));
 });
 
 // TE dashboard routes

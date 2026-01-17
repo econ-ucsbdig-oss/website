@@ -298,9 +298,25 @@ function aggregateTo6Sectors(sectors) {
 async function loadPortfolioData() {
     try {
         const response = await fetch('Portfolio_Positions_Jan-16-2026.csv');
+
+        if (!response.ok) {
+            throw new Error(`Failed to load CSV file: ${response.status} ${response.statusText}`);
+        }
+
         const csvText = await response.text();
 
+        if (!csvText || csvText.trim().length === 0) {
+            throw new Error('CSV file is empty');
+        }
+
         const positions = parseCSV(csvText);
+
+        if (!positions || positions.length === 0) {
+            throw new Error('No positions found in CSV file');
+        }
+
+        console.log(`✅ Loaded ${positions.length} positions from CSV`);
+
         const summary = calculateSummary(positions);
         const composition = calculateComposition(positions);
         const sectors = calculateSectorAllocations(positions);
@@ -318,6 +334,7 @@ async function loadPortfolioData() {
         return portfolioData;
     } catch (error) {
         console.error('Error loading portfolio data:', error);
+        alert(`Error loading portfolio data: ${error.message}\n\nPlease make sure:\n1. The server is running (npm start)\n2. The CSV file exists: Portfolio_Positions_Jan-16-2026.csv`);
         throw error;
     }
 }
@@ -592,22 +609,33 @@ function populateHoldingsTable() {
     const tbody = document.getElementById('holdingsTableBody');
     tbody.innerHTML = '';
 
+    if (!portfolioData || !portfolioData.positions || portfolioData.positions.length === 0) {
+        console.error('No portfolio positions available');
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No positions to display</td></tr>';
+        return;
+    }
+
     portfolioData.positions.forEach(position => {
+        if (!position || !position.symbol || !position.description) {
+            console.warn('Skipping invalid position:', position);
+            return;
+        }
+
         const row = document.createElement('tr');
 
         row.innerHTML = `
             <td class="symbol-cell" onclick="showStockTearsheet('${position.symbol}')">${position.symbol}</td>
             <td>${position.description.substring(0, 40)}${position.description.length > 40 ? '...' : ''}</td>
-            <td>${position.sector}</td>
-            <td>${position.quantity.toFixed(3)}</td>
-            <td>${formatCurrency(position.lastPrice)}</td>
-            <td>${formatCurrency(position.currentValue)}</td>
-            <td>${formatPercent(position.percentOfAccount)}</td>
-            <td class="${position.todayGainDollar >= 0 ? 'positive-value' : 'negative-value'}">
-                ${formatChange(position.todayGainDollar)} (${formatPercent(position.todayGainPercent)})
+            <td>${position.sector || 'Unknown'}</td>
+            <td>${(position.quantity || 0).toFixed(3)}</td>
+            <td>${formatCurrency(position.lastPrice || 0)}</td>
+            <td>${formatCurrency(position.currentValue || 0)}</td>
+            <td>${formatPercent(position.percentOfAccount || 0)}</td>
+            <td class="${(position.todayGainDollar || 0) >= 0 ? 'positive-value' : 'negative-value'}">
+                ${formatChange(position.todayGainDollar || 0)} (${formatPercent(position.todayGainPercent || 0)})
             </td>
-            <td class="${position.totalGainDollar >= 0 ? 'positive-value' : 'negative-value'}">
-                ${formatChange(position.totalGainDollar)} (${formatPercent(position.totalGainPercent)})
+            <td class="${(position.totalGainDollar || 0) >= 0 ? 'positive-value' : 'negative-value'}">
+                ${formatChange(position.totalGainDollar || 0)} (${formatPercent(position.totalGainPercent || 0)})
             </td>
         `;
 
