@@ -57,6 +57,10 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
+# Generated config files (contain API keys)
+load-env.js
+polygon-config.js
+
 # IDE files
 .vscode/
 .idea/
