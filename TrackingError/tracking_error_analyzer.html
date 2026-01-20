@@ -1784,51 +1784,77 @@
             }
         }
 
-        // Load shadow portfolio (user-provided weights; decimals that sum to ~1.0; UI uses percent)
+        // Load shadow portfolio from CSV file
         async function loadShadowPortfolio() {
-            const shadowWeights = [
-                { ticker: 'GOOGL', weight: 0.074003295 },
-                { ticker: 'META', weight: 0.032376442 },
-                { ticker: 'TSM', weight: 0.087878913 },
-                { ticker: 'MSFT', weight: 0.10175453 },
-                { ticker: 'CSCO', weight: 0.055502471 },
-                { ticker: 'DDOG', weight: 0.0555 },
-                { ticker: 'CAN', weight: 0.055502471 },
-                { ticker: 'AMZN', weight: 0.103943884 },
-                { ticker: 'COST', weight: 0.033916186 },
-                { ticker: 'KO', weight: 0.021221479 },
-                { ticker: 'JPM', weight: 0.052036707 },
-                { ticker: 'SCHW', weight: 0.033456 },
-                { ticker: 'BLK', weight: 0.030671334 },
-                { ticker: 'BRK.B', weight: 0.023247477 },
-                { ticker: 'UNH', weight: 0.01739184 },
-                { ticker: 'NVO', weight: 0.013908 },
-                { ticker: 'LLY', weight: 0.013908 },
-                { ticker: 'BSX', weight: 0.013908 },
-                { ticker: 'TMO', weight: 0.01043328 },
-                { ticker: 'DXCM', weight: 0.02164176 },
-                { ticker: 'GE', weight: 0.018644975 },
-                { ticker: 'STRL', weight: 0.012429984 },
-                { ticker: 'RS', weight: 0.02072 },
-                { ticker: 'ECL', weight: 0.02072 },
-                { ticker: 'VRT', weight: 0.01035832 },
-                { ticker: 'GLD', weight: 0.01035832 },
-                { ticker: 'UUP', weight: 0.01035832 },
-                { ticker: 'DLR', weight: 0.010247941 },
-                { ticker: 'VICI', weight: 0.020540054 },
-                { ticker: 'CCJ', weight: 0.00552152 },
-                { ticker: 'CEG', weight: 0.007862644 }
-            ];
-
             document.getElementById('loading').style.display = 'block';
 
             try {
+                // Fetch the CSV file
+                const response = await fetch('ShadowPortfolio.csv');
+                if (!response.ok) {
+                    throw new Error(`Failed to load ShadowPortfolio.csv: ${response.status}`);
+                }
+
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+
+                // Parse CSV header to find column indices
+                const header = lines[0].split(',');
+                const symbolIdx = header.findIndex(h => h.toLowerCase().includes('symbol'));
+                const totalWeightIdx = header.findIndex(h => h.toLowerCase().includes('total weight'));
+                const sectorIdx = header.findIndex(h => h.toLowerCase().includes('sector'));
+
+                if (symbolIdx === -1 || totalWeightIdx === -1) {
+                    throw new Error('CSV must have "Symbol" and "Total Weight" columns');
+                }
+
+                console.log(`Found Symbol at column ${symbolIdx}, Total Weight at column ${totalWeightIdx}`);
+
+                // Parse data rows
+                const shadowWeights = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue; // Skip empty lines
+
+                    const values = line.split(',');
+                    const symbol = values[symbolIdx]?.trim();
+                    const weightStr = values[totalWeightIdx]?.trim();
+                    const sector = sectorIdx >= 0 ? values[sectorIdx]?.trim() : null;
+
+                    if (!symbol || !weightStr) continue;
+
+                    // Parse weight (handle percentage format like "7.40%")
+                    let weight = parseFloat(weightStr.replace('%', ''));
+                    if (isNaN(weight)) continue;
+
+                    // If weight looks like a percentage (e.g., 7.40 for 7.40%), convert to decimal
+                    if (weight > 1) {
+                        weight = weight / 100;
+                    }
+
+                    console.log(`Parsed: ${symbol} = ${weight} (${(weight * 100).toFixed(2)}%)`);
+
+                    shadowWeights.push({
+                        ticker: symbol,
+                        weight: weight,
+                        sector: sector
+                    });
+                }
+
+                if (shadowWeights.length === 0) {
+                    throw new Error('No valid holdings found in ShadowPortfolio.csv');
+                }
+
+                console.log(`✅ Loaded ${shadowWeights.length} holdings from ShadowPortfolio.csv`);
+
+                // Load holdings with sector detection
                 holdings = [];
                 for (const h of shadowWeights) {
-                    const sector = await detectSector(h.ticker);
+                    // Use sector from CSV if available, otherwise detect
+                    const sector = h.sector || await detectSector(h.ticker);
                     holdings.push({
                         ticker: h.ticker,
-                        weight: h.weight * 100,
+                        weight: h.weight * 100, // Convert to percentage for UI
                         sector
                     });
                 }
