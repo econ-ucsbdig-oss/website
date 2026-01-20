@@ -1027,11 +1027,11 @@
                 <table class="results-table" id="sectorResults">
                     <thead>
                         <tr>
-                            <th style="text-align: left;">Sector</th>
-                            <th style="text-align: center;">Active Return (%)</th>
-                            <th style="text-align: center;">CTE (%)</th>
-                            <th style="text-align: center;">% of Return</th>
-                            <th style="text-align: center;">% of TE</th>
+                            <th>Sector</th>
+                            <th>Active Return (%)</th>
+                            <th>CTE (%)</th>
+                            <th>% of Return</th>
+                            <th>% of TE</th>
                         </tr>
                     </thead>
                     <tbody id="sectorResultsBody">
@@ -1046,12 +1046,12 @@
                     <table class="results-table" id="sleeveAttributionTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left;">Sleeve</th>
-                                <th style="text-align: center;">Portfolio Weight (%)</th>
-                                <th style="text-align: center;">Active Return (%)</th>
-                                <th style="text-align: center;">CTE (%)</th>
-                                <th style="text-align: center;">% of Return</th>
-                                <th style="text-align: center;">% of TE</th>
+                                <th>Sleeve</th>
+                                <th>Portfolio Weight (%)</th>
+                                <th>Active Return (%)</th>
+                                <th>CTE (%)</th>
+                                <th>% of Return</th>
+                                <th>% of TE</th>
                             </tr>
                         </thead>
                         <tbody id="sleeveAttributionBody">
@@ -1064,8 +1064,8 @@
                 <table class="summary-table" id="portfolioSummary">
                     <thead>
                         <tr>
-                            <th style="text-align: left;">Metric</th>
-                            <th style="text-align: center;">Value</th>
+                            <th>Metric</th>
+                            <th>Value</th>
                         </tr>
                     </thead>
                     <tbody id="portfolioSummaryBody">
@@ -1102,7 +1102,6 @@
                     <div class="legend" aria-label="Chart legend">
                         <span class="legend-item"><span class="legend-swatch" style="background:#667eea"></span>Daily Returns</span>
                         <span class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>Regression Line (Beta)</span>
-                        <span class="legend-item"><span class="legend-swatch" style="background:#94a3b8"></span>Beta = 1.0 (Market)</span>
                     </div>
                 </div>
                 <svg id="scatterChartSvg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter plot chart"></svg>
@@ -1602,7 +1601,8 @@
                     sleeveWeight: portfolio.passiveIndex.weight,
                     isIndexFund: true  // Flag to handle differently in calculations
                 };
-                console.log('Adding passive index holding:', indexHolding);
+                console.log('🚨🚨🚨 ADDING PASSIVE INDEX HOLDING 🚨🚨🚨', indexHolding);
+                alert('CODE IS UPDATED! Adding passive index: ' + holding);
                 aggregated.push(indexHolding);
             }
 
@@ -2986,11 +2986,11 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td><span class="sleeve-badge sleeve-${sleeve.name.toLowerCase().replace(' ', '-')}">${sleeve.name}</span></td>
-                    <td style="text-align: center;">${sleeve.weight.toFixed(1)}</td>
-                    <td class="${sleeveActiveReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sleeveActiveReturn.toFixed(2)}</td>
-                    <td class="${cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${cte.toFixed(2)}</td>
-                    <td class="${pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${pctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${pctOfTE.toFixed(1)}</td>
+                    <td>${sleeve.weight.toFixed(1)}</td>
+                    <td class="${sleeveActiveReturn >= 0 ? 'positive' : 'negative'}">${sleeveActiveReturn.toFixed(2)}</td>
+                    <td class="${cte >= 0 ? 'positive' : 'negative'}">${cte.toFixed(2)}</td>
+                    <td class="${pctOfReturn >= 0 ? 'positive' : 'negative'}">${pctOfReturn.toFixed(1)}</td>
+                    <td>${pctOfTE.toFixed(1)}</td>
                 `;
             });
 
@@ -3012,11 +3012,11 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td><span class="sleeve-badge" style="background: #6c757d;">Net Index Exposure</span></td>
-                    <td style="text-align: center;">${netIndexWeight.toFixed(1)}</td>
-                    <td class="${passiveIndexActiveReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${passiveIndexActiveReturn.toFixed(2)}</td>
-                    <td class="${netCTE >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${netCTE.toFixed(2)}</td>
-                    <td class="${netPctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${netPctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${netPctOfTE.toFixed(1)}</td>
+                    <td>${netIndexWeight.toFixed(1)}</td>
+                    <td class="${passiveIndexActiveReturn >= 0 ? 'positive' : 'negative'}">${passiveIndexActiveReturn.toFixed(2)}</td>
+                    <td class="${netCTE >= 0 ? 'positive' : 'negative'}">${netCTE.toFixed(2)}</td>
+                    <td class="${netPctOfReturn >= 0 ? 'positive' : 'negative'}">${netPctOfReturn.toFixed(1)}</td>
+                    <td>${netPctOfTE.toFixed(1)}</td>
                 `;
             }
         }
@@ -3118,19 +3118,18 @@
             const equityTbody = document.getElementById('equityResultsBody');
             equityTbody.innerHTML = '';
 
-            // Separate regular equities from passive index funds and benchmark components
+            // Separate regular equities from passive index funds
             const regularEquities = [];
             const passiveIndexFunds = [];
-            const benchmarkComponents = []; // OTHER_SPXE, OTHER_SPX, and benchmark tickers
 
             results.equityResults.forEach(eq => {
-                // Separate OTHER_SPXE, OTHER_SPX, and benchmark tickers
-                if (eq.ticker === 'OTHER_SPXE' || eq.ticker === 'OTHER_SPX' ||
-                    eq.ticker === '^GSPC' || eq.ticker === results.benchmark) {
-                    benchmarkComponents.push(eq);
+                // Skip OTHER_SPXE, OTHER_SPX, and benchmark tickers
+                if (eq.ticker === 'OTHER_SPXE' || eq.ticker === 'OTHER_SPX') {
+                    return;
                 }
+
                 // Separate passive index funds (VOO, SPXE, SPY)
-                else if (eq.ticker === 'VOO' || eq.ticker === 'SPXE' || eq.ticker === 'SPY') {
+                if (eq.ticker === 'VOO' || eq.ticker === 'SPXE' || eq.ticker === 'SPY') {
                     passiveIndexFunds.push(eq);
                 } else {
                     regularEquities.push(eq);
@@ -3152,41 +3151,21 @@
                 `;
             });
 
-            // Display passive index funds
-            if (passiveIndexFunds.length > 0) {
-                passiveIndexFunds.forEach(eq => {
-                    const row = equityTbody.insertRow();
-                    row.style.borderTop = '2px solid #ccc';
-                    row.innerHTML = `
-                        <td><strong>${eq.ticker}</strong></td>
-                        <td>${eq.sector}</td>
-                        <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
-                        <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
-                        <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
-                        <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
-                        <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
-                        <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
-                    `;
-                });
-            }
-
-            // Display benchmark components (OTHER_SPXE, OTHER_SPX, benchmark tickers)
-            if (benchmarkComponents.length > 0) {
-                benchmarkComponents.forEach(eq => {
-                    const row = equityTbody.insertRow();
-                    row.style.borderTop = passiveIndexFunds.length === 0 ? '2px solid #ccc' : '1px solid #e0e0e0';
-                    row.innerHTML = `
-                        <td><strong>${eq.ticker}</strong></td>
-                        <td>${eq.sector}</td>
-                        <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
-                        <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
-                        <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
-                        <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
-                        <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
-                        <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
-                    `;
-                });
-            }
+            // Display passive index funds at the bottom
+            passiveIndexFunds.forEach(eq => {
+                const row = equityTbody.insertRow();
+                row.style.borderTop = '2px solid #ccc';
+                row.innerHTML = `
+                    <td><strong>${eq.ticker}</strong></td>
+                    <td>${eq.sector}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
+                    <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
+                `;
+            });
 
             // Populate sector results table
             const sectorTbody = document.getElementById('sectorResultsBody');
@@ -3215,10 +3194,10 @@
                 const row = sectorTbody.insertRow();
                 row.innerHTML = `
                     <td>${sector.sector}</td>
-                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sector.activeReturn.toFixed(2)}</td>
-                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sector.cte.toFixed(2)}</td>
-                    <td class="${sector.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sector.pctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${sector.pctOfTE.toFixed(1)}</td>
+                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
+                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
+                    <td class="${sector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${sector.pctOfReturn.toFixed(1)}</td>
+                    <td>${sector.pctOfTE.toFixed(1)}</td>
                 `;
             });
 
@@ -3227,10 +3206,10 @@
                 const row = sectorTbody.insertRow();
                 row.innerHTML = `
                     <td>${sector.sector}</td>
-                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sector.activeReturn.toFixed(2)}</td>
-                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sector.cte.toFixed(2)}</td>
-                    <td class="${sector.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${sector.pctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${sector.pctOfTE.toFixed(1)}</td>
+                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
+                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
+                    <td class="${sector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${sector.pctOfReturn.toFixed(1)}</td>
+                    <td>${sector.pctOfTE.toFixed(1)}</td>
                 `;
             });
 
@@ -3244,30 +3223,30 @@
                 const row = sectorTbody.insertRow();
                 row.innerHTML = `
                     <td><strong>Net Index Exposure</strong></td>
-                    <td class="${netActiveReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${netActiveReturn.toFixed(2)}</td>
-                    <td class="${netCTE >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${netCTE.toFixed(2)}</td>
-                    <td class="${netPctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${netPctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${netPctOfTE.toFixed(1)}</td>
+                    <td class="${netActiveReturn >= 0 ? 'positive' : 'negative'}">${netActiveReturn.toFixed(2)}</td>
+                    <td class="${netCTE >= 0 ? 'positive' : 'negative'}">${netCTE.toFixed(2)}</td>
+                    <td class="${netPctOfReturn >= 0 ? 'positive' : 'negative'}">${netPctOfReturn.toFixed(1)}</td>
+                    <td>${netPctOfTE.toFixed(1)}</td>
                 `;
             } else if (indexFundSector) {
                 // Only index fund, no "Other" to net against
                 const row = sectorTbody.insertRow();
                 row.innerHTML = `
                     <td>${indexFundSector.sector}</td>
-                    <td class="${indexFundSector.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${indexFundSector.activeReturn.toFixed(2)}</td>
-                    <td class="${indexFundSector.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${indexFundSector.cte.toFixed(2)}</td>
-                    <td class="${indexFundSector.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${indexFundSector.pctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${indexFundSector.pctOfTE.toFixed(1)}</td>
+                    <td class="${indexFundSector.activeReturn >= 0 ? 'positive' : 'negative'}">${indexFundSector.activeReturn.toFixed(2)}</td>
+                    <td class="${indexFundSector.cte >= 0 ? 'positive' : 'negative'}">${indexFundSector.cte.toFixed(2)}</td>
+                    <td class="${indexFundSector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${indexFundSector.pctOfReturn.toFixed(1)}</td>
+                    <td>${indexFundSector.pctOfTE.toFixed(1)}</td>
                 `;
             } else if (otherSector) {
                 // Only "Other", no index fund
                 const row = sectorTbody.insertRow();
                 row.innerHTML = `
                     <td>${otherSector.sector}</td>
-                    <td class="${otherSector.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${otherSector.activeReturn.toFixed(2)}</td>
-                    <td class="${otherSector.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${otherSector.cte.toFixed(2)}</td>
-                    <td class="${otherSector.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${otherSector.pctOfReturn.toFixed(1)}</td>
-                    <td style="text-align: center;">${otherSector.pctOfTE.toFixed(1)}</td>
+                    <td class="${otherSector.activeReturn >= 0 ? 'positive' : 'negative'}">${otherSector.activeReturn.toFixed(2)}</td>
+                    <td class="${otherSector.cte >= 0 ? 'positive' : 'negative'}">${otherSector.cte.toFixed(2)}</td>
+                    <td class="${otherSector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${otherSector.pctOfReturn.toFixed(1)}</td>
+                    <td>${otherSector.pctOfTE.toFixed(1)}</td>
                 `;
             }
 
@@ -3279,7 +3258,7 @@
                 const row = summaryBody.insertRow();
                 row.innerHTML = `
                     <td>${metric}</td>
-                    <td class="${valueClass}" style="text-align: center;">${value}</td>
+                    <td class="${valueClass}">${value}</td>
                 `;
             };
 
@@ -3490,39 +3469,10 @@
             }
 
             // Draw regression line: y = beta * x (both in percentage terms)
-            // Clip regression line to stay within the graph bounds
-            let regressionX1 = -maxAbsX;
-            let regressionY1 = -maxAbsX * beta;
-            let regressionX2 = maxAbsX;
-            let regressionY2 = maxAbsX * beta;
-
-            // Clip Y values to stay within Y axis bounds
-            if (regressionY1 < -maxAbsY) {
-                regressionX1 = -maxAbsY / beta;
-                regressionY1 = -maxAbsY;
-            } else if (regressionY1 > maxAbsY) {
-                regressionX1 = maxAbsY / beta;
-                regressionY1 = maxAbsY;
-            }
-
-            if (regressionY2 < -maxAbsY) {
-                regressionX2 = -maxAbsY / beta;
-                regressionY2 = -maxAbsY;
-            } else if (regressionY2 > maxAbsY) {
-                regressionX2 = maxAbsY / beta;
-                regressionY2 = maxAbsY;
-            }
-
-            const regX1Svg = xToSvg(regressionX1);
-            const regY1Svg = yToSvg(regressionY1);
-            const regX2Svg = xToSvg(regressionX2);
-            const regY2Svg = yToSvg(regressionY2);
-
-            // Beta = 1.0 reference line (45-degree line)
-            const beta1X1 = xToSvg(-maxAbsX);
-            const beta1Y1 = yToSvg(-maxAbsX);
-            const beta1X2 = xToSvg(maxAbsX);
-            const beta1Y2 = yToSvg(maxAbsX);
+            const regressionX1 = xToSvg(-maxAbsX);
+            const regressionY1 = yToSvg(-maxAbsX * beta);
+            const regressionX2 = xToSvg(maxAbsX);
+            const regressionY2 = yToSvg(maxAbsX * beta);
 
             // Build axis ticks
             const ticks = 5;
@@ -3570,9 +3520,8 @@
                 ${yGrid}
                 ${axis}
                 ${zeroLines}
-                <line x1="${beta1X1}" y1="${beta1Y1}" x2="${beta1X2}" y2="${beta1Y2}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />
                 ${points.join('')}
-                <line x1="${regX1Svg}" y1="${regY1Svg}" x2="${regX2Svg}" y2="${regY2Svg}" stroke="#ef4444" stroke-width="2.5" />
+                <line x1="${regressionX1}" y1="${regressionY1}" x2="${regressionX2}" y2="${regressionY2}" stroke="#ef4444" stroke-width="2.5" />
                 ${axisLabels}
             `;
         }
@@ -3853,19 +3802,19 @@
                 equitySortAscending = true;
             }
 
-            // Separate regular equities from passive index funds and benchmark components
+            // Separate regular equities from passive index funds
             const regularEquities = [];
             const passiveIndexFunds = [];
-            const benchmarkComponents = [];
 
             lastResults.equityResults.forEach(eq => {
-                // Separate OTHER_SPXE, OTHER_SPX, and benchmark tickers
+                // Skip OTHER_SPXE, OTHER_SPX, and benchmark tickers
                 if (eq.ticker === 'OTHER_SPXE' || eq.ticker === 'OTHER_SPX' ||
                     eq.ticker === '^GSPC' || eq.ticker === lastResults.benchmark) {
-                    benchmarkComponents.push(eq);
+                    return;
                 }
+
                 // Separate passive index funds (VOO, SPXE, SPY)
-                else if (eq.ticker === 'VOO' || eq.ticker === 'SPXE' || eq.ticker === 'SPY') {
+                if (eq.ticker === 'VOO' || eq.ticker === 'SPXE' || eq.ticker === 'SPY') {
                     passiveIndexFunds.push(eq);
                 } else {
                     regularEquities.push(eq);
@@ -3933,41 +3882,21 @@
                 `;
             });
 
-            // Display passive index funds
-            if (passiveIndexFunds.length > 0) {
-                passiveIndexFunds.forEach(eq => {
-                    const row = tbody.insertRow();
-                    row.style.borderTop = '2px solid #ccc';
-                    row.innerHTML = `
-                        <td><strong>${eq.ticker}</strong></td>
-                        <td>${eq.sector}</td>
-                        <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
-                        <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
-                        <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
-                        <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
-                        <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
-                        <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
-                    `;
-                });
-            }
-
-            // Display benchmark components (OTHER_SPXE, OTHER_SPX, benchmark tickers)
-            if (benchmarkComponents.length > 0) {
-                benchmarkComponents.forEach(eq => {
-                    const row = tbody.insertRow();
-                    row.style.borderTop = passiveIndexFunds.length === 0 ? '2px solid #ccc' : '1px solid #e0e0e0';
-                    row.innerHTML = `
-                        <td><strong>${eq.ticker}</strong></td>
-                        <td>${eq.sector}</td>
-                        <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
-                        <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
-                        <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
-                        <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
-                        <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
-                        <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
-                    `;
-                });
-            }
+            // Display passive index funds at the bottom
+            passiveIndexFunds.forEach(eq => {
+                const row = tbody.insertRow();
+                row.style.borderTop = '2px solid #ccc';
+                row.innerHTML = `
+                    <td><strong>${eq.ticker}</strong></td>
+                    <td>${eq.sector}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
+                    <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
+                `;
+            });
         }
 
         function toISODateForCSV(periodIndex) {

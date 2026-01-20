@@ -317,6 +317,9 @@ async function loadPortfolioData() {
 
         console.log(`✅ Loaded ${positions.length} positions from CSV`);
 
+        // Fetch current prices and update position values
+        await updateCurrentPrices(positions);
+
         const summary = calculateSummary(positions);
         const composition = calculateComposition(positions);
         const sectors = calculateSectorAllocations(positions);
@@ -337,6 +340,129 @@ async function loadPortfolioData() {
         alert(`Error loading portfolio data: ${error.message}\n\nPlease make sure:\n1. The server is running (npm start)\n2. The CSV file exists: Portfolio_Positions_Jan-16-2026.csv`);
         throw error;
     }
+}
+
+/**
+ * Fetch current prices and update position values
+ * Uses the most recent available price (close if market closed, open if intraday)
+ */
+async function updateCurrentPrices(positions) {
+    const apiKey = localStorage.getItem('POLYGON_API_KEY') || window.POLYGON_API_KEY;
+
+    if (!apiKey) {
+        console.warn('⚠️ Polygon.io API key not found. Using prices from CSV file.');
+        console.warn('To fetch current prices, set API key: localStorage.setItem("POLYGON_API_KEY", "your-key")');
+        return;
+    }
+
+    console.log('🔄 Fetching current prices from Polygon.io...');
+
+    const symbols = [...new Set(positions.map(p => p.symbol))];
+    const priceUpdates = {};
+
+    // Fetch latest prices for all symbols
+    for (const symbol of symbols) {
+        try {
+            const latestPrice = await fetchLatestPrice(symbol, apiKey);
+            if (latestPrice) {
+                priceUpdates[symbol] = latestPrice;
+                console.log(`✅ ${symbol}: $${latestPrice.price.toFixed(2)} (${latestPrice.source})`);
+            }
+        } catch (error) {
+            console.warn(`⚠️ Failed to fetch price for ${symbol}:`, error.message);
+        }
+    }
+
+    // Update positions with new prices
+    positions.forEach(position => {
+        const update = priceUpdates[position.symbol];
+        if (update) {
+            const oldPrice = position.lastPrice;
+            const newPrice = update.price;
+
+            // Update price
+            position.lastPrice = newPrice;
+            position.lastPriceChange = newPrice - oldPrice;
+
+            // Recalculate current value
+            position.currentValue = position.quantity * newPrice;
+
+            // Recalculate today's gain (vs previous close)
+            const priceChange = update.previousClose ? (newPrice - update.previousClose) : 0;
+            position.todayGainDollar = position.quantity * priceChange;
+            position.todayGainPercent = update.previousClose ? priceChange / update.previousClose : 0;
+
+            // Keep original cost basis and total return calculations
+            // (these depend on historical cost basis from CSV)
+        }
+    });
+
+    console.log(`✅ Updated prices for ${Object.keys(priceUpdates).length} symbols`);
+}
+
+/**
+ * Fetch the most recent price for a symbol
+ * Returns close price if market has closed, otherwise returns open price
+ */
+async function fetchLatestPrice(symbol, apiKey) {
+    // Get last 2 trading days to ensure we have previous close
+    const toDate = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 7); // Go back 7 days to account for weekends
+
+    const from = formatDateForAPI(fromDate);
+    const to = formatDateForAPI(toDate);
+
+    const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${from}/${to}?adjusted=true&sort=desc&limit=5&apiKey=${apiKey}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.status === 'ERROR') {
+        throw new Error(data.error || data.message || 'API error');
+    }
+
+    if (!data.results || data.results.length === 0) {
+        throw new Error('No price data available');
+    }
+
+    // Results are sorted descending, so first result is most recent
+    const latestBar = data.results[0];
+    const previousBar = data.results[1];
+
+    // Check if the latest bar is today
+    const latestDate = new Date(latestBar.t);
+    const today = new Date();
+    const isToday = latestDate.toDateString() === today.toDateString();
+
+    // Determine which price to use
+    let price, source;
+
+    if (isToday && latestBar.c) {
+        // If we have today's close, use it (market has closed)
+        price = latestBar.c;
+        source = 'close';
+    } else if (isToday && latestBar.o) {
+        // If we only have today's open (market still open), use it
+        price = latestBar.o;
+        source = 'open';
+    } else {
+        // Use most recent close
+        price = latestBar.c;
+        source = 'previous close';
+    }
+
+    return {
+        price: price,
+        source: source,
+        previousClose: previousBar ? previousBar.c : null,
+        date: latestDate
+    };
 }
 
 /**
