@@ -737,7 +737,7 @@ function populateHoldingsTable() {
 
     if (!portfolioData || !portfolioData.positions || portfolioData.positions.length === 0) {
         console.error('No portfolio positions available');
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No positions to display</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 20px;">No positions to display</td></tr>';
         return;
     }
 
@@ -755,6 +755,8 @@ function populateHoldingsTable() {
             <td>${position.sector || 'Unknown'}</td>
             <td>${(position.quantity || 0).toFixed(3)}</td>
             <td>${formatCurrency(position.lastPrice || 0)}</td>
+            <td>${formatCurrency(position.averageCostBasis || 0)}</td>
+            <td>${formatCurrency(position.costBasisTotal || 0)}</td>
             <td>${formatCurrency(position.currentValue || 0)}</td>
             <td>${formatPercent(position.percentOfAccount || 0)}</td>
             <td class="${(position.todayGainDollar || 0) >= 0 ? 'positive-value' : 'negative-value'}">

@@ -20,6 +20,9 @@ function createSectorChart() {
         sectorChart.destroy();
     }
 
+    // Update reset button visibility
+    updateResetButtonVisibility();
+
     // Check which view to display
     if (currentSectorView === 'composition') {
         createCompositionChart(ctx);
@@ -28,6 +31,26 @@ function createSectorChart() {
     } else if (currentSectorView === 'holdings') {
         createHoldingsChart(ctx);
     }
+}
+
+/**
+ * Update reset button visibility based on current view
+ */
+function updateResetButtonVisibility() {
+    const resetBtn = document.getElementById('resetSectorBtn');
+    if (resetBtn) {
+        // Show button when not in composition view
+        resetBtn.style.display = currentSectorView === 'composition' ? 'none' : 'inline-flex';
+    }
+}
+
+/**
+ * Reset sector view back to composition (top level)
+ */
+function resetSectorView() {
+    currentSectorView = 'composition';
+    currentSelectedSector = null;
+    createSectorChart();
 }
 
 /**
@@ -685,3 +708,4 @@ function createAnalyticsChart() {
 window.createSectorChart = createSectorChart;
 window.createPerformanceChart = createPerformanceChart;
 window.calculatePerformanceMetrics = calculatePerformanceMetrics;
+window.resetSectorView = resetSectorView;
