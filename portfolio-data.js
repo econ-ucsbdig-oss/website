@@ -65,21 +65,26 @@ function parseCSV(csvText) {
         const values = parseCSVLine(lines[i]);
         if (values.length < headers.length) continue;
 
+        const quantity = parseFloat(values[4]) || 0;
+        const lastPrice = parseCurrency(values[5]);
+        const costBasisTotal = parseCurrency(values[13]);
+        const currentValue = quantity * lastPrice;
+
         const position = {
             accountNumber: values[0],
             accountName: values[1],
             symbol: values[2],
             description: values[3],
-            quantity: parseFloat(values[4]) || 0,
-            lastPrice: parseCurrency(values[5]),
+            quantity: quantity,
+            lastPrice: lastPrice,
             lastPriceChange: parseCurrency(values[6]),
-            currentValue: parseCurrency(values[7]),
+            currentValue: currentValue,
             todayGainDollar: parseCurrency(values[8]),
             todayGainPercent: parsePercent(values[9]),
-            totalGainDollar: parseCurrency(values[10]),
-            totalGainPercent: parsePercent(values[11]),
+            totalGainDollar: currentValue - costBasisTotal, // Recalculated: Value - Cost Basis
+            totalGainPercent: costBasisTotal > 0 ? (currentValue - costBasisTotal) / costBasisTotal : 0,
             percentOfAccount: parsePercent(values[12]),
-            costBasisTotal: parseCurrency(values[13]),
+            costBasisTotal: costBasisTotal,
             averageCostBasis: parseCurrency(values[14]),
             type: values[15],
             sector: SECTOR_MAP[values[2]] || 'Other',
@@ -392,8 +397,9 @@ async function updateCurrentPrices(positions) {
             position.todayGainDollar = position.quantity * priceChange;
             position.todayGainPercent = update.previousClose ? priceChange / update.previousClose : 0;
 
-            // Keep original cost basis and total return calculations
-            // (these depend on historical cost basis from CSV)
+            // Recalculate total return based on cost basis from CSV
+            position.totalGainDollar = position.currentValue - position.costBasisTotal;
+            position.totalGainPercent = position.costBasisTotal > 0 ? position.totalGainDollar / position.costBasisTotal : 0;
         }
     });
 
