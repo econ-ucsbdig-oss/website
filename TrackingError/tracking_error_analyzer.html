@@ -2093,6 +2093,10 @@
 
         // Fetch data and perform calculations
         async function fetchDataAndCalculate(holdings, benchmark, period, frequency, skipBenchmarkRemainder = false) {
+            // Determine annualization factor based on frequency
+            const periodsPerYear = frequency === '1wk' ? 52 : 252;
+            console.log(`Using annualization factor: ${periodsPerYear} (${frequency})`);
+
             // Determine which tickers we need - all actual holdings
             let tickersToFetch = [...holdings.map(h => h.ticker)];
 
@@ -2311,7 +2315,7 @@
             }
 
             // Calculate portfolio tracking error (annualized)
-            const portfolioTE = standardDeviation(portfolioActiveReturns) * Math.sqrt(252);
+            const portfolioTE = standardDeviation(portfolioActiveReturns) * Math.sqrt(periodsPerYear);
 
             // Calculate portfolio *active* return (annualized, portfolio return minus benchmark return)
             // Uses log returns, consistent with the rest of the calculations.
@@ -2332,12 +2336,12 @@
 
             const portfolioActiveReturnSeries = portfolioReturnSeries.map((pr, i) => pr - benchmarkReturns[i]);
             const portfolioActiveCumulativeReturn = portfolioActiveReturnSeries.reduce((acc, r) => acc + r, 0);
-            const portfolioAnnualizationFactor = 252 / portfolioActiveReturnSeries.length;
+            const portfolioAnnualizationFactor = periodsPerYear / portfolioActiveReturnSeries.length;
             const portfolioAnnualizedActiveReturnPct = portfolioActiveCumulativeReturn * portfolioAnnualizationFactor * 100;
 
             // Calculate benchmark annualized return
             const benchmarkCumulativeReturn = benchmarkReturns.reduce((acc, ret) => acc + ret, 0);
-            const benchmarkAnnualizationFactor = 252 / benchmarkReturns.length;
+            const benchmarkAnnualizationFactor = periodsPerYear / benchmarkReturns.length;
             const benchmarkAnnualizedReturn = benchmarkCumulativeReturn * benchmarkAnnualizationFactor * 100; // Convert to percentage
 
             // Calculate total return for each equity (annualized)
@@ -2363,7 +2367,7 @@
                 const cumulativeReturn = tickerReturns.reduce((acc, ret) => acc + ret, 0);
 
                 // Annualize based on the number of periods
-                const annualizationFactor = 252 / tickerReturns.length;
+                const annualizationFactor = periodsPerYear / tickerReturns.length;
                 const annualizedReturn = cumulativeReturn * annualizationFactor;
 
                 equityTotalReturns[ticker] = annualizedReturn * 100; // Convert to percentage
@@ -2430,7 +2434,7 @@
 
             // Step 5: Annualize TE
             const dailyTE = Math.sqrt(dailyTEsquared);
-            const annualizedTE = dailyTE * Math.sqrt(252);
+            const annualizedTE = dailyTE * Math.sqrt(periodsPerYear);
 
             console.log(`Matrix-based TE calculation: Daily TE = ${dailyTE.toFixed(6)}, Annualized TE = ${(annualizedTE * 100).toFixed(2)}%`);
             console.log(`Original TE calculation: ${(portfolioTE * 100).toFixed(2)}%`);
@@ -2513,8 +2517,8 @@
 
                 // Use matrix approach for ALL holdings (including index funds)
                 const dailySigma_i = sigmaVector[i];
-                // CRITICAL FIX: Sigma has units of variance (return²), so annualize by × 252, NOT × √252
-                const annualizedSigma_i = dailySigma_i * 252;
+                // CRITICAL FIX: Sigma has units of variance (return²), so annualize by × periodsPerYear, NOT × √periodsPerYear
+                const annualizedSigma_i = dailySigma_i * periodsPerYear;
 
                 // MCTE_i = Sigma_i / TE (both annualized)
                 const mcte = portfolioTEtoUse !== 0 ? annualizedSigma_i / portfolioTEtoUse : 0;
@@ -2607,7 +2611,7 @@
                 // Calculate rolling TE: standard deviation of active returns in this window
                 const windowActiveReturns = windowPortfolioReturns.map((pr, j) => pr - windowBenchmarkReturns[j]);
                 const windowTE = standardDeviation(windowActiveReturns);
-                const annualizedWindowTE = windowTE * Math.sqrt(252); // Annualize
+                const annualizedWindowTE = windowTE * Math.sqrt(periodsPerYear); // Annualize
                 rollingTESeries.push(annualizedWindowTE * 100); // Convert to percentage
             }
 
