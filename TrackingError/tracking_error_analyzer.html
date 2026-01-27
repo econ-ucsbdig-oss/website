@@ -1601,8 +1601,6 @@
                     sleeveWeight: portfolio.passiveIndex.weight,
                     isIndexFund: true  // Flag to handle differently in calculations
                 };
-                console.log('🚨🚨🚨 ADDING PASSIVE INDEX HOLDING 🚨🚨🚨', indexHolding);
-                alert('CODE IS UPDATED! Adding passive index: ' + holding);
                 aggregated.push(indexHolding);
             }
 
@@ -2073,6 +2071,46 @@
                 // Index funds like VOO and SPXE can be treated as single holdings just like individual stocks
                 console.log('Using traditional tracking error approach...');
                 const results = await fetchDataAndCalculate(aggregatedHoldings, benchmark, period, frequency, false); // false = create OTHER_SPXE
+
+                // Fix active weight display for index funds using look-through
+                // The covariance math correctly uses full fund weight, but the displayed
+                // active weight should show how much the fund actually differs from the benchmark
+                const hasIndexFunds = aggregatedHoldings.some(h => h.isIndexFund);
+                if (hasIndexFunds) {
+                    await loadIndexFundHoldings();
+
+                    results.equityResults.forEach(eq => {
+                        const holding = aggregatedHoldings.find(h => h.ticker === eq.ticker);
+                        if (holding && holding.isIndexFund) {
+                            // Get this fund's constituent weights
+                            let fundHoldings;
+                            if (eq.ticker === 'VOO' || eq.ticker === 'SPY') {
+                                fundHoldings = vooHoldings;
+                            } else if (eq.ticker === 'SPXE') {
+                                fundHoldings = spxeHoldings;
+                            }
+
+                            if (fundHoldings) {
+                                // Compare fund constituents vs benchmark at the fund's portfolio weight
+                                const fundWeight = eq.portfolioWeight / 100; // decimal
+                                const allTickers = new Set([...Object.keys(fundHoldings), ...Object.keys(benchmarkWeights)]);
+                                let sumPositiveActive = 0;
+
+                                allTickers.forEach(ticker => {
+                                    const constituentWeight = (fundHoldings[ticker] || 0) * fundWeight;
+                                    const bmkWeight = benchmarkWeights[ticker] || 0;
+                                    const activeWt = constituentWeight - bmkWeight;
+                                    if (activeWt > 0) {
+                                        sumPositiveActive += activeWt;
+                                    }
+                                });
+
+                                eq.activeWeight = sumPositiveActive;
+                                console.log(`Look-through active weight for ${eq.ticker}: ${eq.activeWeight.toFixed(2)}% (was ${eq.portfolioWeight.toFixed(2)}%)`);
+                            }
+                        }
+                    });
+                }
 
                 // store for export
                 lastResults = results;
