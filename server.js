@@ -353,6 +353,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'portfolio.html'));
 });
 
+app.get('/valuation', (req, res) => {
+    res.sendFile(path.join(__dirname, 'valuation.html'));
+});
+
 // TE dashboard routes
 const TE_FLASK_URL = process.env.TE_FLASK_URL || 'http://127.0.0.1:5001';
 
