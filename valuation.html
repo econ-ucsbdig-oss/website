@@ -561,12 +561,20 @@
 
     async function detectAPI() {
         const candidates = [];
-        if (window.location.origin && window.location.origin !== 'null') {
-            candidates.push(window.location.origin.replace(/:\d+$/, ':3002'));
-            candidates.push(window.location.origin.replace(/:\d+$/, ':3001'));
-            candidates.push(window.location.origin);
+        const origin = window.location.origin;
+        const isHTTPS = origin && origin.startsWith('https');
+        if (origin && origin !== 'null') {
+            // On production (HTTPS), try same-origin first — API routes are on the same domain
+            candidates.push(origin);
+            // On local dev, also try common dev ports
+            if (!isHTTPS) {
+                candidates.push(origin.replace(/:\d+$/, ':3002'));
+                candidates.push(origin.replace(/:\d+$/, ':3001'));
+            }
         }
-        candidates.push('http://127.0.0.1:3002', 'http://127.0.0.1:3001');
+        if (!isHTTPS) {
+            candidates.push('http://127.0.0.1:3002', 'http://127.0.0.1:3001');
+        }
         for (const base of candidates) {
             try {
                 const res = await fetch(base + '/api/health', { cache: 'no-store' });
