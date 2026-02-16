@@ -4,35 +4,12 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "portfolio-config.js",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "*.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "data/*.csv",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "valuation-models/*.js",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "server.js"
-    },
-    {
-      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
