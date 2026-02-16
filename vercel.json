@@ -16,6 +16,14 @@
     {
       "src": "*.css",
       "use": "@vercel/static"
+    },
+    {
+      "src": "data/*.csv",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "valuation-models/*.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
