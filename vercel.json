@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "*.js",
+      "src": "portfolio-config.js",
       "use": "@vercel/static"
     },
     {
@@ -30,12 +30,6 @@
     {
       "src": "/api/(.*)",
       "dest": "server.js"
-    },
-    {
-      "src": "/(.*\\.js|.*\\.css|.*\\.html|.*\\.csv|.*\\.png|.*\\.jpg|.*\\.svg)",
-      "headers": {
-        "Content-Type": "$1"
-      }
     },
     {
       "handle": "filesystem"
