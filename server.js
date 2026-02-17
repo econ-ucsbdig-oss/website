@@ -950,6 +950,203 @@ app.post('/api/portfolio/correlation', async (req, res) => {
     }
 });
 
+// Portfolio-level analytics (aggregate risk/return metrics)
+app.post('/api/portfolio/analytics', async (req, res) => {
+    try {
+        const { holdings } = req.body; // [{ symbol, weight }]
+        if (!Array.isArray(holdings) || holdings.length === 0) {
+            return res.status(400).json({ error: 'Holdings array required' });
+        }
+
+        const toDate = new Date().toISOString().split('T')[0];
+        const fromDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const from6m = new Date(Date.now() - 182 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const from3m = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const from1m = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        // Fetch SPY (benchmark) + all holdings in parallel
+        const symbols = holdings.map(h => h.symbol.toUpperCase());
+        const allFetches = ['SPY', ...symbols].map(sym =>
+            fetchHistoricalPrices(sym, 'day', fromDate, toDate, 252)
+                .catch(() => [])
+        );
+        const allPrices = await Promise.all(allFetches);
+        const spyPrices = allPrices[0];
+        const holdingPrices = allPrices.slice(1);
+
+        // Build daily portfolio returns (weight-adjusted)
+        const minLen = Math.min(spyPrices.length, ...holdingPrices.map(p => p.length));
+        if (minLen < 20) {
+            return res.json({ error: 'Insufficient data', partial: true });
+        }
+
+        // Align all series to same length from the end
+        const spy = spyPrices.slice(-minLen);
+        const aligned = holdingPrices.map(p => p.slice(-minLen));
+
+        // Calculate daily returns for each holding
+        const holdingReturns = aligned.map(prices => {
+            const ret = [];
+            for (let i = 1; i < prices.length; i++) {
+                ret.push((prices[i].close - prices[i - 1].close) / prices[i - 1].close);
+            }
+            return ret;
+        });
+
+        // Weighted portfolio daily returns
+        const totalWeight = holdings.reduce((s, h) => s + h.weight, 0) || 1;
+        const weights = holdings.map(h => h.weight / totalWeight);
+        const numDays = holdingReturns[0] ? holdingReturns[0].length : 0;
+        const portfolioReturns = [];
+        for (let d = 0; d < numDays; d++) {
+            let dayReturn = 0;
+            for (let h = 0; h < holdingReturns.length; h++) {
+                if (holdingReturns[h][d] !== undefined) {
+                    dayReturn += weights[h] * holdingReturns[h][d];
+                }
+            }
+            portfolioReturns.push(dayReturn);
+        }
+
+        // SPY daily returns
+        const spyReturns = [];
+        for (let i = 1; i < spy.length; i++) {
+            spyReturns.push((spy[i].close - spy[i - 1].close) / spy[i - 1].close);
+        }
+
+        // --- Cumulative returns ---
+        const cumPort = [1];
+        const cumSpy = [1];
+        for (let i = 0; i < numDays; i++) {
+            cumPort.push(cumPort[i] * (1 + (portfolioReturns[i] || 0)));
+            cumSpy.push(cumSpy[i] * (1 + (spyReturns[i] || 0)));
+        }
+
+        // Dates for the cumulative series
+        const dates = spy.map(p => p.date ? p.date.split('T')[0] : '');
+
+        // --- Period returns ---
+        function periodReturn(cumArr, days) {
+            if (cumArr.length < days + 1) return null;
+            const end = cumArr[cumArr.length - 1];
+            const start = cumArr[cumArr.length - 1 - days];
+            return (end / start - 1) * 100;
+        }
+        const ytdDays = Math.min(numDays, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 86400000));
+
+        // --- Annualized volatility ---
+        const avgPortReturn = portfolioReturns.reduce((a, b) => a + b, 0) / numDays;
+        const portVariance = portfolioReturns.reduce((s, r) => s + Math.pow(r - avgPortReturn, 2), 0) / numDays;
+        const annualizedVol = Math.sqrt(portVariance) * Math.sqrt(252) * 100;
+
+        // --- Portfolio Beta ---
+        const avgSpyReturn = spyReturns.reduce((a, b) => a + b, 0) / spyReturns.length;
+        let covariance = 0, marketVariance = 0;
+        const commonLen = Math.min(portfolioReturns.length, spyReturns.length);
+        for (let i = 0; i < commonLen; i++) {
+            covariance += (portfolioReturns[i] - avgPortReturn) * (spyReturns[i] - avgSpyReturn);
+            marketVariance += Math.pow(spyReturns[i] - avgSpyReturn, 2);
+        }
+        const beta = marketVariance > 0 ? (covariance / commonLen) / (marketVariance / commonLen) : 1;
+
+        // --- Sharpe Ratio (assuming 5% risk-free rate) ---
+        const riskFreeDaily = 0.05 / 252;
+        const excessReturns = portfolioReturns.map(r => r - riskFreeDaily);
+        const avgExcess = excessReturns.reduce((a, b) => a + b, 0) / excessReturns.length;
+        const excessStd = Math.sqrt(excessReturns.reduce((s, r) => s + Math.pow(r - avgExcess, 2), 0) / excessReturns.length);
+        const sharpe = excessStd > 0 ? (avgExcess / excessStd) * Math.sqrt(252) : 0;
+
+        // --- Sortino Ratio ---
+        const downsideReturns = excessReturns.filter(r => r < 0);
+        const downsideStd = downsideReturns.length > 0
+            ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / downsideReturns.length)
+            : 0.0001;
+        const sortino = (avgExcess / downsideStd) * Math.sqrt(252);
+
+        // --- Max Drawdown ---
+        let peak = cumPort[0], maxDD = 0;
+        for (let i = 1; i < cumPort.length; i++) {
+            if (cumPort[i] > peak) peak = cumPort[i];
+            const dd = (peak - cumPort[i]) / peak;
+            if (dd > maxDD) maxDD = dd;
+        }
+
+        // --- Alpha (Jensen's) ---
+        const annPortReturn = (Math.pow(cumPort[cumPort.length - 1], 252 / numDays) - 1);
+        const annSpyReturn = (Math.pow(cumSpy[cumSpy.length - 1], 252 / numDays) - 1);
+        const alpha = (annPortReturn - 0.05) - beta * (annSpyReturn - 0.05);
+
+        // --- Per-stock performance for heatmap ---
+        const stockPerf = [];
+        for (let h = 0; h < holdings.length; h++) {
+            const prices = aligned[h];
+            if (!prices || prices.length < 2) continue;
+            const ret1d = prices.length >= 2 ? ((prices[prices.length-1].close / prices[prices.length-2].close) - 1) * 100 : 0;
+            const ret1w = prices.length >= 6 ? ((prices[prices.length-1].close / prices[Math.max(0, prices.length-6)].close) - 1) * 100 : null;
+            const ret1m = prices.length >= 22 ? ((prices[prices.length-1].close / prices[Math.max(0, prices.length-22)].close) - 1) * 100 : null;
+            const ret3m = prices.length >= 63 ? ((prices[prices.length-1].close / prices[Math.max(0, prices.length-63)].close) - 1) * 100 : null;
+            const retYtd = prices.length > ytdDays && ytdDays > 0 ? ((prices[prices.length-1].close / prices[Math.max(0, prices.length-1-ytdDays)].close) - 1) * 100 : null;
+
+            stockPerf.push({
+                symbol: holdings[h].symbol,
+                weight: (holdings[h].weight / totalWeight * 100),
+                ret1d, ret1w, ret1m, ret3m, retYtd,
+                price: prices[prices.length-1].close
+            });
+        }
+
+        // --- Concentration (HHI) ---
+        const hhi = weights.reduce((s, w) => s + w * w, 0);
+        const effectivePositions = 1 / (hhi || 1);
+
+        // Build sparkline data (weekly sampled cumulative returns)
+        const sparkPort = [], sparkSpy = [], sparkDates = [];
+        const step = Math.max(1, Math.floor(numDays / 52));
+        for (let i = 0; i <= numDays; i += step) {
+            sparkPort.push(((cumPort[i] || cumPort[cumPort.length-1]) - 1) * 100);
+            sparkSpy.push(((cumSpy[i] || cumSpy[cumSpy.length-1]) - 1) * 100);
+            sparkDates.push(dates[i] || dates[dates.length-1]);
+        }
+        // Always include the last point
+        if (sparkPort[sparkPort.length - 1] !== ((cumPort[cumPort.length-1] - 1) * 100)) {
+            sparkPort.push((cumPort[cumPort.length-1] - 1) * 100);
+            sparkSpy.push((cumSpy[cumSpy.length-1] - 1) * 100);
+            sparkDates.push(dates[dates.length - 1]);
+        }
+
+        res.json({
+            portfolio: {
+                return1m: periodReturn(cumPort, Math.min(22, numDays)),
+                return3m: periodReturn(cumPort, Math.min(63, numDays)),
+                return6m: periodReturn(cumPort, Math.min(126, numDays)),
+                returnYtd: periodReturn(cumPort, Math.min(ytdDays, numDays)),
+                return1y: (cumPort[cumPort.length - 1] - 1) * 100,
+                annualizedVol,
+                beta,
+                sharpe,
+                sortino,
+                maxDrawdown: maxDD * 100,
+                alpha: alpha * 100,
+                effectivePositions
+            },
+            benchmark: {
+                return1m: periodReturn(cumSpy, Math.min(22, numDays)),
+                return3m: periodReturn(cumSpy, Math.min(63, numDays)),
+                return6m: periodReturn(cumSpy, Math.min(126, numDays)),
+                returnYtd: periodReturn(cumSpy, Math.min(ytdDays, numDays)),
+                return1y: (cumSpy[cumSpy.length - 1] - 1) * 100
+            },
+            sparkline: { dates: sparkDates, portfolio: sparkPort, spy: sparkSpy },
+            stockPerformance: stockPerf,
+            dataPoints: numDays
+        });
+
+    } catch (error) {
+        console.error('Error calculating portfolio analytics:', error.message);
+        res.status(500).json({ error: 'Failed to calculate portfolio analytics' });
+    }
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error('Unhandled error:', error);
