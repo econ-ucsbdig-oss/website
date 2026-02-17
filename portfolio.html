@@ -605,6 +605,7 @@
                 <li><a href="index.html#home">Home</a></li>
                 <li><a href="index.html#board">Advisory Board</a></li>
                 <li><a href="portfolio.html">Portfolio</a></li>
+                <li><a href="valuation.html">💎 Valuation</a></li>
                 <li><a href="../TrackingError/tracking_error_analyzer.html">Tracking Error</a></li>
             </ul>
         </nav>
@@ -635,6 +636,12 @@
                     <i class="fas fa-download"></i> Export CSV
                 </button>
             </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <strong>Note:</strong> Portfolio performance is currently calculated using synthetic history based on current holdings.
+            Historical transaction data integration coming soon for true inception-to-date performance tracking.
         </div>
 
         <!-- Summary Cards -->
@@ -708,9 +715,6 @@
                     <div class="time-selector">
                         <button class="time-btn active" onclick="changeSectorGrouping('gics11')">11 Sectors</button>
                         <button class="time-btn" onclick="changeSectorGrouping('custom6')">6 Sectors</button>
-                        <button class="time-btn" onclick="resetSectorView()" id="resetSectorBtn" style="display: none;">
-                            <i class="fas fa-undo"></i> Reset
-                        </button>
                     </div>
                 </div>
                 <div class="chart-container">
@@ -733,12 +737,10 @@
                             <th onclick="sortTable(2)">Sector <i class="fas fa-sort"></i></th>
                             <th onclick="sortTable(3)">Quantity <i class="fas fa-sort"></i></th>
                             <th onclick="sortTable(4)">Price <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable(5)">Avg Cost <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable(6)">Cost Basis <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable(7)">Value <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable(8)">Weight % <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable(9)">Day Change <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable(10)">Total Return <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(5)">Value <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(6)">Weight % <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(7)">Day Change <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable(8)">Total Return <i class="fas fa-sort"></i></th>
                         </tr>
                     </thead>
                     <tbody id="holdingsTableBody">

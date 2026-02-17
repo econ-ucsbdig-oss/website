@@ -44,6 +44,58 @@ const PORTFOLIO_CONFIG = {
     }
 };
 
+// Sector mapping for ticker symbols
+var SECTOR_MAP = {
+    'AMZN': 'Consumer Discretionary',
+    'ASML': 'Technology',
+    'BLD': 'Industrials',
+    'CEG': 'Utilities',
+    'COST': 'Consumer Staples',
+    'DXCM': 'Healthcare',
+    'FCX': 'Materials',
+    'FLUT': 'Consumer Discretionary',
+    'GOOGL': 'Communication Services',
+    'HIMS': 'Healthcare',
+    'IHI': 'Healthcare',
+    'JPM': 'Financials',
+    'MSFT': 'Technology',
+    'NUKZ': 'Energy',
+    'PANW': 'Technology',
+    'PSA': 'Real Estate',
+    'SCHW': 'Financials',
+    'SNOW': 'Technology',
+    'TSM': 'Technology',
+    'VRT': 'Industrials',
+    'AAPL': 'Technology',
+    'NVDA': 'Technology',
+    'META': 'Communication Services',
+    'TSLA': 'Consumer Discretionary',
+    'V': 'Financials',
+    'JNJ': 'Healthcare',
+    'UNH': 'Healthcare',
+    'XOM': 'Energy',
+    'CVX': 'Energy',
+    'CSCO': 'Technology',
+    'DDOG': 'Technology',
+    'ACN': 'Technology',
+    'KO': 'Consumer Staples',
+    'BLK': 'Financials',
+    'BRK.B': 'Financials',
+    'NVO': 'Healthcare',
+    'LLY': 'Healthcare',
+    'BSX': 'Healthcare',
+    'TMO': 'Healthcare',
+    'GE': 'Industrials',
+    'STRL': 'Industrials',
+    'RS': 'Materials',
+    'ECL': 'Materials',
+    'GLD': 'Materials',
+    'UUP': 'Financials',
+    'DLR': 'Real Estate',
+    'XLV': 'Healthcare',
+    'REMX': 'Materials'
+};
+
 // Utility functions for portfolio calculations
 const PortfolioUtils = {
     /**

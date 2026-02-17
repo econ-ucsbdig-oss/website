@@ -851,6 +851,84 @@
                 max-height: 200px;
             }
         }
+
+        /* ======== PORTFOLIO HISTORY EXPLORER ======== */
+        .history-section {
+            margin-top: 3rem;
+        }
+        .history-toggle-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 1.2rem 1.8rem; cursor: pointer; transition: all 0.3s ease;
+        }
+        .history-toggle-bar:hover { border-color: rgba(254,188,17,0.4); background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); }
+        .history-toggle-bar h2 { font-size: 1.3rem; color: white; display: flex; align-items: center; gap: 0.8rem; }
+        .history-toggle-bar h2 i { color: #febc11; }
+        .history-toggle-bar .toggle-arrow { color: #febc11; font-size: 1.2rem; transition: transform 0.3s ease; }
+        .history-toggle-bar .toggle-arrow.open { transform: rotate(180deg); }
+
+        .history-content { display: none; margin-top: 1.5rem; animation: fadeInUp 0.4s ease; }
+        .history-content.visible { display: block; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .history-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .history-tab {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7); padding: 0.5rem 1.2rem; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+        }
+        .history-tab:hover { background: rgba(254,188,17,0.1); border-color: rgba(254,188,17,0.3); color: #febc11; }
+        .history-tab.active { background: rgba(254,188,17,0.15); border-color: #febc11; color: #febc11; }
+        .history-tab-content { display: none; }
+        .history-tab-content.active { display: block; }
+
+        .history-filters {
+            display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;
+        }
+        .history-filter {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+            color: white; padding: 0.5rem 0.8rem; border-radius: 6px; font-size: 0.85rem; outline: none;
+        }
+        .history-filter option { background: #1e3c72; color: white; }
+
+        .history-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .history-table th {
+            text-align: left; padding: 0.6rem 0.7rem; background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.65); font-weight: 600; font-size: 0.72rem;
+            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky; top: 0; z-index: 1; cursor: pointer;
+        }
+        .history-table th:hover { color: #febc11; }
+        .history-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.04); color: rgba(255,255,255,0.8); }
+        .history-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .action-badge {
+            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+        }
+        .action-buy { background: rgba(40,167,69,0.2); color: #28a745; }
+        .action-sell { background: rgba(220,53,69,0.2); color: #dc3545; }
+        .action-dividend { background: rgba(254,188,17,0.2); color: #febc11; }
+        .action-other { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+
+        .history-card-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(16px);
+        }
+        .history-card-panel h3 { font-size: 1rem; color: #febc11; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+        .history-chart-box { position: relative; height: 300px; }
+        .history-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .history-stat { text-align: center; padding: 1rem; background: rgba(255,255,255,0.04); border-radius: 8px; }
+        .history-stat .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); }
+        .history-stat .stat-value { font-size: 1.3rem; font-weight: 800; color: #febc11; margin-top: 0.2rem; }
+
+        @media (max-width: 768px) {
+            .history-toggle-bar { padding: 1rem; flex-direction: column; gap: 0.5rem; }
+            .history-tabs { gap: 0.3rem; }
+            .history-tab { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -869,6 +947,7 @@
                 <li><a href="index.html#home">Home</a></li>
                 <li><a href="index.html#board">Advisory Board</a></li>
                 <li><a href="live-portfolio.html" class="live-portfolio-link">📊 Live Portfolio</a></li>
+                <li><a href="valuation.html">💎 Valuation</a></li>
                 <li><a href="TrackingError/tracking_error_analyzer.html">📈 Tracking Error</a></li>
             </ul>
             <div class="mobile-menu-toggle" id="mobileMenuToggle">
@@ -921,7 +1000,7 @@
                 <div class="portfolio-tabs">
                     <button class="tab-btn active" onclick="showPortfolioSection('all', event)">All Holdings</button>
                     <button class="tab-btn" onclick="showPortfolioSection('broad-market', event)">Broad Market ETFs (3)</button>
-                    <button class="tab-btn" onclick="showPortfolioSection('equity', event)">DIG Active Positions (20)</button>
+                    <button class="tab-btn" onclick="showPortfolioSection('equity', event)">DIG Active Positions (19)</button>
                 </div>
 
                 <div class="section-header">
@@ -978,6 +1057,115 @@
                 </div>
             </div>
         </section>
+
+        <!-- ======== PORTFOLIO HISTORY EXPLORER ======== -->
+        <div class="section-separator"></div>
+        <section class="history-section">
+            <div class="history-toggle-bar" onclick="toggleHistorySection()">
+                <h2><i class="fas fa-history"></i> Portfolio History Explorer (2021 - 2026)</h2>
+                <span class="toggle-arrow" id="historyArrow"><i class="fas fa-chevron-down"></i></span>
+            </div>
+            <div class="history-content" id="historyContent">
+                <div class="history-tabs">
+                    <button class="history-tab active" onclick="switchHistoryTab('timeline', event)"><i class="fas fa-list"></i> Transaction Timeline</button>
+                    <button class="history-tab" onclick="switchHistoryTab('dividends', event)"><i class="fas fa-dollar-sign"></i> Dividend Income</button>
+                    <button class="history-tab" onclick="switchHistoryTab('cashbalance', event)"><i class="fas fa-chart-line"></i> Cash Balance</button>
+                    <button class="history-tab" onclick="switchHistoryTab('trades', event)"><i class="fas fa-exchange-alt"></i> Trade History</button>
+                    <button class="history-tab" onclick="switchHistoryTab('turnover', event)"><i class="fas fa-sync-alt"></i> Turnover</button>
+                </div>
+
+                <!-- Tab: Transaction Timeline -->
+                <div class="history-tab-content active" id="tab-timeline">
+                    <div class="history-filters">
+                        <select class="history-filter" id="filterYear" onchange="filterTransactions()">
+                            <option value="all">All Years</option>
+                            <option value="2021">2021</option><option value="2022">2022</option>
+                            <option value="2023">2023</option><option value="2024">2024</option>
+                            <option value="2025">2025</option><option value="2026">2026</option>
+                        </select>
+                        <select class="history-filter" id="filterAction" onchange="filterTransactions()">
+                            <option value="all">All Actions</option>
+                            <option value="BUY">Buys</option><option value="SELL">Sells</option>
+                            <option value="DIVIDEND">Dividends</option><option value="OTHER">Other</option>
+                        </select>
+                        <input type="text" class="history-filter" id="filterSymbol" placeholder="Search symbol..." oninput="filterTransactions()" style="width:140px;" />
+                        <span id="txnCount" style="font-size:0.8rem;opacity:0.5;margin-left:auto;"></span>
+                    </div>
+                    <div style="overflow-x:auto; max-height: 500px; overflow-y: auto;">
+                        <table class="history-table" id="timelineTable">
+                            <thead><tr>
+                                <th onclick="sortHistory('date')">Date <i class="fas fa-sort"></i></th>
+                                <th onclick="sortHistory('action')">Action</th>
+                                <th onclick="sortHistory('symbol')">Symbol</th>
+                                <th>Description</th>
+                                <th onclick="sortHistory('quantity')">Qty</th>
+                                <th onclick="sortHistory('price')">Price</th>
+                                <th onclick="sortHistory('amount')">Amount</th>
+                                <th onclick="sortHistory('balance')">Cash Balance</th>
+                            </tr></thead>
+                            <tbody id="timelineBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: Dividend Income -->
+                <div class="history-tab-content" id="tab-dividends">
+                    <div class="history-stats-row" id="dividendStats"></div>
+                    <div class="history-card-panel" style="margin-bottom:1.5rem;">
+                        <h3><i class="fas fa-chart-bar"></i> Annual Dividend Income</h3>
+                        <div class="history-chart-box"><canvas id="dividendChart"></canvas></div>
+                    </div>
+                    <div class="history-card-panel">
+                        <h3><i class="fas fa-table"></i> Dividends by Holding</h3>
+                        <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+                            <table class="history-table" id="dividendTable">
+                                <thead><tr><th>Symbol</th><th>Total Dividends</th><th>Count</th><th>Avg per Payment</th></tr></thead>
+                                <tbody id="dividendBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Cash Balance -->
+                <div class="history-tab-content" id="tab-cashbalance">
+                    <div class="history-card-panel">
+                        <h3><i class="fas fa-chart-area"></i> Cash Balance Over Time</h3>
+                        <div class="history-chart-box"><canvas id="cashBalanceChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Tab: Trade History -->
+                <div class="history-tab-content" id="tab-trades">
+                    <div class="history-stats-row" id="tradeStats"></div>
+                    <div class="history-card-panel">
+                        <h3><i class="fas fa-exchange-alt"></i> All Trades by Symbol</h3>
+                        <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
+                            <table class="history-table" id="tradeTable">
+                                <thead><tr><th>Date</th><th>Action</th><th>Symbol</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead>
+                                <tbody id="tradeBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Turnover -->
+                <div class="history-tab-content" id="tab-turnover">
+                    <div class="history-card-panel" style="margin-bottom:1.5rem;">
+                        <h3><i class="fas fa-sync-alt"></i> Annual Trading Activity</h3>
+                        <div class="history-chart-box"><canvas id="turnoverChart"></canvas></div>
+                    </div>
+                    <div class="history-card-panel">
+                        <h3><i class="fas fa-table"></i> Annual Summary</h3>
+                        <div style="overflow-x:auto;">
+                            <table class="history-table" id="turnoverTable">
+                                <thead><tr><th>Year</th><th>Total Buys ($)</th><th>Total Sells ($)</th><th>Net Trades</th><th>Dividends</th><th>Total Transactions</th></tr></thead>
+                                <tbody id="turnoverBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- Single clean script block with working JS -->
@@ -1007,33 +1195,33 @@
     let currentSectorBreakdown = null;
     let currentSection = 'all';
 
+    // Current holdings as of Feb 13, 2026 (reconstructed from DIG Activity CSVs 2021-2026)
     const broadMarketETFs = [
-        { symbol: 'VOO', description: "Vanguard Index Funds S&P 500 ETF", quantity: 590.669, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 627.59, type: 'etf', change: 5.04, changePercent: 0.80 },
-        { symbol: 'VTV', description: 'Vanguard Value ETF', quantity: 131.11, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 188.36, type: 'etf', change: 0.23, changePercent: 0.12 },
-        { symbol: 'SPY', description: 'SPDR S&P 500 ETF Trust', quantity: 34.281, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 682.60, type: 'etf', change: 5.35, changePercent: 0.78 }
+        { symbol: 'VOO', description: 'Vanguard S&P 500 ETF', quantity: 590.669, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 626.89, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'VTV', description: 'Vanguard Value ETF', quantity: 131.11, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 197.27, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'SPY', description: 'SPDR S&P 500 ETF Trust', quantity: 34.281, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 691.32, type: 'etf', change: 0, changePercent: 0 }
     ];
 
     const equityHoldings = [
-        { symbol: 'TSM', description: 'Taiwan Semiconductor Manufacturing Co Ltd ADR', quantity: 137.398, sector: 'Technology Hardware & Equipment', gicsSector: 'Information Technology', lastPrice: 295.72, type: 'stock', change: 0.76, changePercent: 0.25 },
-        { symbol: 'GOOGL', description: 'Alphabet Inc Class A', quantity: 137.343, sector: 'Interactive Media & Services', gicsSector: 'Communication Services', lastPrice: 265.09, type: 'stock', change: 5.17, changePercent: 1.98 },
-        { symbol: 'MSFT', description: 'Microsoft Corp', quantity: 55.274, sector: 'Systems Software', gicsSector: 'Information Technology', lastPrice: 533.11, type: 'stock', change: 9.50, changePercent: 1.81 },
-        { symbol: 'AMZN', description: 'Amazon.com Inc', quantity: 112.118, sector: 'Internet & Direct Marketing Retail', gicsSector: 'Consumer Discretionary', lastPrice: 226.80, type: 'stock', change: 2.59, changePercent: 1.15 },
-        { symbol: 'ASML', description: 'ASML Holding NV', quantity: 19.917, sector: 'Semiconductor Equipment', gicsSector: 'Information Technology', lastPrice: 1057.72, type: 'stock', change: 24.62, changePercent: 2.38 },
-        { symbol: 'SNOW', description: 'Snowflake Inc', quantity: 62.096, sector: 'Application Software', gicsSector: 'Information Technology', lastPrice: 264.18, type: 'stock', change: 6.24, changePercent: 2.41 },
-        { symbol: 'NUKZ', description: 'Range Nuclear Renaissance ETF', quantity: 226.815, sector: 'Nuclear Energy ETF', gicsSector: 'Energy', lastPrice: 70.35, type: 'etf', change: -0.26, changePercent: -0.38 },
-        { symbol: 'VRT', description: 'Vertiv Holdings Co', quantity: 77, sector: 'Electrical Components & Equipment', gicsSector: 'Industrials', lastPrice: 189.98, type: 'stock', change: 3.92, changePercent: 2.10 },
-        { symbol: 'COST', description: 'Costco Wholesale Corp', quantity: 15, sector: 'Hypermarkets & Super Centers', gicsSector: 'Consumer Staples', lastPrice: 927.33, type: 'stock', change: -4.82, changePercent: -0.52 },
-        { symbol: 'IHI', description: 'iShares U.S. Medical Devices ETF', quantity: 219.368, sector: 'Medical Devices ETF', gicsSector: 'Health Care', lastPrice: 61.95, type: 'etf', change: 0.08, changePercent: 0.12 },
-        { symbol: 'CEG', description: 'Constellation Energy Corp', quantity: 33.189, sector: 'Independent Power Producers & Energy Traders', gicsSector: 'Utilities', lastPrice: 385.38, type: 'stock', change: -3.81, changePercent: -0.98 },
-        { symbol: 'JPM', description: 'JPMorgan Chase & Co', quantity: 40, sector: 'Diversified Banks', gicsSector: 'Financials', lastPrice: 302.10, type: 'stock', change: 1.66, changePercent: 0.55 },
-        { symbol: 'PANW', description: 'Palo Alto Networks Inc', quantity: 54, sector: 'Systems Software', gicsSector: 'Information Technology', lastPrice: 218.68, type: 'stock', change: 1.57, changePercent: 0.72 },
-        { symbol: 'BLD', description: 'TopBuild Corp', quantity: 19.521, sector: 'Building Products', gicsSector: 'Industrials', lastPrice: 456.12, type: 'stock', change: 4.14, changePercent: 0.91 },
-        { symbol: 'FLUT', description: 'Flutter Entertainment PLC', quantity: 35.91, sector: 'Casinos & Gaming', gicsSector: 'Consumer Discretionary', lastPrice: 243.96, type: 'stock', change: 0.04, changePercent: 0.01 },
-        { symbol: 'SCHW', description: 'Charles Schwab Corp', quantity: 92.199, sector: 'Investment Banking & Brokerage', gicsSector: 'Financials', lastPrice: 94.75, type: 'stock', change: 0.33, changePercent: 0.34 },
-        { symbol: 'HIMS', description: 'Hims & Hers Health Inc', quantity: 166, sector: 'Health Care Services', gicsSector: 'Health Care', lastPrice: 49.34, type: 'stock', change: 0.56, changePercent: 1.14 },
-        { symbol: 'FCX', description: 'Freeport-McMoRan Inc', quantity: 195.831, sector: 'Copper', gicsSector: 'Materials', lastPrice: 40.83, type: 'stock', change: -0.55, changePercent: -1.32 },
-        { symbol: 'DXCM', description: 'DexCom Inc', quantity: 112.945, sector: 'Health Care Equipment', gicsSector: 'Health Care', lastPrice: 70.20, type: 'stock', change: -0.14, changePercent: -0.20 },
-        { symbol: 'PSA', description: 'Public Storage', quantity: 20.725, sector: 'Specialized REITs', gicsSector: 'Real Estate', lastPrice: 300.53, type: 'stock', change: -1.72, changePercent: -0.57 }
+        { symbol: 'TSM', description: 'Taiwan Semiconductor Manufacturing ADR', quantity: 137.398, sector: 'Semiconductor', gicsSector: 'Information Technology', lastPrice: 209.87, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'GOOGL', description: 'Alphabet Inc Class A', quantity: 137.343, sector: 'Interactive Media', gicsSector: 'Communication Services', lastPrice: 305.72, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'MSFT', description: 'Microsoft Corp', quantity: 55.274, sector: 'Software', gicsSector: 'Information Technology', lastPrice: 401.32, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'AMZN', description: 'Amazon.com Inc', quantity: 112.118, sector: 'Internet Retail', gicsSector: 'Consumer Discretionary', lastPrice: 228.68, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'ASML', description: 'ASML Holding NV', quantity: 19.917, sector: 'Semiconductor Equipment', gicsSector: 'Information Technology', lastPrice: 747.56, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'SNOW', description: 'Snowflake Inc', quantity: 62.096, sector: 'Application Software', gicsSector: 'Information Technology', lastPrice: 186.41, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'NUKZ', description: 'Range Nuclear Renaissance ETF', quantity: 226.815, sector: 'Nuclear Energy ETF', gicsSector: 'Energy', lastPrice: 48.69, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'VRT', description: 'Vertiv Holdings Co', quantity: 77, sector: 'Electrical Equipment', gicsSector: 'Industrials', lastPrice: 113.04, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'COST', description: 'Costco Wholesale Corp', quantity: 15, sector: 'Consumer Staples Retail', gicsSector: 'Consumer Staples', lastPrice: 1049.47, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'XLV', description: 'Health Care Select Sector SPDR', quantity: 94.93, sector: 'Health Care ETF', gicsSector: 'Health Care', lastPrice: 148.47, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'CEG', description: 'Constellation Energy Corp', quantity: 33.189, sector: 'Independent Power', gicsSector: 'Utilities', lastPrice: 313.33, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'JPM', description: 'JPMorgan Chase & Co', quantity: 40, sector: 'Diversified Banks', gicsSector: 'Financials', lastPrice: 276.32, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'PANW', description: 'Palo Alto Networks Inc', quantity: 54, sector: 'Network Security', gicsSector: 'Information Technology', lastPrice: 197.76, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'FLUT', description: 'Flutter Entertainment PLC', quantity: 35.91, sector: 'Casinos & Gaming', gicsSector: 'Consumer Discretionary', lastPrice: 272.35, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'SCHW', description: 'Charles Schwab Corp', quantity: 92.199, sector: 'Investment Banking', gicsSector: 'Financials', lastPrice: 81.71, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'REMX', description: 'VanEck Rare Earth/Strategic Metals ETF', quantity: 61.438, sector: 'Rare Earth Metals ETF', gicsSector: 'Materials', lastPrice: 89.52, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'FCX', description: 'Freeport-McMoRan Inc', quantity: 195.831, sector: 'Copper', gicsSector: 'Materials', lastPrice: 42.31, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'DXCM', description: 'DexCom Inc', quantity: 112.945, sector: 'Health Care Equipment', gicsSector: 'Health Care', lastPrice: 75.52, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'PSA', description: 'Public Storage', quantity: 20.725, sector: 'Specialized REITs', gicsSector: 'Real Estate', lastPrice: 316.72, type: 'stock', change: 0, changePercent: 0 }
     ];
 
     const portfolioData = [...broadMarketETFs, ...equityHoldings];
@@ -1266,9 +1454,10 @@
         const candidates = [];
         if (provided) candidates.push(provided);
         if (window.location.origin && window.location.origin !== 'null') {
+            candidates.push(window.location.origin.replace(/:\d+$/, ':3002'));
             candidates.push(window.location.origin.replace(/:\d+$/, ':3001'));
         }
-        candidates.push(window.location.origin, 'http://127.0.0.1:3001');
+        candidates.push(window.location.origin, 'http://127.0.0.1:3002', 'http://127.0.0.1:3001');
         let healthyBase = null;
 
         for (const base of candidates) {
@@ -1293,7 +1482,7 @@
             console.log('Running in offline mode with sample data. API tried:', attempted.join(', '));
             // Display sample data instead of showing error
             updateDashboard();
-            showSuccessMessage('📊 Running in Demo Mode with sample data. To use live data, access via http://localhost:3001/live-portfolio.html');
+            showSuccessMessage('📊 Running in Demo Mode with sample data. To use live data, start the server (node server.js) and access via http://localhost:3002/live-portfolio.html');
             return;
         }
 
@@ -1327,12 +1516,22 @@
                         const map = new Map(batchData.map(d => [d.symbol, d]));
                         portfolioData.forEach(h => {
                             const live = map.get(h.symbol);
-                            if (live && typeof live.price === 'number') {
-                                const prev = h.lastPrice;
-                                h.lastPrice = live.price;
-                                h.change = live.change ?? (live.price - prev);
-                                h.changePercent = live.changePercent ?? (h.change / prev * 100);
-                                updatedCount++;
+                            if (live) {
+                                // Use prevClose as fallback when price is 0 (market closed / weekends)
+                                const effectivePrice = (live.price && live.price > 0) ? live.price : (live.prevClose || live.prev_close || 0);
+                                if (effectivePrice > 0) {
+                                    const prev = h.lastPrice;
+                                    h.lastPrice = effectivePrice;
+                                    // When using prevClose (market closed), change is 0
+                                    if (live.price && live.price > 0) {
+                                        h.change = live.change ?? (live.price - (live.prevClose || prev));
+                                        h.changePercent = live.changePercent ?? (h.change / (live.prevClose || prev) * 100);
+                                    } else {
+                                        h.change = 0;
+                                        h.changePercent = 0;
+                                    }
+                                    updatedCount++;
+                                }
                             }
                         });
                         usedBatch = true;
@@ -1348,12 +1547,21 @@
                         const res = await fetch(window.apiBaseURL + '/api/stock/' + h.symbol);
                         if (!res.ok) continue;
                         const data = await res.json();
-                        if (data && typeof data.price === 'number') {
-                            const prev = h.lastPrice;
-                            h.lastPrice = data.price;
-                            h.change = data.change ?? (data.price - prev);
-                            h.changePercent = data.changePercent ?? (h.change / prev * 100);
-                            updatedCount++;
+                        if (data) {
+                            // Use prevClose as fallback when price is 0 (market closed / weekends)
+                            const effectivePrice = (data.price && data.price > 0) ? data.price : (data.prevClose || data.prev_close || 0);
+                            if (effectivePrice > 0) {
+                                const prev = h.lastPrice;
+                                h.lastPrice = effectivePrice;
+                                if (data.price && data.price > 0) {
+                                    h.change = data.change ?? (data.price - (data.prevClose || prev));
+                                    h.changePercent = data.changePercent ?? (h.change / (data.prevClose || prev) * 100);
+                                } else {
+                                    h.change = 0;
+                                    h.changePercent = 0;
+                                }
+                                updatedCount++;
+                            }
                         }
                     } catch (e) {
                         continue;
@@ -2233,6 +2441,339 @@
             console.error(err);
             hideProgressIndicator();
             showError(`Failed to download CSV for ${symbol}: ${err.message}`);
+        }
+    }
+
+    // ================================================================
+    // PORTFOLIO HISTORY EXPLORER
+    // ================================================================
+    let activityData = [];
+    let activityLoaded = false;
+    let historySortField = 'date';
+    let historySortAsc = false;
+    let historyCharts = {};
+
+    function toggleHistorySection() {
+        const content = document.getElementById('historyContent');
+        const arrow = document.getElementById('historyArrow');
+        const isOpen = content.classList.contains('visible');
+        if (isOpen) {
+            content.classList.remove('visible');
+            arrow.classList.remove('open');
+        } else {
+            content.classList.add('visible');
+            arrow.classList.add('open');
+            if (!activityLoaded) loadActivityData();
+        }
+    }
+
+    async function loadActivityData() {
+        const years = [2021, 2022, 2023, 2024, 2025, 2026];
+        try {
+            const csvTexts = await Promise.all(
+                years.map(y => fetch(`data/DIG_${y}_Activity.csv`).then(r => {
+                    if (!r.ok) throw new Error(`Failed to load ${y}`);
+                    return r.text();
+                }))
+            );
+            activityData = [];
+            csvTexts.forEach(text => {
+                const lines = text.split('\n').filter(l => l.trim());
+                for (let i = 1; i < lines.length; i++) {
+                    const parsed = parseActivityLine(lines[i]);
+                    if (parsed) activityData.push(parsed);
+                }
+            });
+            // Sort by date descending
+            activityData.sort((a, b) => b.date - a.date);
+            activityLoaded = true;
+            renderTimeline();
+            renderDividends();
+            renderCashBalance();
+            renderTrades();
+            renderTurnover();
+        } catch (err) {
+            console.error('Error loading activity data:', err);
+            document.getElementById('timelineBody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc3545;padding:2rem;">Failed to load activity data. Ensure CSV files are in the data/ directory.</td></tr>`;
+        }
+    }
+
+    function parseActivityLine(line) {
+        // Split by comma - handle the Fidelity CSV format
+        const parts = line.split(',');
+        if (parts.length < 12) return null;
+        const dateStr = parts[0]?.trim();
+        if (!dateStr) return null;
+        // Parse date: "2/13/26" or "12/31/21"
+        const dp = dateStr.split('/');
+        if (dp.length !== 3) return null;
+        let yr = parseInt(dp[2]);
+        if (yr < 100) yr += 2000;
+        const date = new Date(yr, parseInt(dp[0]) - 1, parseInt(dp[1]));
+        if (isNaN(date.getTime())) return null;
+
+        const actionText = parts[1]?.trim() || '';
+        const symbol = parts[2]?.trim() || '';
+        const description = parts[3]?.trim() || '';
+        const type = parts[4]?.trim() || '';
+        const price = parseFloat(parts[5]) || null;
+        const quantity = parseFloat(parts[6]) || 0;
+        const commission = parseFloat(parts[7]) || 0;
+        const fees = parseFloat(parts[8]) || 0;
+        const amount = parseFloat(parts[10]) || 0;
+        const cashBalance = parseFloat(parts[11]) || null;
+
+        const actionType = categorizeAction(actionText);
+
+        return { date, dateStr, action: actionText, actionType, symbol, description, type, price, quantity, commission, fees, amount, cashBalance, year: date.getFullYear() };
+    }
+
+    function categorizeAction(text) {
+        if (!text) return 'OTHER';
+        const u = text.toUpperCase();
+        if (u.startsWith('YOU BOUGHT')) return 'BUY';
+        if (u.startsWith('YOU SOLD')) return 'SELL';
+        if (u.includes('DIVIDEND RECEIVED')) return 'DIVIDEND';
+        if (u.includes('REINVESTMENT')) return 'REINVESTMENT';
+        if (u.includes('LONG-TERM CAP GAIN')) return 'CAP_GAIN';
+        if (u.includes('SHORT-TERM CAP GAIN')) return 'CAP_GAIN';
+        if (u.includes('WIRE TRANSFER')) return 'WIRE_TRANSFER';
+        if (u.includes('FOREIGN TAX')) return 'TAX';
+        if (u.includes('JOURNALED')) return 'JOURNAL';
+        return 'OTHER';
+    }
+
+    function getActionBadge(type) {
+        switch (type) {
+            case 'BUY': return '<span class="action-badge action-buy">Buy</span>';
+            case 'SELL': return '<span class="action-badge action-sell">Sell</span>';
+            case 'DIVIDEND': return '<span class="action-badge action-dividend">Dividend</span>';
+            case 'CAP_GAIN': return '<span class="action-badge action-dividend">Cap Gain</span>';
+            default: return `<span class="action-badge action-other">${type.replace('_', ' ')}</span>`;
+        }
+    }
+
+    function fmtHistCur(n) {
+        if (n == null || isNaN(n)) return '-';
+        const neg = n < 0;
+        const formatted = '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return neg ? `<span style="color:#dc3545;">(${formatted})</span>` : formatted;
+    }
+
+    function fmtHistDate(d) {
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function switchHistoryTab(tab, event) {
+        document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.history-tab-content').forEach(c => c.classList.remove('active'));
+        if (event) event.target.closest('.history-tab').classList.add('active');
+        document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    // --- TIMELINE ---
+    function renderTimeline() {
+        filterTransactions();
+    }
+
+    function filterTransactions() {
+        const yearFilter = document.getElementById('filterYear').value;
+        const actionFilter = document.getElementById('filterAction').value;
+        const symbolFilter = (document.getElementById('filterSymbol').value || '').toUpperCase();
+
+        let filtered = activityData;
+        if (yearFilter !== 'all') filtered = filtered.filter(t => t.year === parseInt(yearFilter));
+        if (actionFilter !== 'all') {
+            if (actionFilter === 'OTHER') filtered = filtered.filter(t => !['BUY', 'SELL', 'DIVIDEND'].includes(t.actionType));
+            else filtered = filtered.filter(t => t.actionType === actionFilter);
+        }
+        if (symbolFilter) filtered = filtered.filter(t => t.symbol.includes(symbolFilter));
+
+        // Sort
+        filtered.sort((a, b) => {
+            let va, vb;
+            switch (historySortField) {
+                case 'date': va = a.date; vb = b.date; break;
+                case 'symbol': va = a.symbol; vb = b.symbol; break;
+                case 'quantity': va = Math.abs(a.quantity); vb = Math.abs(b.quantity); break;
+                case 'price': va = a.price || 0; vb = b.price || 0; break;
+                case 'amount': va = a.amount; vb = b.amount; break;
+                case 'balance': va = a.cashBalance || 0; vb = b.cashBalance || 0; break;
+                default: va = a.date; vb = b.date;
+            }
+            if (va < vb) return historySortAsc ? -1 : 1;
+            if (va > vb) return historySortAsc ? 1 : -1;
+            return 0;
+        });
+
+        document.getElementById('txnCount').textContent = `${filtered.length} transactions`;
+        const tbody = document.getElementById('timelineBody');
+        tbody.innerHTML = filtered.slice(0, 200).map(t => `<tr>
+            <td style="white-space:nowrap;">${fmtHistDate(t.date)}</td>
+            <td>${getActionBadge(t.actionType)}</td>
+            <td style="color:#febc11;font-weight:600;">${t.symbol || '-'}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.description}">${t.description || '-'}</td>
+            <td>${t.quantity ? t.quantity.toFixed(3) : '-'}</td>
+            <td>${t.price ? '$' + t.price.toFixed(2) : '-'}</td>
+            <td>${fmtHistCur(t.amount)}</td>
+            <td>${t.cashBalance != null ? '$' + t.cashBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+        </tr>`).join('');
+
+        if (filtered.length > 200) {
+            tbody.innerHTML += `<tr><td colspan="8" style="text-align:center;opacity:0.5;padding:1rem;">Showing first 200 of ${filtered.length} transactions. Use filters to narrow results.</td></tr>`;
+        }
+    }
+
+    function sortHistory(field) {
+        if (historySortField === field) historySortAsc = !historySortAsc;
+        else { historySortField = field; historySortAsc = field === 'symbol'; }
+        filterTransactions();
+    }
+
+    // --- DIVIDENDS ---
+    function renderDividends() {
+        const divs = activityData.filter(t => t.actionType === 'DIVIDEND' && t.amount > 0);
+        const totalDivs = divs.reduce((s, t) => s + t.amount, 0);
+
+        // By year
+        const byYear = {};
+        divs.forEach(t => { byYear[t.year] = (byYear[t.year] || 0) + t.amount; });
+        const years = Object.keys(byYear).sort();
+
+        // By symbol
+        const bySymbol = {};
+        divs.forEach(t => {
+            if (!t.symbol) return;
+            if (!bySymbol[t.symbol]) bySymbol[t.symbol] = { total: 0, count: 0 };
+            bySymbol[t.symbol].total += t.amount;
+            bySymbol[t.symbol].count++;
+        });
+        const symbolList = Object.entries(bySymbol).sort((a, b) => b[1].total - a[1].total);
+
+        // Stats
+        document.getElementById('dividendStats').innerHTML = `
+            <div class="history-stat"><div class="stat-label">Total Dividends</div><div class="stat-value">$${totalDivs.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div></div>
+            <div class="history-stat"><div class="stat-label">Payments</div><div class="stat-value">${divs.length}</div></div>
+            <div class="history-stat"><div class="stat-label">Unique Holdings</div><div class="stat-value">${symbolList.length}</div></div>
+            <div class="history-stat"><div class="stat-label">Avg/Year</div><div class="stat-value">$${years.length > 0 ? (totalDivs / years.length).toFixed(2) : '0'}</div></div>`;
+
+        // Table
+        document.getElementById('dividendBody').innerHTML = symbolList.map(([sym, data]) =>
+            `<tr><td style="color:#febc11;font-weight:600;">${sym}</td><td>$${data.total.toFixed(2)}</td><td>${data.count}</td><td>$${(data.total / data.count).toFixed(2)}</td></tr>`
+        ).join('');
+
+        // Chart
+        if (historyCharts.dividend) historyCharts.dividend.destroy();
+        const ctx = document.getElementById('dividendChart');
+        if (ctx) {
+            historyCharts.dividend = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{ label: 'Dividend Income ($)', data: years.map(y => byYear[y]), backgroundColor: 'rgba(254,188,17,0.4)', borderColor: '#febc11', borderWidth: 1 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#e5e5e5' } } },
+                    scales: { x: { ticks: { color: '#aaa' }, grid: { display: false } }, y: { ticks: { color: '#aaa', callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(255,255,255,0.05)' } } }
+                }
+            });
+        }
+    }
+
+    // --- CASH BALANCE ---
+    function renderCashBalance() {
+        // Get all entries with cash balance, sorted chronologically
+        const withBalance = activityData.filter(t => t.cashBalance != null).sort((a, b) => a.date - b.date);
+        if (withBalance.length === 0) return;
+
+        if (historyCharts.cashBalance) historyCharts.cashBalance.destroy();
+        const ctx = document.getElementById('cashBalanceChart');
+        if (ctx) {
+            historyCharts.cashBalance = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: withBalance.map(t => fmtHistDate(t.date)),
+                    datasets: [{
+                        label: 'Cash Balance ($)',
+                        data: withBalance.map(t => t.cashBalance),
+                        borderColor: '#febc11', backgroundColor: 'rgba(254,188,17,0.08)',
+                        fill: true, tension: 0.2, pointRadius: 1, pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#e5e5e5' } } },
+                    scales: {
+                        x: { ticks: { color: '#aaa', maxTicksLimit: 20, maxRotation: 45 }, grid: { display: false } },
+                        y: { ticks: { color: '#aaa', callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+    }
+
+    // --- TRADES ---
+    function renderTrades() {
+        const trades = activityData.filter(t => t.actionType === 'BUY' || t.actionType === 'SELL');
+        const totalBuys = trades.filter(t => t.actionType === 'BUY').reduce((s, t) => s + Math.abs(t.amount), 0);
+        const totalSells = trades.filter(t => t.actionType === 'SELL').reduce((s, t) => s + Math.abs(t.amount), 0);
+
+        document.getElementById('tradeStats').innerHTML = `
+            <div class="history-stat"><div class="stat-label">Total Trades</div><div class="stat-value">${trades.length}</div></div>
+            <div class="history-stat"><div class="stat-label">Total Buys</div><div class="stat-value" style="color:#28a745;">$${totalBuys.toLocaleString('en-US', {maximumFractionDigits: 0})}</div></div>
+            <div class="history-stat"><div class="stat-label">Total Sells</div><div class="stat-value" style="color:#dc3545;">$${totalSells.toLocaleString('en-US', {maximumFractionDigits: 0})}</div></div>
+            <div class="history-stat"><div class="stat-label">Net Flow</div><div class="stat-value" style="color:${totalSells - totalBuys >= 0 ? '#28a745' : '#dc3545'};">$${(totalSells - totalBuys).toLocaleString('en-US', {maximumFractionDigits: 0})}</div></div>`;
+
+        document.getElementById('tradeBody').innerHTML = trades.map(t => `<tr>
+            <td style="white-space:nowrap;">${fmtHistDate(t.date)}</td>
+            <td>${getActionBadge(t.actionType)}</td>
+            <td style="color:#febc11;font-weight:600;">${t.symbol}</td>
+            <td>${t.quantity ? t.quantity.toFixed(3) : '-'}</td>
+            <td>${t.price ? '$' + t.price.toFixed(2) : '-'}</td>
+            <td>${fmtHistCur(t.amount)}</td>
+        </tr>`).join('');
+    }
+
+    // --- TURNOVER ---
+    function renderTurnover() {
+        const years = [2021, 2022, 2023, 2024, 2025, 2026];
+        const annualData = years.map(yr => {
+            const yearTxns = activityData.filter(t => t.year === yr);
+            const buys = yearTxns.filter(t => t.actionType === 'BUY').reduce((s, t) => s + Math.abs(t.amount), 0);
+            const sells = yearTxns.filter(t => t.actionType === 'SELL').reduce((s, t) => s + Math.abs(t.amount), 0);
+            const divs = yearTxns.filter(t => t.actionType === 'DIVIDEND').reduce((s, t) => s + t.amount, 0);
+            return { year: yr, buys, sells, dividends: divs, total: yearTxns.length };
+        });
+
+        document.getElementById('turnoverBody').innerHTML = annualData.map(d => `<tr>
+            <td style="font-weight:700;">${d.year}</td>
+            <td style="color:#28a745;">$${d.buys.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+            <td style="color:#dc3545;">$${d.sells.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+            <td>${d.buys + d.sells > 0 ? Math.round((d.buys + d.sells) / 2).toLocaleString() : '0'}</td>
+            <td style="color:#febc11;">$${d.dividends.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+            <td>${d.total}</td>
+        </tr>`).join('');
+
+        if (historyCharts.turnover) historyCharts.turnover.destroy();
+        const ctx = document.getElementById('turnoverChart');
+        if (ctx) {
+            historyCharts.turnover = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: years.map(String),
+                    datasets: [
+                        { label: 'Buys ($)', data: annualData.map(d => d.buys), backgroundColor: 'rgba(40,167,69,0.4)', borderColor: '#28a745', borderWidth: 1 },
+                        { label: 'Sells ($)', data: annualData.map(d => d.sells), backgroundColor: 'rgba(220,53,69,0.4)', borderColor: '#dc3545', borderWidth: 1 },
+                        { label: 'Dividends ($)', data: annualData.map(d => d.dividends), backgroundColor: 'rgba(254,188,17,0.4)', borderColor: '#febc11', borderWidth: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#e5e5e5' } } },
+                    scales: { x: { ticks: { color: '#aaa' }, grid: { display: false } }, y: { ticks: { color: '#aaa', callback: v => '$' + (v/1000).toFixed(0) + 'K' }, grid: { color: 'rgba(255,255,255,0.05)' } } }
+                }
+            });
         }
     }
     </script>

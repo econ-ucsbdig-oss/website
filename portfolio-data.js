@@ -14,33 +14,17 @@ let portfolioData = {
 // Current sector grouping mode: 'gics11' or 'custom6'
 let sectorGrouping = 'gics11';
 
-// Sector mapping for holdings
-const SECTOR_MAP = {
-    'VOO': 'Broad Market',
-    'SPY': 'Broad Market',
-    'VTV': 'Broad Market',
-    'TSM': 'Technology',
-    'GOOGL': 'Communication Services',
-    'ASML': 'Technology',
-    'AMZN': 'Consumer Discretionary',
-    'MSFT': 'Technology',
-    'NUKZ': 'Energy',
-    'COST': 'Consumer Staples',
-    'VRT': 'Industrials',
-    'IHI': 'Healthcare',
-    'SNOW': 'Technology',
-    'JPM': 'Financials',
-    'FCX': 'Materials',
-    'CEG': 'Utilities',
-    'PANW': 'Technology',
-    'BLD': 'Industrials',
-    'SCHW': 'Financials',
-    'DXCM': 'Healthcare',
-    'FLUT': 'Consumer Discretionary',
-    'PSA': 'Real Estate',
-    'HIMS': 'Healthcare',
+// Sector mapping for holdings (extend SECTOR_MAP from portfolio-config.js if already loaded)
+if (typeof SECTOR_MAP === 'undefined') {
+    var SECTOR_MAP = {};
+}
+// Ensure portfolio-specific mappings are present (including Broad Market ETFs and Cash)
+Object.assign(SECTOR_MAP, {
+    'VOO': SECTOR_MAP['VOO'] || 'Broad Market',
+    'SPY': SECTOR_MAP['SPY'] || 'Broad Market',
+    'VTV': SECTOR_MAP['VTV'] || 'Broad Market',
     'SPAXX': 'Cash'
-};
+});
 
 // Index funds (broad market ETFs)
 const INDEX_FUNDS = ['VOO', 'SPY', 'VTV'];
@@ -65,26 +49,21 @@ function parseCSV(csvText) {
         const values = parseCSVLine(lines[i]);
         if (values.length < headers.length) continue;
 
-        const quantity = parseFloat(values[4]) || 0;
-        const lastPrice = parseCurrency(values[5]);
-        const costBasisTotal = parseCurrency(values[13]);
-        const currentValue = quantity * lastPrice;
-
         const position = {
             accountNumber: values[0],
             accountName: values[1],
             symbol: values[2],
             description: values[3],
-            quantity: quantity,
-            lastPrice: lastPrice,
+            quantity: parseFloat(values[4]) || 0,
+            lastPrice: parseCurrency(values[5]),
             lastPriceChange: parseCurrency(values[6]),
-            currentValue: currentValue,
+            currentValue: parseCurrency(values[7]),
             todayGainDollar: parseCurrency(values[8]),
             todayGainPercent: parsePercent(values[9]),
-            totalGainDollar: currentValue - costBasisTotal, // Recalculated: Value - Cost Basis
-            totalGainPercent: costBasisTotal > 0 ? (currentValue - costBasisTotal) / costBasisTotal : 0,
+            totalGainDollar: parseCurrency(values[10]),
+            totalGainPercent: parsePercent(values[11]),
             percentOfAccount: parsePercent(values[12]),
-            costBasisTotal: costBasisTotal,
+            costBasisTotal: parseCurrency(values[13]),
             averageCostBasis: parseCurrency(values[14]),
             type: values[15],
             sector: SECTOR_MAP[values[2]] || 'Other',
@@ -322,9 +301,6 @@ async function loadPortfolioData() {
 
         console.log(`✅ Loaded ${positions.length} positions from CSV`);
 
-        // Fetch current prices and update position values
-        await updateCurrentPrices(positions);
-
         const summary = calculateSummary(positions);
         const composition = calculateComposition(positions);
         const sectors = calculateSectorAllocations(positions);
@@ -345,130 +321,6 @@ async function loadPortfolioData() {
         alert(`Error loading portfolio data: ${error.message}\n\nPlease make sure:\n1. The server is running (npm start)\n2. The CSV file exists: Portfolio_Positions_Jan-16-2026.csv`);
         throw error;
     }
-}
-
-/**
- * Fetch current prices and update position values
- * Uses the most recent available price (close if market closed, open if intraday)
- */
-async function updateCurrentPrices(positions) {
-    const apiKey = localStorage.getItem('POLYGON_API_KEY') || window.POLYGON_API_KEY;
-
-    if (!apiKey) {
-        console.warn('⚠️ Polygon.io API key not found. Using prices from CSV file.');
-        console.warn('To fetch current prices, set API key: localStorage.setItem("POLYGON_API_KEY", "your-key")');
-        return;
-    }
-
-    console.log('🔄 Fetching current prices from Polygon.io...');
-
-    const symbols = [...new Set(positions.map(p => p.symbol))];
-    const priceUpdates = {};
-
-    // Fetch latest prices for all symbols
-    for (const symbol of symbols) {
-        try {
-            const latestPrice = await fetchLatestPrice(symbol, apiKey);
-            if (latestPrice) {
-                priceUpdates[symbol] = latestPrice;
-                console.log(`✅ ${symbol}: $${latestPrice.price.toFixed(2)} (${latestPrice.source})`);
-            }
-        } catch (error) {
-            console.warn(`⚠️ Failed to fetch price for ${symbol}:`, error.message);
-        }
-    }
-
-    // Update positions with new prices
-    positions.forEach(position => {
-        const update = priceUpdates[position.symbol];
-        if (update) {
-            const oldPrice = position.lastPrice;
-            const newPrice = update.price;
-
-            // Update price
-            position.lastPrice = newPrice;
-            position.lastPriceChange = newPrice - oldPrice;
-
-            // Recalculate current value
-            position.currentValue = position.quantity * newPrice;
-
-            // Recalculate today's gain (vs previous close)
-            const priceChange = update.previousClose ? (newPrice - update.previousClose) : 0;
-            position.todayGainDollar = position.quantity * priceChange;
-            position.todayGainPercent = update.previousClose ? priceChange / update.previousClose : 0;
-
-            // Recalculate total return based on cost basis from CSV
-            position.totalGainDollar = position.currentValue - position.costBasisTotal;
-            position.totalGainPercent = position.costBasisTotal > 0 ? position.totalGainDollar / position.costBasisTotal : 0;
-        }
-    });
-
-    console.log(`✅ Updated prices for ${Object.keys(priceUpdates).length} symbols`);
-}
-
-/**
- * Fetch the most recent price for a symbol
- * Returns close price if market has closed, otherwise returns open price
- */
-async function fetchLatestPrice(symbol, apiKey) {
-    // Get last 2 trading days to ensure we have previous close
-    const toDate = new Date();
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 7); // Go back 7 days to account for weekends
-
-    const from = formatDateForAPI(fromDate);
-    const to = formatDateForAPI(toDate);
-
-    const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${from}/${to}?adjusted=true&sort=desc&limit=5&apiKey=${apiKey}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.status === 'ERROR') {
-        throw new Error(data.error || data.message || 'API error');
-    }
-
-    if (!data.results || data.results.length === 0) {
-        throw new Error('No price data available');
-    }
-
-    // Results are sorted descending, so first result is most recent
-    const latestBar = data.results[0];
-    const previousBar = data.results[1];
-
-    // Check if the latest bar is today
-    const latestDate = new Date(latestBar.t);
-    const today = new Date();
-    const isToday = latestDate.toDateString() === today.toDateString();
-
-    // Determine which price to use
-    let price, source;
-
-    if (isToday && latestBar.c) {
-        // If we have today's close, use it (market has closed)
-        price = latestBar.c;
-        source = 'close';
-    } else if (isToday && latestBar.o) {
-        // If we only have today's open (market still open), use it
-        price = latestBar.o;
-        source = 'open';
-    } else {
-        // Use most recent close
-        price = latestBar.c;
-        source = 'previous close';
-    }
-
-    return {
-        price: price,
-        source: source,
-        previousClose: previousBar ? previousBar.c : null,
-        date: latestDate
-    };
 }
 
 /**
@@ -743,7 +595,7 @@ function populateHoldingsTable() {
 
     if (!portfolioData || !portfolioData.positions || portfolioData.positions.length === 0) {
         console.error('No portfolio positions available');
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 20px;">No positions to display</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No positions to display</td></tr>';
         return;
     }
 
@@ -761,8 +613,6 @@ function populateHoldingsTable() {
             <td>${position.sector || 'Unknown'}</td>
             <td>${(position.quantity || 0).toFixed(3)}</td>
             <td>${formatCurrency(position.lastPrice || 0)}</td>
-            <td>${formatCurrency(position.averageCostBasis || 0)}</td>
-            <td>${formatCurrency(position.costBasisTotal || 0)}</td>
             <td>${formatCurrency(position.currentValue || 0)}</td>
             <td>${formatPercent(position.percentOfAccount || 0)}</td>
             <td class="${(position.todayGainDollar || 0) >= 0 ? 'positive-value' : 'negative-value'}">
