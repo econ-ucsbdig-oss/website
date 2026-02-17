@@ -1555,17 +1555,38 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
         });
         const spyDates = Object.keys(spyPriceLookup).sort();
 
+        // Also include current holdings that have NO transaction history at all
+        for (const h of currentHoldings) {
+            if (!symbolMap[h.symbol] && h.symbol !== 'SPAXX') {
+                symbolMap[h.symbol] = {
+                    symbol: h.symbol,
+                    description: h.symbol,
+                    transactions: [],
+                    totalBought: 0,
+                    totalSold: 0,
+                    totalCostBasis: 0,
+                    totalSellProceeds: 0
+                };
+                // Fetch prices for this symbol too
+                if (!priceMap[h.symbol]) {
+                    const fromD = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    priceMap[h.symbol] = await fetchHistoricalPrices(h.symbol, 'day', fromD, toDate, 500).catch(() => []);
+                }
+            }
+        }
+
         // Build stock-level analytics
         const stocks = [];
-        for (const sym of allSymbols) {
+        const allSymbolsFinal = Object.keys(symbolMap);
+        for (const sym of allSymbolsFinal) {
             const entry = symbolMap[sym];
             const prices = priceMap[sym] || [];
             if (prices.length === 0) continue;
 
             const isActive = !!currentHoldingsMap[sym] && currentHoldingsMap[sym] > 0.001;
             const currentShares = isActive ? currentHoldingsMap[sym] : 0;
-            const firstBuyDate = entry.transactions[0].date;
-            const lastTradeDate = entry.transactions[entry.transactions.length - 1].date;
+            const firstBuyDate = entry.transactions.length > 0 ? entry.transactions[0].date : prices[0].date.split('T')[0];
+            const lastTradeDate = entry.transactions.length > 0 ? entry.transactions[entry.transactions.length - 1].date : prices[prices.length - 1].date.split('T')[0];
 
             // Current/last price
             const lastPrice = prices[prices.length - 1].close;
@@ -1574,13 +1595,35 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
             // Holding period
             const holdStart = new Date(firstBuyDate);
             const holdEnd = isActive ? new Date() : new Date(lastTradeDate);
-            const holdingPeriodDays = Math.round((holdEnd - holdStart) / 86400000);
+            const holdingPeriodDays = Math.max(1, Math.round((holdEnd - holdStart) / 86400000));
+
+            // Reconcile shares: check if CSV transactions account for current holdings
+            // Net shares from transactions = totalBought - totalSold
+            const netSharesFromTx = entry.totalBought - entry.totalSold;
+            const hasUnrecordedShares = isActive && (currentShares - netSharesFromTx > 0.5);
+            const unrecordedShares = hasUnrecordedShares ? currentShares - netSharesFromTx : 0;
+
+            // If there are unrecorded shares, estimate their cost basis
+            // Use the last known buy price, or the earliest price in the remaining period
+            let adjustedCostBasis = entry.totalCostBasis;
+            if (unrecordedShares > 0) {
+                // Find the most recent buy price from transactions, or use earliest available price
+                const lastBuyTx = [...entry.transactions].reverse().find(t => t.type === 'BUY');
+                const estimatedBuyPrice = lastBuyTx ? lastBuyTx.price : firstPrice;
+                adjustedCostBasis += unrecordedShares * estimatedBuyPrice;
+            }
+
+            // For stocks with NO buy transactions but currently held (e.g., SPY — only sells in CSV)
+            // Estimate cost basis from price at first known date
+            if (isActive && entry.totalCostBasis === 0 && entry.totalBought === 0) {
+                adjustedCostBasis = currentShares * firstPrice;
+            }
 
             // Calculate total return
             let totalReturn, currentValue;
             if (isActive) {
                 currentValue = currentShares * lastPrice;
-                totalReturn = entry.totalCostBasis > 0 ? ((currentValue + entry.totalSellProceeds - entry.totalCostBasis) / entry.totalCostBasis) * 100 : 0;
+                totalReturn = adjustedCostBasis > 0 ? ((currentValue + entry.totalSellProceeds - adjustedCostBasis) / adjustedCostBasis) * 100 : 0;
             } else {
                 currentValue = 0;
                 totalReturn = entry.totalCostBasis > 0 ? ((entry.totalSellProceeds - entry.totalCostBasis) / entry.totalCostBasis) * 100 : 0;
@@ -1589,10 +1632,11 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
             // CAGR
             const years = holdingPeriodDays / 365.25;
             const totalReturnDecimal = totalReturn / 100;
-            const cagr = years > 0.1 ? (Math.pow(1 + totalReturnDecimal, 1 / years) - 1) * 100 : totalReturn;
+            const cagr = years > 0.1 && totalReturnDecimal > -1 ? (Math.pow(1 + totalReturnDecimal, 1 / years) - 1) * 100 : totalReturn;
 
-            // Avg cost basis
-            const avgCostBasis = entry.totalBought > 0 ? entry.totalCostBasis / entry.totalBought : 0;
+            // Avg cost basis — use adjusted if we imputed missing shares
+            const totalSharesForBasis = entry.totalBought + unrecordedShares + (isActive && entry.totalBought === 0 ? currentShares : 0);
+            const avgCostBasis = totalSharesForBasis > 0 ? adjustedCostBasis / totalSharesForBasis : 0;
 
             // Max drawdown from price history
             let peak = 0, maxDD = 0;
@@ -1639,7 +1683,7 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
                 currentShares: Math.round(currentShares * 1000) / 1000,
                 avgCostBasis: Math.round(avgCostBasis * 100) / 100,
                 currentPrice: lastPrice,
-                totalInvested: Math.round(entry.totalCostBasis * 100) / 100,
+                totalInvested: Math.round(adjustedCostBasis * 100) / 100,
                 totalSellProceeds: Math.round(entry.totalSellProceeds * 100) / 100,
                 currentValue: Math.round(currentValue * 100) / 100,
                 totalReturn: Math.round(totalReturn * 100) / 100,
@@ -1648,6 +1692,8 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
                 alpha: Math.round(alpha * 100) / 100,
                 maxDrawdown: Math.round(maxDD * 100) / 100,
                 weight: Math.round(weight * 100) / 100,
+                hasEstimatedCost: hasUnrecordedShares || (isActive && entry.totalCostBasis === 0 && entry.totalBought === 0),
+                unrecordedShares: Math.round(unrecordedShares * 1000) / 1000,
                 transactions: entry.transactions,
                 priceHistory: sampledPrices
             });

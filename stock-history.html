@@ -510,9 +510,10 @@ function renderTable() {
         html += '<td><span class="status-badge ' + s.status + '">' + s.status + '</span></td>';
         html += '<td style="font-size:0.85rem;">' + formatDate(s.firstBuyDate) + '</td>';
         html += '<td style="font-size:0.85rem;">' + holdStr + '</td>';
-        html += '<td style="font-size:0.85rem;">$' + s.avgCostBasis.toFixed(2) + '</td>';
+        var estMark = s.hasEstimatedCost ? ' *' : '';
+        html += '<td style="font-size:0.85rem;">$' + s.avgCostBasis.toFixed(2) + estMark + '</td>';
         html += '<td style="font-size:0.85rem;">$' + s.currentPrice.toFixed(2) + '</td>';
-        html += '<td class="return-cell ' + retCls + '">' + (s.totalReturn >= 0 ? '+' : '') + s.totalReturn.toFixed(1) + '%</td>';
+        html += '<td class="return-cell ' + retCls + '">' + (s.totalReturn >= 0 ? '+' : '') + s.totalReturn.toFixed(1) + '%' + estMark + '</td>';
         html += '<td class="return-cell ' + retCls + '" style="font-size:0.85rem;">' + (s.cagr >= 0 ? '+' : '') + s.cagr.toFixed(1) + '%</td>';
         html += '<td style="font-size:0.85rem;color:rgba(255,255,255,0.5);">' + (s.spyReturnSamePeriod >= 0 ? '+' : '') + s.spyReturnSamePeriod.toFixed(1) + '%</td>';
         html += '<td class="alpha-cell ' + alphaCls + '">' + (s.alpha >= 0 ? '+' : '') + s.alpha.toFixed(1) + '%</td>';
@@ -632,14 +633,15 @@ function renderDetailPanel(stock) {
         '</div>' +
         '<div class="detail-card">' +
             '<h4><i class="fas fa-calculator"></i> Key Metrics</h4>' +
+            (stock.hasEstimatedCost ? '<div style="font-size:0.7rem;color:#fb923c;margin-bottom:0.5rem;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>Some cost basis data estimated — incomplete transaction history in CSVs</div>' : '') +
             '<div class="metrics-grid">' +
-                metricBox('Total Invested', fmtCurrency(stock.totalInvested)) +
+                metricBox('Total Invested', fmtCurrency(stock.totalInvested) + (stock.hasEstimatedCost ? ' *' : '')) +
                 metricBox('Current Value', stock.status === 'active' ? fmtCurrency(stock.currentValue) : '—') +
-                metricBox('Total Return', (stock.totalReturn >= 0 ? '+' : '') + stock.totalReturn.toFixed(2) + '%', stock.totalReturn >= 0 ? '#4ade80' : '#f87171') +
+                metricBox('Total Return', (stock.totalReturn >= 0 ? '+' : '') + stock.totalReturn.toFixed(2) + '%' + (stock.hasEstimatedCost ? ' *' : ''), stock.totalReturn >= 0 ? '#4ade80' : '#f87171') +
                 metricBox('CAGR', (stock.cagr >= 0 ? '+' : '') + stock.cagr.toFixed(2) + '%', stock.cagr >= 0 ? '#4ade80' : '#f87171') +
                 metricBox('Alpha vs SPY', (stock.alpha >= 0 ? '+' : '') + stock.alpha.toFixed(2) + '%', stock.alpha >= 0 ? '#60a5fa' : '#fb923c') +
                 metricBox('Max Drawdown', stock.maxDrawdown.toFixed(1) + '%', '#f87171') +
-                metricBox('Avg Cost Basis', '$' + stock.avgCostBasis.toFixed(2)) +
+                metricBox('Avg Cost Basis', '$' + stock.avgCostBasis.toFixed(2) + (stock.hasEstimatedCost ? ' *' : '')) +
                 metricBox('Shares Bought', stock.totalSharesBought.toFixed(1)) +
                 metricBox('Shares Sold', stock.totalSharesSold.toFixed(1)) +
                 metricBox('Weight', stock.weight > 0 ? stock.weight.toFixed(1) + '%' : '—') +
