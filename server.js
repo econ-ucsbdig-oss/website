@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -953,21 +954,28 @@ app.post('/api/portfolio/correlation', async (req, res) => {
 // Portfolio-level analytics (aggregate risk/return metrics)
 app.post('/api/portfolio/analytics', async (req, res) => {
     try {
-        const { holdings } = req.body; // [{ symbol, weight }]
+        const { holdings, period } = req.body; // [{ symbol, weight }], period: '3m','6m','ytd','1y','2y','all'
         if (!Array.isArray(holdings) || holdings.length === 0) {
             return res.status(400).json({ error: 'Holdings array required' });
         }
 
+        // Calculate lookback based on period
+        const periodDaysMap = { '3m': 70, '6m': 135, '1y': 260, '2y': 510, 'all': 1300 };
+        let lookbackDays;
+        if (period === 'ytd') {
+            const jan1 = new Date(new Date().getFullYear(), 0, 1);
+            lookbackDays = Math.ceil((Date.now() - jan1) / 86400000) + 10;
+        } else {
+            lookbackDays = periodDaysMap[period] || 260;
+        }
+
         const toDate = new Date().toISOString().split('T')[0];
-        const fromDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const from6m = new Date(Date.now() - 182 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const from3m = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const from1m = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const fromDate = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         // Fetch SPY (benchmark) + all holdings in parallel
         const symbols = holdings.map(h => h.symbol.toUpperCase());
         const allFetches = ['SPY', ...symbols].map(sym =>
-            fetchHistoricalPrices(sym, 'day', fromDate, toDate, 252)
+            fetchHistoricalPrices(sym, 'day', fromDate, toDate, lookbackDays + 10)
                 .catch(() => [])
         );
         const allPrices = await Promise.all(allFetches);
@@ -1101,7 +1109,7 @@ app.post('/api/portfolio/analytics', async (req, res) => {
 
         // Build sparkline data (weekly sampled cumulative returns)
         const sparkPort = [], sparkSpy = [], sparkDates = [];
-        const step = Math.max(1, Math.floor(numDays / 52));
+        const step = numDays <= 70 ? 1 : numDays <= 260 ? Math.max(1, Math.floor(numDays / 65)) : Math.max(1, Math.floor(numDays / 100));
         for (let i = 0; i <= numDays; i += step) {
             sparkPort.push(((cumPort[i] || cumPort[cumPort.length-1]) - 1) * 100);
             sparkSpy.push(((cumSpy[i] || cumSpy[cumSpy.length-1]) - 1) * 100);
@@ -1144,6 +1152,311 @@ app.post('/api/portfolio/analytics', async (req, res) => {
     } catch (error) {
         console.error('Error calculating portfolio analytics:', error.message);
         res.status(500).json({ error: 'Failed to calculate portfolio analytics' });
+    }
+});
+
+// --- Shared risk metrics computation ---
+function computeRiskMetrics(portfolioReturns, spyReturns, numDays) {
+    const cumPort = [1], cumSpy = [1];
+    for (let i = 0; i < numDays; i++) {
+        cumPort.push(cumPort[i] * (1 + (portfolioReturns[i] || 0)));
+        cumSpy.push(cumSpy[i] * (1 + (spyReturns[i] || 0)));
+    }
+
+    const avgPortReturn = portfolioReturns.reduce((a, b) => a + b, 0) / numDays;
+    const portVariance = portfolioReturns.reduce((s, r) => s + Math.pow(r - avgPortReturn, 2), 0) / numDays;
+    const annualizedVol = Math.sqrt(portVariance) * Math.sqrt(252) * 100;
+
+    const avgSpyReturn = spyReturns.reduce((a, b) => a + b, 0) / spyReturns.length;
+    let covariance = 0, marketVariance = 0;
+    const commonLen = Math.min(portfolioReturns.length, spyReturns.length);
+    for (let i = 0; i < commonLen; i++) {
+        covariance += (portfolioReturns[i] - avgPortReturn) * (spyReturns[i] - avgSpyReturn);
+        marketVariance += Math.pow(spyReturns[i] - avgSpyReturn, 2);
+    }
+    const beta = marketVariance > 0 ? (covariance / commonLen) / (marketVariance / commonLen) : 1;
+
+    const riskFreeDaily = 0.05 / 252;
+    const excessReturns = portfolioReturns.map(r => r - riskFreeDaily);
+    const avgExcess = excessReturns.reduce((a, b) => a + b, 0) / excessReturns.length;
+    const excessStd = Math.sqrt(excessReturns.reduce((s, r) => s + Math.pow(r - avgExcess, 2), 0) / excessReturns.length);
+    const sharpe = excessStd > 0 ? (avgExcess / excessStd) * Math.sqrt(252) : 0;
+
+    const downsideReturns = excessReturns.filter(r => r < 0);
+    const downsideStd = downsideReturns.length > 0
+        ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / downsideReturns.length)
+        : 0.0001;
+    const sortino = (avgExcess / downsideStd) * Math.sqrt(252);
+
+    let peak = cumPort[0], maxDD = 0;
+    for (let i = 1; i < cumPort.length; i++) {
+        if (cumPort[i] > peak) peak = cumPort[i];
+        const dd = (peak - cumPort[i]) / peak;
+        if (dd > maxDD) maxDD = dd;
+    }
+
+    const annPortReturn = numDays > 0 ? (Math.pow(cumPort[cumPort.length - 1], 252 / numDays) - 1) : 0;
+    const annSpyReturn = numDays > 0 ? (Math.pow(cumSpy[cumSpy.length - 1], 252 / numDays) - 1) : 0;
+    const alpha = (annPortReturn - 0.05) - beta * (annSpyReturn - 0.05);
+
+    function periodReturn(cumArr, days) {
+        if (cumArr.length < days + 1) return null;
+        return (cumArr[cumArr.length - 1] / cumArr[cumArr.length - 1 - days] - 1) * 100;
+    }
+    const ytdDays = Math.min(numDays, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 86400000));
+
+    return {
+        cumPort, cumSpy, annualizedVol, beta, sharpe, sortino, maxDrawdown: maxDD * 100, alpha: alpha * 100,
+        return1m: periodReturn(cumPort, Math.min(22, numDays)),
+        return3m: periodReturn(cumPort, Math.min(63, numDays)),
+        return6m: periodReturn(cumPort, Math.min(126, numDays)),
+        returnYtd: periodReturn(cumPort, Math.min(ytdDays, numDays)),
+        return1y: (cumPort[cumPort.length - 1] - 1) * 100,
+        benchReturn1m: periodReturn(cumSpy, Math.min(22, numDays)),
+        benchReturn3m: periodReturn(cumSpy, Math.min(63, numDays)),
+        benchReturn6m: periodReturn(cumSpy, Math.min(126, numDays)),
+        benchReturnYtd: periodReturn(cumSpy, Math.min(ytdDays, numDays)),
+        benchReturn1y: (cumSpy[cumSpy.length - 1] - 1) * 100
+    };
+}
+
+// --- CSV parsing for historical portfolio reconstruction ---
+function parseActivityCSVs() {
+    const years = [2021, 2022, 2023, 2024, 2025, 2026];
+    const transactions = [];
+    for (const year of years) {
+        const filePath = path.join(__dirname, 'data', `DIG_${year}_Activity.csv`);
+        try {
+            const text = fs.readFileSync(filePath, 'utf8');
+            const lines = text.split('\n').filter(l => l.trim());
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length < 12) continue;
+                const dateStr = (parts[0] || '').trim();
+                if (!dateStr) continue;
+                const dp = dateStr.split('/');
+                if (dp.length !== 3) continue;
+                let yr = parseInt(dp[2]);
+                if (yr < 100) yr += 2000;
+                const date = new Date(yr, parseInt(dp[0]) - 1, parseInt(dp[1]));
+                if (isNaN(date.getTime())) continue;
+                const action = (parts[1] || '').trim().toUpperCase();
+                const symbol = (parts[2] || '').trim();
+                const quantity = parseFloat(parts[6]) || 0;
+                let type = null;
+                if (action.startsWith('YOU BOUGHT')) type = 'BUY';
+                else if (action.startsWith('YOU SOLD')) type = 'SELL';
+                else if (action.includes('REINVESTMENT') && symbol && symbol !== 'SPAXX') type = 'BUY'; // dividend reinvestment
+                if (type && symbol && symbol !== 'SPAXX' && /^[A-Z]{1,5}$/.test(symbol)) {
+                    transactions.push({ date, symbol, type, quantity });
+                }
+            }
+        } catch (e) { /* skip missing files */ }
+    }
+    transactions.sort((a, b) => a.date - b.date);
+    return transactions;
+}
+
+function reconstructHistoricalHoldings(currentHoldings, transactions) {
+    // currentHoldings: [{symbol, quantity}]
+    const sharesMap = {};
+    currentHoldings.forEach(h => { sharesMap[h.symbol] = h.quantity; });
+
+    // Walk transactions backwards
+    const sortedTx = [...transactions].sort((a, b) => b.date - a.date);
+    const snapshots = [{ date: new Date(), holdings: { ...sharesMap } }];
+
+    for (const tx of sortedTx) {
+        if (tx.type === 'BUY') {
+            sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) - Math.abs(tx.quantity);
+        } else if (tx.type === 'SELL') {
+            sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) + Math.abs(tx.quantity);
+        }
+        if ((sharesMap[tx.symbol] || 0) <= 0.001) delete sharesMap[tx.symbol];
+        snapshots.push({ date: tx.date, holdings: { ...sharesMap } });
+    }
+    snapshots.reverse();
+    return snapshots;
+}
+
+// Historical portfolio analytics endpoint
+app.post('/api/portfolio/historical-analytics', async (req, res) => {
+    try {
+        const { currentHoldings, period } = req.body;
+        if (!Array.isArray(currentHoldings) || currentHoldings.length === 0) {
+            return res.status(400).json({ error: 'currentHoldings array required' });
+        }
+
+        const periodDaysMap = { '3m': 70, '6m': 135, 'ytd': null, '1y': 260, '2y': 510, 'all': 1300 };
+        let lookbackDays;
+        if (period === 'ytd') {
+            const jan1 = new Date(new Date().getFullYear(), 0, 1);
+            lookbackDays = Math.ceil((Date.now() - jan1) / 86400000) + 10;
+        } else {
+            lookbackDays = periodDaysMap[period] || 260;
+        }
+
+        const toDate = new Date().toISOString().split('T')[0];
+        const fromDate = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const fromDateObj = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+
+        // Parse transactions and reconstruct holdings
+        const transactions = parseActivityCSVs();
+        const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
+
+        // Collect all unique symbols held during the period
+        const allSymbols = new Set();
+        snapshots.forEach(s => {
+            if (s.date >= fromDateObj || s === snapshots[0]) {
+                Object.keys(s.holdings).forEach(sym => allSymbols.add(sym));
+            }
+        });
+        // Also add current holdings symbols
+        currentHoldings.forEach(h => allSymbols.add(h.symbol));
+        const equitySymbols = [...allSymbols].filter(s => /^[A-Z]{1,5}$/.test(s));
+
+        // Fetch prices in batches
+        const BATCH_SIZE = 10;
+        const priceMap = {};
+        for (let i = 0; i < equitySymbols.length; i += BATCH_SIZE) {
+            const batch = equitySymbols.slice(i, i + BATCH_SIZE);
+            const results = await Promise.all(
+                batch.map(sym => fetchHistoricalPrices(sym, 'day', fromDate, toDate, lookbackDays + 10).catch(() => []))
+            );
+            batch.forEach((sym, idx) => { priceMap[sym] = results[idx]; });
+            if (i + BATCH_SIZE < equitySymbols.length) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        // Ensure SPY is fetched
+        if (!priceMap['SPY']) {
+            priceMap['SPY'] = await fetchHistoricalPrices('SPY', 'day', fromDate, toDate, lookbackDays + 10).catch(() => []);
+        }
+
+        // Build a date index from SPY
+        const spyPrices = priceMap['SPY'] || [];
+        if (spyPrices.length < 20) {
+            return res.json({ error: 'Insufficient benchmark data', partial: true });
+        }
+
+        // Build price lookup maps: symbol -> { dateStr -> close }
+        const priceLookup = {};
+        for (const [sym, prices] of Object.entries(priceMap)) {
+            priceLookup[sym] = {};
+            prices.forEach(p => {
+                const ds = p.date ? p.date.split('T')[0] : '';
+                if (ds) priceLookup[sym][ds] = p.close;
+            });
+        }
+
+        // For each trading day, find applicable holdings snapshot and compute portfolio value
+        const dailyValues = [];
+        for (const bar of spyPrices) {
+            const dateStr = bar.date ? bar.date.split('T')[0] : '';
+            const d = new Date(dateStr);
+
+            // Find most recent snapshot <= this date
+            let snap = snapshots[0].holdings;
+            for (const s of snapshots) {
+                if (s.date <= d) snap = s.holdings;
+                else break;
+            }
+
+            let totalVal = 0;
+            for (const [sym, shares] of Object.entries(snap)) {
+                const price = priceLookup[sym] && priceLookup[sym][dateStr];
+                if (price) totalVal += shares * price;
+            }
+            dailyValues.push({ date: dateStr, value: totalVal });
+        }
+
+        // Compute daily portfolio returns
+        const portfolioReturns = [];
+        for (let i = 1; i < dailyValues.length; i++) {
+            if (dailyValues[i - 1].value > 100) { // skip days with near-zero value
+                portfolioReturns.push((dailyValues[i].value - dailyValues[i - 1].value) / dailyValues[i - 1].value);
+            } else {
+                portfolioReturns.push(0);
+            }
+        }
+
+        // SPY daily returns
+        const spyReturns = [];
+        for (let i = 1; i < spyPrices.length; i++) {
+            spyReturns.push((spyPrices[i].close - spyPrices[i - 1].close) / spyPrices[i - 1].close);
+        }
+
+        const numDays = Math.min(portfolioReturns.length, spyReturns.length);
+        const trimmedPortReturns = portfolioReturns.slice(-numDays);
+        const trimmedSpyReturns = spyReturns.slice(-numDays);
+
+        // Compute risk metrics
+        const metrics = computeRiskMetrics(trimmedPortReturns, trimmedSpyReturns, numDays);
+        const { cumPort, cumSpy } = metrics;
+
+        // Build sparkline
+        const dates = spyPrices.slice(-numDays - 1).map(p => p.date ? p.date.split('T')[0] : '');
+        const sparkPort = [], sparkSpy = [], sparkDates = [];
+        const step = numDays <= 70 ? 1 : numDays <= 260 ? Math.max(1, Math.floor(numDays / 65)) : Math.max(1, Math.floor(numDays / 100));
+        for (let i = 0; i <= numDays; i += step) {
+            sparkPort.push(((cumPort[i] || cumPort[cumPort.length - 1]) - 1) * 100);
+            sparkSpy.push(((cumSpy[i] || cumSpy[cumSpy.length - 1]) - 1) * 100);
+            sparkDates.push(dates[i] || dates[dates.length - 1]);
+        }
+        if (sparkPort[sparkPort.length - 1] !== ((cumPort[cumPort.length - 1] - 1) * 100)) {
+            sparkPort.push((cumPort[cumPort.length - 1] - 1) * 100);
+            sparkSpy.push((cumSpy[cumSpy.length - 1] - 1) * 100);
+            sparkDates.push(dates[dates.length - 1]);
+        }
+
+        // Per-stock performance (using current holdings for the heatmap)
+        const totalWeight = currentHoldings.reduce((s, h) => s + h.quantity, 0) || 1;
+        const stockPerf = [];
+        for (const h of currentHoldings) {
+            const prices = priceMap[h.symbol];
+            if (!prices || prices.length < 2) continue;
+            const ytdDays = Math.min(prices.length - 1, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 86400000));
+            const lastPrice = prices[prices.length - 1].close;
+            const totalPortVal = currentHoldings.reduce((s, hh) => {
+                const p = priceMap[hh.symbol];
+                return s + (p && p.length ? hh.quantity * p[p.length - 1].close : 0);
+            }, 0) || 1;
+            stockPerf.push({
+                symbol: h.symbol,
+                weight: (h.quantity * lastPrice) / totalPortVal * 100,
+                ret1d: prices.length >= 2 ? ((prices[prices.length - 1].close / prices[prices.length - 2].close) - 1) * 100 : 0,
+                ret1w: prices.length >= 6 ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 6)].close) - 1) * 100 : null,
+                ret1m: prices.length >= 22 ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 22)].close) - 1) * 100 : null,
+                ret3m: prices.length >= 63 ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 63)].close) - 1) * 100 : null,
+                retYtd: ytdDays > 0 && prices.length > ytdDays ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 1 - ytdDays)].close) - 1) * 100 : null,
+                price: lastPrice
+            });
+        }
+
+        res.json({
+            portfolio: {
+                return1m: metrics.return1m, return3m: metrics.return3m, return6m: metrics.return6m,
+                returnYtd: metrics.returnYtd, return1y: metrics.return1y,
+                annualizedVol: metrics.annualizedVol, beta: metrics.beta, sharpe: metrics.sharpe,
+                sortino: metrics.sortino, maxDrawdown: metrics.maxDrawdown, alpha: metrics.alpha,
+                effectivePositions: currentHoldings.length
+            },
+            benchmark: {
+                return1m: metrics.benchReturn1m, return3m: metrics.benchReturn3m, return6m: metrics.benchReturn6m,
+                returnYtd: metrics.benchReturnYtd, return1y: metrics.benchReturn1y
+            },
+            sparkline: { dates: sparkDates, portfolio: sparkPort, spy: sparkSpy },
+            stockPerformance: stockPerf,
+            dataPoints: numDays,
+            mode: 'historical',
+            uniqueSymbols: equitySymbols.length,
+            snapshotCount: snapshots.length
+        });
+
+    } catch (error) {
+        console.error('Error calculating historical portfolio analytics:', error.message);
+        res.status(500).json({ error: 'Failed to calculate historical analytics' });
     }
 });
 
