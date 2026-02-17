@@ -9,6 +9,8 @@
           "*.html",
           "*.css",
           "*.js",
+          "*.csv",
+          "*.json",
           "data/**",
           "valuation-models/**",
           "TrackingError/**"
