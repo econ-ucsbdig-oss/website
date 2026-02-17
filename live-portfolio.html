@@ -1573,7 +1573,7 @@
                         <tbody id="holdingsBody"></tbody>
                     </table>
                 </div>
-                <div class="last-updated">Last updated: <span id="updateTime">Static data from October 27, 2024</span></div>
+                <div class="last-updated">Last updated: <span id="updateTime">Loading...</span></div>
             </div>
 
             <div class="card-panel">
@@ -1984,7 +1984,7 @@
         } else {
             statusEl.classList.add('status-static');
             if (icon) icon.className = 'fas fa-database';
-            if (textSpan) textSpan.textContent = 'Using Static Data';
+            if (textSpan) textSpan.textContent = 'Portfolio Data Loaded';
             if (hintEl) hintEl.style.display = 'block';
         }
     }
@@ -2165,21 +2165,43 @@
     function updateSummaryCards() {
         let totalValue = 0;
         let totalDayChange = 0;
+        let hasDayChange = false;
         portfolioData.forEach(h => {
             const mv = h.quantity * h.lastPrice;
             totalValue += mv;
-            if (h.change) totalDayChange += h.quantity * h.change;
+            if (h.change) { totalDayChange += h.quantity * h.change; hasDayChange = true; }
         });
-        const base = totalValue - totalDayChange || 1;
-        const dayChangePercent = (totalDayChange / base) * 100;
+
+        // If no live day change from API, try using perfIntelData for last trading day return
+        let dayChangeStr = '';
+        let dayChangeClass = '';
+        if (hasDayChange) {
+            const base = totalValue - totalDayChange || 1;
+            const dayChangePercent = (totalDayChange / base) * 100;
+            dayChangeStr = `${formatCurrency(totalDayChange)} (${dayChangePercent >= 0 ? '+' : ''}${dayChangePercent.toFixed(2)}%)`;
+            dayChangeClass = totalDayChange >= 0 ? 'positive' : 'negative';
+        } else if (perfIntelData && perfIntelData.stockPerformance && perfIntelData.stockPerformance.length > 0) {
+            // Calculate portfolio-weighted 1-day return from perf intel stock data
+            let weightedReturn = 0;
+            perfIntelData.stockPerformance.forEach(s => {
+                if (s.ret1d != null) weightedReturn += (s.weight / 100) * s.ret1d;
+            });
+            const estimatedDayChange = totalValue * (weightedReturn / 100);
+            dayChangeStr = `${formatCurrency(estimatedDayChange)} (${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(2)}%) last trading day`;
+            dayChangeClass = weightedReturn >= 0 ? 'positive' : 'negative';
+        } else {
+            dayChangeStr = 'Connect API for live day change';
+            dayChangeClass = '';
+        }
+
         const sortedBySize = [...portfolioData].sort((a, b) => (b.quantity * b.lastPrice) - (a.quantity * a.lastPrice));
 
         const summaryData = [
             {
                 title: 'Total Portfolio Value',
                 value: formatCurrency(totalValue),
-                change: `${formatCurrency(totalDayChange)} (${dayChangePercent >= 0 ? '+' : ''}${dayChangePercent.toFixed(2)}%)`,
-                changeClass: totalDayChange >= 0 ? 'positive' : 'negative'
+                change: dayChangeStr,
+                changeClass: dayChangeClass
             },
             {
                 title: 'Number of Holdings',
@@ -2190,7 +2212,6 @@
             {
                 title: 'Largest Non-Index Position',
                 value: (() => {
-                    // Exclude common index funds/ETFs
                     const indexFunds = ['SPY', 'QQQ', 'IWM', 'DIA', 'VOO', 'VTI', 'IVV'];
                     const nonIndexPositions = sortedBySize.filter(h => !indexFunds.includes(h.symbol));
                     return nonIndexPositions.length > 0 ? nonIndexPositions[0].symbol : 'N/A';
@@ -2695,7 +2716,8 @@
         const el = document.getElementById('updateTime');
         if (!el) return;
         if (!lastUpdateTime) {
-            el.textContent = 'Static data from October 27, 2024';
+            var now = new Date();
+            el.textContent = 'Portfolio as of ' + now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         } else {
             el.textContent = lastUpdateTime.toLocaleString();
         }
@@ -3431,6 +3453,8 @@
         document.getElementById('perfTicker').style.display = '';
         document.getElementById('perfScoreboard').style.display = '';
         document.getElementById('perfHeatmap').style.display = '';
+        // Refresh summary cards with perf intel data (e.g. last trading day return)
+        updateSummaryCards();
     }
 
     function renderTickerTape(d) {
