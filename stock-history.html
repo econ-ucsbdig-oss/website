@@ -505,7 +505,7 @@ function renderTable() {
 
         html += '<tr class="stock-row" data-symbol="' + s.symbol + '" onclick="toggleDetail(\'' + s.symbol + '\')">';
         html += '<td><i class="fas fa-chevron-right expand-icon" id="chevron-' + s.symbol + '"></i></td>';
-        html += '<td class="symbol-cell">' + s.symbol + '</td>';
+        html += '<td class="symbol-cell">' + s.symbol + (s.isBenchmark ? ' <span style="font-size:0.55rem;color:#60a5fa;border:1px solid rgba(96,165,250,0.3);padding:1px 4px;border-radius:4px;vertical-align:middle;">INDEX</span>' : '') + '</td>';
         html += '<td style="color:rgba(255,255,255,0.6);font-size:0.8rem;" title="' + s.description + '">' + descShort + '</td>';
         html += '<td><span class="status-badge ' + s.status + '">' + s.status + '</span></td>';
         html += '<td style="font-size:0.85rem;">' + formatDate(s.firstBuyDate) + '</td>';
@@ -516,7 +516,11 @@ function renderTable() {
         html += '<td class="return-cell ' + retCls + '">' + (s.totalReturn >= 0 ? '+' : '') + s.totalReturn.toFixed(1) + '%' + estMark + '</td>';
         html += '<td class="return-cell ' + retCls + '" style="font-size:0.85rem;">' + (s.cagr >= 0 ? '+' : '') + s.cagr.toFixed(1) + '%</td>';
         html += '<td style="font-size:0.85rem;color:rgba(255,255,255,0.5);">' + (s.spyReturnSamePeriod >= 0 ? '+' : '') + s.spyReturnSamePeriod.toFixed(1) + '%</td>';
-        html += '<td class="alpha-cell ' + alphaCls + '">' + (s.alpha >= 0 ? '+' : '') + s.alpha.toFixed(1) + '%</td>';
+        if (s.isBenchmark && s.symbol === 'SPY') {
+            html += '<td class="alpha-cell" style="color:rgba(255,255,255,0.3);font-style:italic;" title="SPY is the benchmark — alpha is N/A">—</td>';
+        } else {
+            html += '<td class="alpha-cell ' + alphaCls + '">' + (s.alpha >= 0 ? '+' : '') + s.alpha.toFixed(1) + '%</td>';
+        }
         html += '<td><canvas id="spark-' + s.symbol + '" class="mini-sparkline" width="80" height="30"></canvas></td>';
         html += '</tr>';
         // Detail panel row
@@ -608,9 +612,11 @@ function renderDetailPanel(stock) {
     for (var i = 0; i < txList.length; i++) {
         var tx = txList[i];
         var cls = tx.type === 'BUY' ? 'tx-type-buy' : 'tx-type-sell';
+        var typeLabel = tx.type;
+        if (tx.isTransfer) typeLabel = tx.type === 'BUY' ? 'TRANSFER IN' : 'TRANSFER OUT';
         txHtml += '<tr>';
         txHtml += '<td>' + formatDate(tx.date) + '</td>';
-        txHtml += '<td class="' + cls + '">' + tx.type + '</td>';
+        txHtml += '<td class="' + cls + '">' + typeLabel + '</td>';
         txHtml += '<td>' + tx.quantity.toFixed(3) + '</td>';
         txHtml += '<td>$' + tx.price.toFixed(2) + '</td>';
         txHtml += '<td>' + fmtCurrency(tx.amount) + '</td>';
@@ -639,7 +645,7 @@ function renderDetailPanel(stock) {
                 metricBox('Current Value', stock.status === 'active' ? fmtCurrency(stock.currentValue) : '—') +
                 metricBox('Total Return', (stock.totalReturn >= 0 ? '+' : '') + stock.totalReturn.toFixed(2) + '%' + (stock.hasEstimatedCost ? ' *' : ''), stock.totalReturn >= 0 ? '#4ade80' : '#f87171') +
                 metricBox('CAGR', (stock.cagr >= 0 ? '+' : '') + stock.cagr.toFixed(2) + '%', stock.cagr >= 0 ? '#4ade80' : '#f87171') +
-                metricBox('Alpha vs SPY', (stock.alpha >= 0 ? '+' : '') + stock.alpha.toFixed(2) + '%', stock.alpha >= 0 ? '#60a5fa' : '#fb923c') +
+                metricBox('Alpha vs SPY', (stock.isBenchmark && stock.symbol === 'SPY') ? 'N/A (is benchmark)' : ((stock.alpha >= 0 ? '+' : '') + stock.alpha.toFixed(2) + '%'), stock.alpha >= 0 ? '#60a5fa' : '#fb923c') +
                 metricBox('Max Drawdown', stock.maxDrawdown.toFixed(1) + '%', '#f87171') +
                 metricBox('Avg Cost Basis', '$' + stock.avgCostBasis.toFixed(2) + (stock.hasEstimatedCost ? ' *' : '')) +
                 metricBox('Shares Bought', stock.totalSharesBought.toFixed(1)) +
@@ -836,7 +842,9 @@ function renderLeaderboard() {
     var top10 = sorted.slice(0, 10);
     var bottom10 = sorted.slice(-10).reverse();
 
-    var alphaSorted = allStocks.slice().sort(function(a, b) { return b.alpha - a.alpha; });
+    // Exclude SPY from alpha ranking (it IS the benchmark, alpha is always 0 by definition)
+    var nonBenchmark = allStocks.filter(function(s) { return s.symbol !== 'SPY'; });
+    var alphaSorted = nonBenchmark.slice().sort(function(a, b) { return b.alpha - a.alpha; });
     var topAlpha = alphaSorted.slice(0, 10);
     var bottomAlpha = alphaSorted.slice(-10).reverse();
 

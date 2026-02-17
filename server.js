@@ -1254,13 +1254,18 @@ function parseActivityCSVs(includeDetails) {
                 if (action.startsWith('YOU BOUGHT')) type = 'BUY';
                 else if (action.startsWith('YOU SOLD')) type = 'SELL';
                 else if (action.includes('REINVESTMENT') && symbol && symbol !== 'SPAXX') type = 'BUY'; // dividend reinvestment
+                else if (action.startsWith('RECEIVED FROM YOU') && symbol) type = 'TRANSFER_IN'; // share transfer in
+                else if (action.startsWith('DELIVERED TO YOU') && symbol) type = 'TRANSFER_OUT'; // share transfer out
                 if (type && symbol && symbol !== 'SPAXX' && /^[A-Z]{1,5}$/.test(symbol)) {
-                    const tx = { date, symbol, type, quantity };
+                    const tx = { date, symbol, type, quantity: Math.abs(quantity) };
                     if (includeDetails) {
                         tx.price = price;
                         tx.amount = Math.abs(amount);
                         tx.description = description;
                     }
+                    // Normalize transfer types for downstream callers
+                    if (type === 'TRANSFER_IN') tx.originalType = 'TRANSFER_IN';
+                    if (type === 'TRANSFER_OUT') tx.originalType = 'TRANSFER_OUT';
                     transactions.push(tx);
                 }
             }
@@ -1280,9 +1285,9 @@ function reconstructHistoricalHoldings(currentHoldings, transactions) {
     const snapshots = [{ date: new Date(), holdings: { ...sharesMap } }];
 
     for (const tx of sortedTx) {
-        if (tx.type === 'BUY') {
+        if (tx.type === 'BUY' || tx.type === 'TRANSFER_IN') {
             sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) - Math.abs(tx.quantity);
-        } else if (tx.type === 'SELL') {
+        } else if (tx.type === 'SELL' || tx.type === 'TRANSFER_OUT') {
             sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) + Math.abs(tx.quantity);
         }
         if ((sharesMap[tx.symbol] || 0) <= 0.001) delete sharesMap[tx.symbol];
@@ -1502,17 +1507,22 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
             if (tx.description && tx.description.length > entry.description.length) {
                 entry.description = tx.description;
             }
+            // Normalize type for display: TRANSFER_IN → BUY, TRANSFER_OUT → SELL
+            const displayType = tx.type === 'TRANSFER_IN' ? 'BUY' : tx.type === 'TRANSFER_OUT' ? 'SELL' : tx.type;
+            const isTransfer = tx.originalType === 'TRANSFER_IN' || tx.originalType === 'TRANSFER_OUT';
             entry.transactions.push({
                 date: tx.date.toISOString().split('T')[0],
-                type: tx.type,
+                type: displayType,
+                isTransfer: isTransfer,
                 quantity: Math.abs(tx.quantity),
                 price: tx.price,
                 amount: tx.amount
             });
-            if (tx.type === 'BUY') {
+            if (displayType === 'BUY') {
                 entry.totalBought += Math.abs(tx.quantity);
+                // For transfers-in, the amount column often has the market value at transfer
                 entry.totalCostBasis += tx.amount || (Math.abs(tx.quantity) * tx.price);
-            } else if (tx.type === 'SELL') {
+            } else if (displayType === 'SELL') {
                 entry.totalSold += Math.abs(tx.quantity);
                 entry.totalSellProceeds += tx.amount || (Math.abs(tx.quantity) * tx.price);
             }
@@ -1646,12 +1656,53 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
                 if (dd < maxDD) maxDD = dd;
             }
 
-            // SPY return over same period
-            const spyStart = spyPriceLookup[firstBuyDate] || findNearestPrice(spyPriceLookup, spyDates, firstBuyDate);
+            // SPY return over same period — use each stock's actual holding period
+            // For each BUY transaction, compute what SPY did from buy date to end date,
+            // weighted by the cost of that purchase. This gives a dollar-weighted benchmark return.
+            let spyReturnSamePeriod = 0;
             const endDateStr = isActive ? toDate : lastTradeDate;
-            const spyEnd = spyPriceLookup[endDateStr] || findNearestPrice(spyPriceLookup, spyDates, endDateStr);
-            const spyReturnSamePeriod = spyStart > 0 ? ((spyEnd - spyStart) / spyStart) * 100 : 0;
+            const spyEndPrice = spyPriceLookup[endDateStr] || findNearestPrice(spyPriceLookup, spyDates, endDateStr);
+
+            if (sym === 'SPY') {
+                // SPY IS the benchmark — alpha is always 0
+                spyReturnSamePeriod = totalReturn;
+            } else {
+                // Dollar-weighted benchmark: what if each $ invested in this stock went into SPY instead?
+                const buyTxs = entry.transactions.filter(t => t.type === 'BUY');
+                const sellTxs = entry.transactions.filter(t => t.type === 'SELL');
+
+                if (buyTxs.length > 0 && spyEndPrice > 0) {
+                    let hypotheticalSpyValue = 0;
+                    let totalSpyCost = 0;
+
+                    for (const btx of buyTxs) {
+                        const buyAmount = btx.amount || (btx.quantity * btx.price);
+                        const spyPriceAtBuy = spyPriceLookup[btx.date] || findNearestPrice(spyPriceLookup, spyDates, btx.date);
+                        if (spyPriceAtBuy > 0 && buyAmount > 0) {
+                            const spySharesBought = buyAmount / spyPriceAtBuy;
+                            hypotheticalSpyValue += spySharesBought * spyEndPrice;
+                            totalSpyCost += buyAmount;
+                        }
+                    }
+
+                    // Account for sells: subtract proportional SPY value at sell dates
+                    if (!isActive && sellTxs.length > 0) {
+                        // For exited positions, the SPY return is just cost-to-end
+                        // since all capital was deployed and then recovered
+                    }
+
+                    spyReturnSamePeriod = totalSpyCost > 0 ? ((hypotheticalSpyValue - totalSpyCost) / totalSpyCost) * 100 : 0;
+                } else {
+                    // Fallback: simple price return from first to last date
+                    const spyStart = spyPriceLookup[firstBuyDate] || findNearestPrice(spyPriceLookup, spyDates, firstBuyDate);
+                    spyReturnSamePeriod = spyStart > 0 ? ((spyEndPrice - spyStart) / spyStart) * 100 : 0;
+                }
+            }
             const alpha = totalReturn - spyReturnSamePeriod;
+
+            // Flag benchmark-tracking symbols
+            const benchmarkSymbols = ['SPY', 'VOO', 'IVV', 'SPLG', 'SPYM'];
+            const isBenchmark = benchmarkSymbols.includes(sym);
 
             // Price history sampled (max ~200 points for charts)
             const step = Math.max(1, Math.floor(prices.length / 200));
@@ -1675,6 +1726,7 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
                 symbol: sym,
                 description: entry.description,
                 status: isActive ? 'active' : 'exited',
+                isBenchmark,
                 firstBuyDate,
                 lastTradeDate,
                 holdingPeriodDays,
@@ -1707,7 +1759,9 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
         const exitedStocks = stocks.filter(s => s.status === 'exited');
         const winners = stocks.filter(s => s.totalReturn > 0);
         const avgReturn = stocks.length > 0 ? stocks.reduce((s, st) => s + st.totalReturn, 0) / stocks.length : 0;
-        const avgAlpha = stocks.length > 0 ? stocks.reduce((s, st) => s + st.alpha, 0) / stocks.length : 0;
+        // Exclude benchmark-tracking stocks from alpha average (SPY, VOO have alpha ~0 by definition)
+        const nonBenchmarkStocks = stocks.filter(s => !s.isBenchmark);
+        const avgAlpha = nonBenchmarkStocks.length > 0 ? nonBenchmarkStocks.reduce((s, st) => s + st.alpha, 0) / nonBenchmarkStocks.length : 0;
 
         res.json({
             stocks,
