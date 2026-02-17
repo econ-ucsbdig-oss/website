@@ -1783,6 +1783,40 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
     }
 });
 
+// Lightweight price history endpoint for What-If analyzer (single symbol)
+app.get('/api/portfolio/price-history/:symbol', async (req, res) => {
+    try {
+        const symbol = (req.params.symbol || '').toUpperCase().trim();
+        if (!symbol || !/^[A-Z]{1,5}$/.test(symbol)) {
+            return res.status(400).json({ error: 'Invalid symbol' });
+        }
+
+        const toDate = new Date().toISOString().split('T')[0];
+        const fromDate = '2021-01-01'; // full history back to DIG inception
+        const prices = await fetchHistoricalPrices(symbol, 'day', fromDate, toDate, 2000);
+
+        if (!prices || prices.length === 0) {
+            return res.status(404).json({ error: 'No price data found for ' + symbol });
+        }
+
+        // Sample to max ~500 points for reasonable payload
+        const step = Math.max(1, Math.floor(prices.length / 500));
+        const sampled = [];
+        for (let i = 0; i < prices.length; i += step) {
+            sampled.push({ date: prices[i].date.split('T')[0], close: prices[i].close });
+        }
+        // Always include last point
+        if (sampled.length === 0 || sampled[sampled.length - 1].date !== prices[prices.length - 1].date.split('T')[0]) {
+            sampled.push({ date: prices[prices.length - 1].date.split('T')[0], close: prices[prices.length - 1].close });
+        }
+
+        res.json({ symbol, prices: sampled });
+    } catch (error) {
+        console.error('Error fetching price history for', req.params.symbol, ':', error.message);
+        res.status(500).json({ error: 'Failed to fetch price history' });
+    }
+});
+
 // Helper: find nearest price in a sorted date map
 function findNearestPrice(lookup, sortedDates, targetDate) {
     if (lookup[targetDate]) return lookup[targetDate];

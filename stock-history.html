@@ -255,6 +255,155 @@
         }
         .section-header i { color: #febc11; }
 
+        /* ===== WHAT-IF TRADE ANALYZER ===== */
+        .what-if-section {
+            margin-top: 2.5rem; margin-bottom: 2.5rem;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(254,188,17,0.15);
+            border-radius: 16px; padding: 2rem; backdrop-filter: blur(10px);
+        }
+        .what-if-header {
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; user-select: none;
+        }
+        .what-if-header h2 {
+            font-size: 1.4rem; font-weight: 700;
+            background: linear-gradient(135deg, #febc11, #ffd700);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: flex; align-items: center; gap: 0.7rem;
+        }
+        .what-if-header .toggle-icon { color: #febc11; transition: transform 0.3s; font-size: 1rem; }
+        .what-if-header .toggle-icon.open { transform: rotate(180deg); }
+        .what-if-subtitle { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin: 0.3rem 0 0 0; }
+        .what-if-body { display: none; margin-top: 1.5rem; }
+        .what-if-body.open { display: block; }
+
+        .what-if-tabs {
+            display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+        }
+        .what-if-tab {
+            padding: 0.6rem 1.2rem; border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px; background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.85rem;
+            font-weight: 600; transition: all 0.3s;
+        }
+        .what-if-tab:hover { border-color: rgba(254,188,17,0.4); color: #febc11; }
+        .what-if-tab.active {
+            background: rgba(254,188,17,0.12); border-color: #febc11; color: #febc11;
+        }
+
+        .what-if-panel { min-height: 120px; }
+
+        .wi-form-group { margin-bottom: 1rem; }
+        .wi-form-group label {
+            display: block; font-size: 0.8rem; color: rgba(255,255,255,0.5);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem;
+        }
+        .wi-select, .wi-input {
+            width: 100%; max-width: 400px; padding: 0.6rem 0.8rem;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; color: #fff; font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+        .wi-select:focus, .wi-input:focus {
+            outline: none; border-color: #febc11;
+        }
+        .wi-select option { background: #1a2332; color: #fff; }
+
+        .wi-tx-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .wi-tx-table th {
+            padding: 0.5rem 0.8rem; text-align: left; font-size: 0.7rem;
+            color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .wi-tx-table td {
+            padding: 0.5rem 0.8rem; font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .wi-tx-table tr:hover { background: rgba(255,255,255,0.03); }
+        .wi-tx-table input[type="checkbox"] {
+            accent-color: #febc11; width: 16px; height: 16px; cursor: pointer;
+        }
+        .wi-tx-table .editing { background: rgba(254,188,17,0.08); }
+        .wi-edit-input {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(254,188,17,0.4);
+            border-radius: 4px; color: #fff; padding: 0.3rem 0.5rem; width: 80px;
+            font-size: 0.85rem;
+        }
+        .wi-edit-input:focus { outline: none; border-color: #febc11; }
+
+        .wi-analyze-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.7rem 1.5rem; background: linear-gradient(135deg, #febc11, #e5a810);
+            color: #0f1419; font-weight: 700; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 0.9rem; transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .wi-analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(254,188,17,0.3); }
+        .wi-analyze-btn:disabled {
+            opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;
+        }
+        .wi-analyze-btn .spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(15,20,25,0.3);
+            border-top-color: #0f1419; border-radius: 50%; animation: spin 0.6s linear infinite;
+            display: none;
+        }
+        .wi-analyze-btn.loading .spinner { display: inline-block; }
+        .wi-analyze-btn.loading .btn-text { display: none; }
+
+        /* Hypothetical form */
+        .wi-hypo-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 600px; }
+        @media (max-width: 600px) { .wi-hypo-form { grid-template-columns: 1fr; } }
+        .wi-hypo-form .full-width { grid-column: 1 / -1; }
+
+        /* Results */
+        .what-if-results { margin-top: 2rem; display: none; }
+        .what-if-results.visible { display: block; }
+
+        .wi-impact-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(254,188,17,0.2);
+            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;
+        }
+        .wi-impact-card .impact-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .wi-impact-card .impact-value { font-size: 2rem; font-weight: 700; }
+        .wi-impact-card .impact-value.positive { color: #4ade80; }
+        .wi-impact-card .impact-value.negative { color: #f87171; }
+        .wi-impact-card .impact-detail { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem; }
+
+        .wi-comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        @media (max-width: 600px) { .wi-comparison-grid { grid-template-columns: 1fr; } }
+        .wi-comparison-card {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 1.2rem;
+        }
+        .wi-comparison-card h4 {
+            font-size: 0.75rem; color: rgba(255,255,255,0.4);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;
+        }
+        .wi-metric-row {
+            display: flex; justify-content: space-between; padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.85rem;
+        }
+        .wi-metric-label { color: rgba(255,255,255,0.5); }
+        .wi-metric-value { font-weight: 600; }
+
+        .wi-chart-container {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .wi-chart-container h4 {
+            font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .wi-chart-wrap { position: relative; height: 300px; }
+        .wi-reset-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+            color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.8rem;
+            transition: all 0.3s; margin-top: 1rem;
+        }
+        .wi-reset-btn:hover { border-color: #f87171; color: #f87171; }
+
         /* Search */
         .search-input {
             padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
@@ -369,6 +518,32 @@
                     </table>
                 </div>
             </div>
+
+            <!-- What-If Trade Analyzer -->
+            <section class="what-if-section" id="whatIfSection">
+                <div class="what-if-header" onclick="toggleWhatIf()">
+                    <div>
+                        <h2><i class="fas fa-flask"></i> What-If Trade Analyzer</h2>
+                        <p class="what-if-subtitle">See how the portfolio would have performed with different trades</p>
+                    </div>
+                    <i class="fas fa-chevron-down toggle-icon" id="whatIfToggle"></i>
+                </div>
+                <div class="what-if-body" id="whatIfBody">
+                    <div class="what-if-tabs">
+                        <button class="what-if-tab active" data-tab="undo" onclick="switchWhatIfTab('undo')">
+                            <i class="fas fa-undo"></i> Undo a Trade
+                        </button>
+                        <button class="what-if-tab" data-tab="modify" onclick="switchWhatIfTab('modify')">
+                            <i class="fas fa-edit"></i> Modify a Trade
+                        </button>
+                        <button class="what-if-tab" data-tab="add" onclick="switchWhatIfTab('add')">
+                            <i class="fas fa-plus-circle"></i> Add Hypothetical
+                        </button>
+                    </div>
+                    <div class="what-if-panel" id="whatIfPanel"></div>
+                    <div class="what-if-results" id="whatIfResults"></div>
+                </div>
+            </section>
 
             <!-- Leaderboard -->
             <section class="leaderboard-section">
@@ -875,6 +1050,637 @@ function buildLeaderList(stocks, metric) {
         html += '</div></div>';
     }
     return html;
+}
+
+// ===== WHAT-IF TRADE ANALYZER =====
+var whatIfChart = null;
+var whatIfCurrentTab = 'undo';
+var whatIfOpen = false;
+
+function toggleWhatIf() {
+    whatIfOpen = !whatIfOpen;
+    document.getElementById('whatIfBody').classList.toggle('open', whatIfOpen);
+    document.getElementById('whatIfToggle').classList.toggle('open', whatIfOpen);
+    if (whatIfOpen && allStocks.length > 0) {
+        renderWhatIfTab(whatIfCurrentTab);
+    }
+}
+
+function switchWhatIfTab(tab) {
+    whatIfCurrentTab = tab;
+    document.querySelectorAll('.what-if-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    document.getElementById('whatIfResults').classList.remove('visible');
+    document.getElementById('whatIfResults').innerHTML = '';
+    renderWhatIfTab(tab);
+}
+
+function renderWhatIfTab(tab) {
+    var panel = document.getElementById('whatIfPanel');
+    if (tab === 'undo') {
+        renderUndoTab(panel);
+    } else if (tab === 'modify') {
+        renderModifyTab(panel);
+    } else if (tab === 'add') {
+        renderAddTab(panel);
+    }
+}
+
+// ----- UNDO TAB -----
+function renderUndoTab(panel) {
+    var syms = allStocks.filter(function(s) { return s.transactions && s.transactions.length > 0; });
+    var opts = syms.map(function(s) { return '<option value="' + s.symbol + '">' + s.symbol + ' — ' + s.description.substring(0, 35) + ' (' + s.transactions.length + ' trades)</option>'; }).join('');
+
+    panel.innerHTML = '<div class="wi-form-group">' +
+        '<label>Select Stock</label>' +
+        '<select class="wi-select" id="wiUndoSymbol" onchange="showUndoTransactions()">' +
+        '<option value="">Choose a stock...</option>' + opts +
+        '</select></div>' +
+        '<div id="wiUndoTxList"></div>' +
+        '<button class="wi-analyze-btn" id="wiUndoBtn" onclick="runUndoAnalysis()" disabled>' +
+        '<span class="spinner"></span><span class="btn-text"><i class="fas fa-chart-line"></i> Analyze What-If</span></button>';
+}
+
+function showUndoTransactions() {
+    var sym = document.getElementById('wiUndoSymbol').value;
+    var container = document.getElementById('wiUndoTxList');
+    if (!sym) { container.innerHTML = ''; return; }
+    var stock = allStocks.find(function(s) { return s.symbol === sym; });
+    if (!stock) return;
+
+    var html = '<table class="wi-tx-table"><thead><tr><th>Undo</th><th>Date</th><th>Type</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead><tbody>';
+    for (var i = 0; i < stock.transactions.length; i++) {
+        var tx = stock.transactions[i];
+        var cls = tx.type === 'BUY' ? 'tx-type-buy' : 'tx-type-sell';
+        var label = tx.isTransfer ? (tx.type === 'BUY' ? 'TRANSFER IN' : 'TRANSFER OUT') : tx.type;
+        html += '<tr>';
+        html += '<td><input type="checkbox" data-idx="' + i + '" onchange="updateUndoBtn()"></td>';
+        html += '<td>' + formatDate(tx.date) + '</td>';
+        html += '<td class="' + cls + '">' + label + '</td>';
+        html += '<td>' + tx.quantity.toFixed(3) + '</td>';
+        html += '<td>$' + tx.price.toFixed(2) + '</td>';
+        html += '<td>' + fmtCurrency(tx.amount) + '</td>';
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    document.getElementById('wiUndoBtn').disabled = true;
+}
+
+function updateUndoBtn() {
+    var checked = document.querySelectorAll('#wiUndoTxList input[type="checkbox"]:checked');
+    document.getElementById('wiUndoBtn').disabled = checked.length === 0;
+}
+
+function runUndoAnalysis() {
+    var sym = document.getElementById('wiUndoSymbol').value;
+    var stock = allStocks.find(function(s) { return s.symbol === sym; });
+    if (!stock) return;
+
+    var checkedIdxs = [];
+    document.querySelectorAll('#wiUndoTxList input[type="checkbox"]:checked').forEach(function(cb) {
+        checkedIdxs.push(parseInt(cb.dataset.idx));
+    });
+
+    // Build modified transaction list (remove checked ones)
+    var modifiedTxs = stock.transactions.filter(function(tx, idx) {
+        return checkedIdxs.indexOf(idx) === -1;
+    });
+
+    var removedTxs = stock.transactions.filter(function(tx, idx) {
+        return checkedIdxs.indexOf(idx) !== -1;
+    });
+
+    computeAndShowResults(stock, stock.transactions, modifiedTxs, removedTxs, 'undo');
+}
+
+// ----- MODIFY TAB -----
+function renderModifyTab(panel) {
+    var syms = allStocks.filter(function(s) { return s.transactions && s.transactions.length > 0; });
+    var opts = syms.map(function(s) { return '<option value="' + s.symbol + '">' + s.symbol + ' — ' + s.description.substring(0, 35) + ' (' + s.transactions.length + ' trades)</option>'; }).join('');
+
+    panel.innerHTML = '<div class="wi-form-group">' +
+        '<label>Select Stock</label>' +
+        '<select class="wi-select" id="wiModSymbol" onchange="showModifyTransactions()">' +
+        '<option value="">Choose a stock...</option>' + opts +
+        '</select></div>' +
+        '<div id="wiModTxList"></div>' +
+        '<button class="wi-analyze-btn" id="wiModBtn" onclick="runModifyAnalysis()" disabled>' +
+        '<span class="spinner"></span><span class="btn-text"><i class="fas fa-chart-line"></i> Analyze What-If</span></button>';
+}
+
+function showModifyTransactions() {
+    var sym = document.getElementById('wiModSymbol').value;
+    var container = document.getElementById('wiModTxList');
+    if (!sym) { container.innerHTML = ''; return; }
+    var stock = allStocks.find(function(s) { return s.symbol === sym; });
+    if (!stock) return;
+
+    var html = '<p style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem;">Click a row to edit quantity or price.</p>';
+    html += '<table class="wi-tx-table"><thead><tr><th>Date</th><th>Type</th><th>Qty</th><th>Price</th><th>Amount</th><th></th></tr></thead><tbody>';
+    for (var i = 0; i < stock.transactions.length; i++) {
+        var tx = stock.transactions[i];
+        var cls = tx.type === 'BUY' ? 'tx-type-buy' : 'tx-type-sell';
+        var label = tx.isTransfer ? (tx.type === 'BUY' ? 'TRANSFER IN' : 'TRANSFER OUT') : tx.type;
+        html += '<tr id="modRow-' + i + '">';
+        html += '<td>' + formatDate(tx.date) + '</td>';
+        html += '<td class="' + cls + '">' + label + '</td>';
+        html += '<td id="modQty-' + i + '">' + tx.quantity.toFixed(3) + '</td>';
+        html += '<td id="modPrice-' + i + '">$' + tx.price.toFixed(2) + '</td>';
+        html += '<td id="modAmt-' + i + '">' + fmtCurrency(tx.amount) + '</td>';
+        html += '<td><button style="background:none;border:1px solid rgba(254,188,17,0.3);color:#febc11;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;" onclick="editModRow(' + i + ')"><i class="fas fa-pen"></i></button></td>';
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    container._originalTxs = JSON.parse(JSON.stringify(stock.transactions));
+    container._modifiedTxs = JSON.parse(JSON.stringify(stock.transactions));
+    document.getElementById('wiModBtn').disabled = true;
+}
+
+function editModRow(idx) {
+    var container = document.getElementById('wiModTxList');
+    var txs = container._modifiedTxs;
+    var tx = txs[idx];
+    var qtyTd = document.getElementById('modQty-' + idx);
+    var priceTd = document.getElementById('modPrice-' + idx);
+    var row = document.getElementById('modRow-' + idx);
+
+    if (row.classList.contains('editing')) return; // already editing
+    row.classList.add('editing');
+
+    qtyTd.innerHTML = '<input class="wi-edit-input" type="number" step="0.001" value="' + tx.quantity.toFixed(3) + '" id="modQtyInput-' + idx + '">';
+    priceTd.innerHTML = '<input class="wi-edit-input" type="number" step="0.01" value="' + tx.price.toFixed(2) + '" id="modPriceInput-' + idx + '">';
+
+    // Replace edit button with save button
+    var lastTd = row.lastElementChild;
+    lastTd.innerHTML = '<button style="background:rgba(74,222,128,0.15);border:1px solid #4ade80;color:#4ade80;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;" onclick="saveModRow(' + idx + ')"><i class="fas fa-check"></i></button>';
+}
+
+function saveModRow(idx) {
+    var container = document.getElementById('wiModTxList');
+    var txs = container._modifiedTxs;
+    var newQty = parseFloat(document.getElementById('modQtyInput-' + idx).value) || txs[idx].quantity;
+    var newPrice = parseFloat(document.getElementById('modPriceInput-' + idx).value) || txs[idx].price;
+
+    txs[idx].quantity = newQty;
+    txs[idx].price = newPrice;
+    txs[idx].amount = newQty * newPrice;
+
+    var row = document.getElementById('modRow-' + idx);
+    row.classList.remove('editing');
+
+    document.getElementById('modQty-' + idx).innerHTML = '<span style="color:#febc11;">' + newQty.toFixed(3) + '</span>';
+    document.getElementById('modPrice-' + idx).innerHTML = '<span style="color:#febc11;">$' + newPrice.toFixed(2) + '</span>';
+    document.getElementById('modAmt-' + idx).innerHTML = '<span style="color:#febc11;">' + fmtCurrency(newQty * newPrice) + '</span>';
+
+    var lastTd = row.lastElementChild;
+    lastTd.innerHTML = '<button style="background:none;border:1px solid rgba(254,188,17,0.3);color:#febc11;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;" onclick="editModRow(' + idx + ')"><i class="fas fa-pen"></i></button>';
+
+    document.getElementById('wiModBtn').disabled = false;
+}
+
+function runModifyAnalysis() {
+    var sym = document.getElementById('wiModSymbol').value;
+    var stock = allStocks.find(function(s) { return s.symbol === sym; });
+    var container = document.getElementById('wiModTxList');
+    if (!stock || !container._modifiedTxs) return;
+
+    computeAndShowResults(stock, container._originalTxs, container._modifiedTxs, [], 'modify');
+}
+
+// ----- ADD HYPOTHETICAL TAB -----
+function renderAddTab(panel) {
+    panel.innerHTML = '<div class="wi-hypo-form">' +
+        '<div class="wi-form-group"><label>Ticker Symbol</label>' +
+        '<input class="wi-input" type="text" id="wiAddSymbol" placeholder="e.g. NVDA" style="text-transform:uppercase;"></div>' +
+        '<div class="wi-form-group"><label>Action</label>' +
+        '<select class="wi-select" id="wiAddAction"><option value="BUY">Buy</option><option value="SELL">Sell</option></select></div>' +
+        '<div class="wi-form-group"><label>Buy Date</label>' +
+        '<input class="wi-input" type="date" id="wiAddDate" value="2023-01-03"></div>' +
+        '<div class="wi-form-group"><label>Dollar Amount</label>' +
+        '<input class="wi-input" type="number" id="wiAddAmount" placeholder="e.g. 10000" step="100"></div>' +
+        '<div class="wi-form-group"><label>Sell Date (optional)</label>' +
+        '<input class="wi-input" type="date" id="wiAddSellDate" value=""></div>' +
+        '<div class="wi-form-group"><label>Sell Amount (optional)</label>' +
+        '<input class="wi-input" type="number" id="wiAddSellAmount" placeholder="Leave blank for current value" step="100"></div>' +
+        '</div>' +
+        '<button class="wi-analyze-btn" id="wiAddBtn" onclick="runAddAnalysis()">' +
+        '<span class="spinner"></span><span class="btn-text"><i class="fas fa-chart-line"></i> Analyze What-If</span></button>';
+}
+
+async function runAddAnalysis() {
+    var sym = (document.getElementById('wiAddSymbol').value || '').toUpperCase().trim();
+    var action = document.getElementById('wiAddAction').value;
+    var buyDate = document.getElementById('wiAddDate').value;
+    var amount = parseFloat(document.getElementById('wiAddAmount').value) || 0;
+    var sellDate = document.getElementById('wiAddSellDate').value || '';
+    var sellAmount = parseFloat(document.getElementById('wiAddSellAmount').value) || 0;
+
+    if (!sym || !buyDate || amount <= 0) {
+        alert('Please enter a ticker symbol, date, and dollar amount.');
+        return;
+    }
+
+    var btn = document.getElementById('wiAddBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try {
+        // Check if we already have price data for this symbol
+        var existingStock = allStocks.find(function(s) { return s.symbol === sym; });
+        var priceHistory;
+
+        if (existingStock && existingStock.priceHistory && existingStock.priceHistory.length > 0) {
+            priceHistory = existingStock.priceHistory;
+        } else {
+            // Fetch price data from server
+            var resp = await fetch('/api/portfolio/price-history/' + sym);
+            if (!resp.ok) throw new Error('Could not fetch price data for ' + sym);
+            var data = await resp.json();
+            priceHistory = data.prices || [];
+        }
+
+        if (priceHistory.length === 0) {
+            alert('No price data available for ' + sym);
+            return;
+        }
+
+        // Build price lookup
+        var priceLookup = {};
+        priceHistory.forEach(function(p) { priceLookup[p.date] = p.close; });
+        var dates = Object.keys(priceLookup).sort();
+
+        // Find buy price
+        var buyPrice = priceLookup[buyDate] || findNearestPriceClient(priceLookup, dates, buyDate);
+        if (!buyPrice || buyPrice <= 0) {
+            alert('Cannot find a price for ' + sym + ' on ' + buyDate);
+            return;
+        }
+
+        var shares = amount / buyPrice;
+
+        // Build hypothetical transaction(s)
+        var hypoTxs = [{ date: buyDate, type: 'BUY', quantity: shares, price: buyPrice, amount: amount }];
+
+        if (sellDate) {
+            var sellPrice = priceLookup[sellDate] || findNearestPriceClient(priceLookup, dates, sellDate);
+            var sellAmt = sellAmount > 0 ? sellAmount : (shares * sellPrice);
+            hypoTxs.push({ date: sellDate, type: 'SELL', quantity: shares, price: sellPrice || 0, amount: sellAmt });
+        }
+
+        // Compute result for this hypothetical stock
+        var lastPriceDate = dates[dates.length - 1];
+        var lastPrice = priceLookup[lastPriceDate];
+        var isStillHolding = !sellDate;
+        var currentValue = isStillHolding ? shares * lastPrice : 0;
+        var totalSellProceeds = sellDate ? hypoTxs[1].amount : 0;
+
+        var totalReturn;
+        if (isStillHolding) {
+            totalReturn = amount > 0 ? ((currentValue - amount) / amount) * 100 : 0;
+        } else {
+            totalReturn = amount > 0 ? ((totalSellProceeds - amount) / amount) * 100 : 0;
+        }
+
+        var holdStart = new Date(buyDate);
+        var holdEnd = sellDate ? new Date(sellDate) : new Date();
+        var holdDays = Math.max(1, Math.round((holdEnd - holdStart) / 86400000));
+        var years = holdDays / 365.25;
+        var cagr = years > 0.1 && (totalReturn / 100) > -1 ? (Math.pow(1 + totalReturn / 100, 1 / years) - 1) * 100 : totalReturn;
+
+        // Build a pseudo stock object for results
+        var hypoStock = {
+            symbol: sym,
+            description: 'Hypothetical ' + action,
+            status: isStillHolding ? 'active' : 'exited',
+            totalReturn: totalReturn,
+            cagr: cagr,
+            currentValue: currentValue,
+            totalInvested: amount,
+            totalSellProceeds: totalSellProceeds,
+            holdingPeriodDays: holdDays,
+            priceHistory: priceHistory,
+            transactions: hypoTxs
+        };
+
+        showHypotheticalResults(hypoStock, priceLookup, dates);
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }
+}
+
+function findNearestPriceClient(lookup, sortedDates, target) {
+    var best = null;
+    for (var i = 0; i < sortedDates.length; i++) {
+        if (sortedDates[i] <= target) best = lookup[sortedDates[i]];
+        else break;
+    }
+    return best || (sortedDates.length > 0 ? lookup[sortedDates[0]] : 0);
+}
+
+// ----- RESULTS ENGINE -----
+function computeAndShowResults(stock, originalTxs, modifiedTxs, removedTxs, mode) {
+    // Compute actual metrics from original transactions
+    var actual = computeStockMetrics(originalTxs, stock);
+    // Compute what-if metrics from modified transactions
+    var whatIf = computeStockMetrics(modifiedTxs, stock);
+
+    var diff = {
+        returnDiff: whatIf.totalReturn - actual.totalReturn,
+        valueDiff: whatIf.endValue - actual.endValue,
+        cagrDiff: whatIf.cagr - actual.cagr,
+        costDiff: whatIf.totalCost - actual.totalCost
+    };
+
+    showComparisonResults(stock, actual, whatIf, diff, mode, removedTxs);
+}
+
+function computeStockMetrics(txs, stock) {
+    var totalBought = 0, totalSold = 0, totalCostBasis = 0, totalSellProceeds = 0;
+    for (var i = 0; i < txs.length; i++) {
+        if (txs[i].type === 'BUY') {
+            totalBought += txs[i].quantity;
+            totalCostBasis += txs[i].amount || (txs[i].quantity * txs[i].price);
+        } else if (txs[i].type === 'SELL') {
+            totalSold += txs[i].quantity;
+            totalSellProceeds += txs[i].amount || (txs[i].quantity * txs[i].price);
+        }
+    }
+
+    var netShares = totalBought - totalSold;
+    var isActive = netShares > 0.001;
+    var lastPrice = stock.currentPrice;
+    var currentValue = isActive ? netShares * lastPrice : 0;
+    var endValue = currentValue + totalSellProceeds;
+    var totalReturn = totalCostBasis > 0 ? ((endValue - totalCostBasis) / totalCostBasis) * 100 : 0;
+
+    var holdDays = stock.holdingPeriodDays || 365;
+    var years = holdDays / 365.25;
+    var cagr = years > 0.1 && (totalReturn / 100) > -1 ? (Math.pow(1 + totalReturn / 100, 1 / years) - 1) * 100 : totalReturn;
+
+    return {
+        totalCost: totalCostBasis,
+        totalSellProceeds: totalSellProceeds,
+        netShares: netShares,
+        currentValue: currentValue,
+        endValue: endValue,
+        totalReturn: totalReturn,
+        cagr: cagr,
+        totalBought: totalBought,
+        totalSold: totalSold
+    };
+}
+
+function showComparisonResults(stock, actual, whatIf, diff, mode, removedTxs) {
+    var resultsEl = document.getElementById('whatIfResults');
+    var impactCls = diff.returnDiff >= 0 ? 'positive' : 'negative';
+    var impactSign = diff.returnDiff >= 0 ? '+' : '';
+    var valueSign = diff.valueDiff >= 0 ? '+' : '';
+
+    var modeLabel = mode === 'undo' ? 'Undoing' : 'Modifying';
+    var descText = mode === 'undo'
+        ? modeLabel + ' ' + removedTxs.length + ' transaction(s) on ' + stock.symbol
+        : modeLabel + ' trades on ' + stock.symbol;
+
+    var html = '<div class="wi-impact-card">' +
+        '<div class="impact-label">' + descText + '</div>' +
+        '<div class="impact-value ' + impactCls + '">' + impactSign + diff.returnDiff.toFixed(2) + '% Return Impact</div>' +
+        '<div class="impact-detail">' + valueSign + fmtCurrency(Math.abs(diff.valueDiff)) + ' value difference • ' +
+        (diff.valueDiff >= 0 ? 'Would have been better' : 'Would have been worse') + '</div>' +
+        '</div>';
+
+    html += '<div class="wi-comparison-grid">' +
+        '<div class="wi-comparison-card"><h4><i class="fas fa-chart-line" style="color:#60a5fa;"></i> Actual</h4>' +
+        wiMetricRow('Total Invested', fmtCurrency(actual.totalCost)) +
+        wiMetricRow('Current Value', fmtCurrency(actual.currentValue)) +
+        wiMetricRow('Sell Proceeds', fmtCurrency(actual.totalSellProceeds)) +
+        wiMetricRow('Total Return', (actual.totalReturn >= 0 ? '+' : '') + actual.totalReturn.toFixed(2) + '%', actual.totalReturn >= 0 ? '#4ade80' : '#f87171') +
+        wiMetricRow('CAGR', (actual.cagr >= 0 ? '+' : '') + actual.cagr.toFixed(2) + '%', actual.cagr >= 0 ? '#4ade80' : '#f87171') +
+        wiMetricRow('Net Shares', actual.netShares.toFixed(3)) +
+        '</div>' +
+        '<div class="wi-comparison-card"><h4><i class="fas fa-flask" style="color:#febc11;"></i> What-If</h4>' +
+        wiMetricRow('Total Invested', fmtCurrency(whatIf.totalCost), whatIf.totalCost !== actual.totalCost ? '#febc11' : null) +
+        wiMetricRow('Current Value', fmtCurrency(whatIf.currentValue), whatIf.currentValue !== actual.currentValue ? '#febc11' : null) +
+        wiMetricRow('Sell Proceeds', fmtCurrency(whatIf.totalSellProceeds), whatIf.totalSellProceeds !== actual.totalSellProceeds ? '#febc11' : null) +
+        wiMetricRow('Total Return', (whatIf.totalReturn >= 0 ? '+' : '') + whatIf.totalReturn.toFixed(2) + '%', whatIf.totalReturn >= actual.totalReturn ? '#4ade80' : '#f87171') +
+        wiMetricRow('CAGR', (whatIf.cagr >= 0 ? '+' : '') + whatIf.cagr.toFixed(2) + '%', whatIf.cagr >= actual.cagr ? '#4ade80' : '#f87171') +
+        wiMetricRow('Net Shares', whatIf.netShares.toFixed(3), whatIf.netShares !== actual.netShares ? '#febc11' : null) +
+        '</div></div>';
+
+    // Cumulative return chart using price history
+    html += '<div class="wi-chart-container">' +
+        '<h4><i class="fas fa-chart-area"></i> Price Performance — ' + stock.symbol + '</h4>' +
+        '<div class="wi-chart-wrap"><canvas id="whatIfChart"></canvas></div></div>';
+
+    html += '<button class="wi-reset-btn" onclick="resetWhatIf()"><i class="fas fa-times"></i> Clear Results</button>';
+
+    resultsEl.innerHTML = html;
+    resultsEl.classList.add('visible');
+
+    // Draw comparison chart
+    setTimeout(function() { drawWhatIfChart(stock); }, 50);
+
+    // Scroll to results
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showHypotheticalResults(hypoStock, priceLookup, dates) {
+    var resultsEl = document.getElementById('whatIfResults');
+    var retCls = hypoStock.totalReturn >= 0 ? 'positive' : 'negative';
+    var retSign = hypoStock.totalReturn >= 0 ? '+' : '';
+
+    var html = '<div class="wi-impact-card">' +
+        '<div class="impact-label">Hypothetical: ' + (hypoStock.transactions[0].type === 'BUY' ? 'Buying' : 'Selling') + ' $' + hypoStock.totalInvested.toLocaleString() + ' of ' + hypoStock.symbol + ' on ' + hypoStock.transactions[0].date + '</div>' +
+        '<div class="impact-value ' + retCls + '">' + retSign + hypoStock.totalReturn.toFixed(2) + '% Total Return</div>' +
+        '<div class="impact-detail">' + retSign + fmtCurrency(Math.abs((hypoStock.currentValue || hypoStock.totalSellProceeds) - hypoStock.totalInvested)) +
+        ' P&L • ' + hypoStock.holdingPeriodDays + ' day holding period • CAGR: ' + retSign + hypoStock.cagr.toFixed(2) + '%</div>' +
+        '</div>';
+
+    // Metrics
+    html += '<div class="wi-comparison-grid">' +
+        '<div class="wi-comparison-card"><h4><i class="fas fa-flask" style="color:#febc11;"></i> Hypothetical Trade</h4>' +
+        wiMetricRow('Symbol', hypoStock.symbol) +
+        wiMetricRow('Buy Date', hypoStock.transactions[0].date) +
+        wiMetricRow('Buy Price', '$' + hypoStock.transactions[0].price.toFixed(2)) +
+        wiMetricRow('Shares', hypoStock.transactions[0].quantity.toFixed(3)) +
+        wiMetricRow('Amount Invested', fmtCurrency(hypoStock.totalInvested)) +
+        (hypoStock.status === 'active'
+            ? wiMetricRow('Current Value', fmtCurrency(hypoStock.currentValue), '#4ade80')
+            : wiMetricRow('Sell Proceeds', fmtCurrency(hypoStock.totalSellProceeds), '#febc11')
+        ) +
+        '</div>' +
+        '<div class="wi-comparison-card"><h4><i class="fas fa-chart-bar" style="color:#60a5fa;"></i> Performance</h4>' +
+        wiMetricRow('Total Return', retSign + hypoStock.totalReturn.toFixed(2) + '%', hypoStock.totalReturn >= 0 ? '#4ade80' : '#f87171') +
+        wiMetricRow('CAGR', retSign + hypoStock.cagr.toFixed(2) + '%', hypoStock.cagr >= 0 ? '#4ade80' : '#f87171') +
+        wiMetricRow('Holding Period', hypoStock.holdingPeriodDays + ' days') +
+        wiMetricRow('Status', hypoStock.status === 'active' ? 'Still Holding' : 'Exited') +
+        '</div></div>';
+
+    // Price chart
+    html += '<div class="wi-chart-container">' +
+        '<h4><i class="fas fa-chart-area"></i> ' + hypoStock.symbol + ' Price History</h4>' +
+        '<div class="wi-chart-wrap"><canvas id="whatIfChart"></canvas></div></div>';
+
+    html += '<button class="wi-reset-btn" onclick="resetWhatIf()"><i class="fas fa-times"></i> Clear Results</button>';
+
+    resultsEl.innerHTML = html;
+    resultsEl.classList.add('visible');
+
+    // Draw chart
+    setTimeout(function() {
+        drawHypotheticalChart(hypoStock, priceLookup, dates);
+    }, 50);
+
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function wiMetricRow(label, value, color) {
+    var style = color ? ' style="color:' + color + ';"' : '';
+    return '<div class="wi-metric-row"><span class="wi-metric-label">' + label + '</span><span class="wi-metric-value"' + style + '>' + value + '</span></div>';
+}
+
+function drawWhatIfChart(stock) {
+    var canvas = document.getElementById('whatIfChart');
+    if (!canvas || !stock.priceHistory || stock.priceHistory.length < 2) return;
+
+    if (whatIfChart) { whatIfChart.destroy(); whatIfChart = null; }
+
+    var labels = stock.priceHistory.map(function(p) { return p.date; });
+    var data = stock.priceHistory.map(function(p) { return p.close; });
+    var basePrice = data[0];
+    var returns = data.map(function(p) { return ((p / basePrice) - 1) * 100; });
+
+    whatIfChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: stock.symbol + ' Return',
+                data: returns,
+                borderColor: stock.totalReturn >= 0 ? '#4ade80' : '#f87171',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, labels: { color: 'rgba(255,255,255,0.6)', font: { size: 10 } } },
+                tooltip: {
+                    backgroundColor: 'rgba(15,20,25,0.95)',
+                    titleColor: '#febc11',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        label: function(ctx) { return (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(2) + '%'; }
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: 'rgba(255,255,255,0.3)', maxTicksLimit: 10, maxRotation: 0, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 }, callback: function(v) { return v.toFixed(0) + '%'; } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+function drawHypotheticalChart(hypoStock, priceLookup, dates) {
+    var canvas = document.getElementById('whatIfChart');
+    if (!canvas) return;
+
+    if (whatIfChart) { whatIfChart.destroy(); whatIfChart = null; }
+
+    var buyDate = hypoStock.transactions[0].date;
+    var startIdx = dates.indexOf(buyDate);
+    if (startIdx < 0) {
+        // Find nearest
+        for (var i = 0; i < dates.length; i++) {
+            if (dates[i] >= buyDate) { startIdx = i; break; }
+        }
+    }
+    if (startIdx < 0) startIdx = 0;
+
+    var endDate = hypoStock.transactions.length > 1 ? hypoStock.transactions[1].date : dates[dates.length - 1];
+    var endIdx = dates.length - 1;
+    for (var j = startIdx; j < dates.length; j++) {
+        if (dates[j] >= endDate) { endIdx = j; break; }
+    }
+
+    // Sample for chart (max 200 points)
+    var range = dates.slice(startIdx, endIdx + 1);
+    var step = Math.max(1, Math.floor(range.length / 200));
+    var labels = [], prices = [];
+    for (var k = 0; k < range.length; k += step) {
+        labels.push(range[k]);
+        prices.push(priceLookup[range[k]]);
+    }
+    if (labels[labels.length - 1] !== range[range.length - 1]) {
+        labels.push(range[range.length - 1]);
+        prices.push(priceLookup[range[range.length - 1]]);
+    }
+
+    var basePrice = prices[0];
+    var returns = prices.map(function(p) { return ((p / basePrice) - 1) * 100; });
+
+    var isPositive = hypoStock.totalReturn >= 0;
+
+    var ctx = canvas.getContext('2d');
+    var gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement.clientHeight);
+    gradient.addColorStop(0, isPositive ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+    whatIfChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: hypoStock.symbol + ' Cumulative Return',
+                data: returns,
+                borderColor: isPositive ? '#4ade80' : '#f87171',
+                backgroundColor: gradient,
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, labels: { color: 'rgba(255,255,255,0.6)', font: { size: 10 } } },
+                tooltip: {
+                    backgroundColor: 'rgba(15,20,25,0.95)',
+                    titleColor: '#febc11',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        label: function(ctx) { return (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(2) + '%'; }
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: 'rgba(255,255,255,0.3)', maxTicksLimit: 10, maxRotation: 0, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: {
+                    ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 }, callback: function(v) { return v.toFixed(0) + '%'; } },
+                    grid: { color: 'rgba(255,255,255,0.04)' }
+                }
+            }
+        }
+    });
+}
+
+function resetWhatIf() {
+    if (whatIfChart) { whatIfChart.destroy(); whatIfChart = null; }
+    document.getElementById('whatIfResults').classList.remove('visible');
+    document.getElementById('whatIfResults').innerHTML = '';
 }
 
 // ===== EVENT LISTENERS =====
