@@ -34,7 +34,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.options('*', cors(corsOptions));
-app.use(express.static(__dirname, { index: false }));
+app.use(express.static(__dirname));
 
 // Debug middleware
 app.use((req, res, next) => {
@@ -350,7 +350,7 @@ async function calculateAnalytics(symbol, prices) {
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'live-portfolio.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/valuation', (req, res) => {
