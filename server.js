@@ -358,6 +358,10 @@ app.get('/valuation', (req, res) => {
     res.sendFile(path.join(__dirname, 'valuation.html'));
 });
 
+app.get('/stock-history', (req, res) => {
+    res.sendFile(path.join(__dirname, 'stock-history.html'));
+});
+
 // TE dashboard routes
 const TE_FLASK_URL = process.env.TE_FLASK_URL || 'http://127.0.0.1:5001';
 
@@ -1221,7 +1225,7 @@ function computeRiskMetrics(portfolioReturns, spyReturns, numDays) {
 }
 
 // --- CSV parsing for historical portfolio reconstruction ---
-function parseActivityCSVs() {
+function parseActivityCSVs(includeDetails) {
     const years = [2021, 2022, 2023, 2024, 2025, 2026];
     const transactions = [];
     for (const year of years) {
@@ -1242,13 +1246,22 @@ function parseActivityCSVs() {
                 if (isNaN(date.getTime())) continue;
                 const action = (parts[1] || '').trim().toUpperCase();
                 const symbol = (parts[2] || '').trim();
+                const description = (parts[3] || '').trim();
+                const price = parseFloat((parts[5] || '').replace(/[^0-9.\-]/g, '')) || 0;
                 const quantity = parseFloat(parts[6]) || 0;
+                const amount = parseFloat((parts[10] || '').replace(/[^0-9.\-]/g, '')) || 0;
                 let type = null;
                 if (action.startsWith('YOU BOUGHT')) type = 'BUY';
                 else if (action.startsWith('YOU SOLD')) type = 'SELL';
                 else if (action.includes('REINVESTMENT') && symbol && symbol !== 'SPAXX') type = 'BUY'; // dividend reinvestment
                 if (type && symbol && symbol !== 'SPAXX' && /^[A-Z]{1,5}$/.test(symbol)) {
-                    transactions.push({ date, symbol, type, quantity });
+                    const tx = { date, symbol, type, quantity };
+                    if (includeDetails) {
+                        tx.price = price;
+                        tx.amount = Math.abs(amount);
+                        tx.description = description;
+                    }
+                    transactions.push(tx);
                 }
             }
         } catch (e) { /* skip missing files */ }
@@ -1459,6 +1472,227 @@ app.post('/api/portfolio/historical-analytics', async (req, res) => {
         res.status(500).json({ error: 'Failed to calculate historical analytics' });
     }
 });
+
+// Stock history endpoint — full history of every stock ever held
+app.post('/api/portfolio/stock-history', async (req, res) => {
+    try {
+        const { currentHoldings } = req.body;
+        if (!Array.isArray(currentHoldings) || currentHoldings.length === 0) {
+            return res.status(400).json({ error: 'currentHoldings array required' });
+        }
+
+        // Parse all transactions with price/amount details
+        const transactions = parseActivityCSVs(true);
+
+        // Build per-symbol ledger
+        const symbolMap = {};
+        for (const tx of transactions) {
+            if (!symbolMap[tx.symbol]) {
+                symbolMap[tx.symbol] = {
+                    symbol: tx.symbol,
+                    description: tx.description || tx.symbol,
+                    transactions: [],
+                    totalBought: 0,
+                    totalSold: 0,
+                    totalCostBasis: 0,
+                    totalSellProceeds: 0
+                };
+            }
+            const entry = symbolMap[tx.symbol];
+            if (tx.description && tx.description.length > entry.description.length) {
+                entry.description = tx.description;
+            }
+            entry.transactions.push({
+                date: tx.date.toISOString().split('T')[0],
+                type: tx.type,
+                quantity: Math.abs(tx.quantity),
+                price: tx.price,
+                amount: tx.amount
+            });
+            if (tx.type === 'BUY') {
+                entry.totalBought += Math.abs(tx.quantity);
+                entry.totalCostBasis += tx.amount || (Math.abs(tx.quantity) * tx.price);
+            } else if (tx.type === 'SELL') {
+                entry.totalSold += Math.abs(tx.quantity);
+                entry.totalSellProceeds += tx.amount || (Math.abs(tx.quantity) * tx.price);
+            }
+        }
+
+        // Determine current status and shares for each symbol
+        const currentHoldingsMap = {};
+        currentHoldings.forEach(h => { currentHoldingsMap[h.symbol] = h.quantity; });
+
+        const allSymbols = Object.keys(symbolMap);
+        const toDate = new Date().toISOString().split('T')[0];
+
+        // Fetch current/last prices for all symbols in batches
+        const BATCH_SIZE = 10;
+        const priceMap = {};
+        for (let i = 0; i < allSymbols.length; i += BATCH_SIZE) {
+            const batch = allSymbols.slice(i, i + BATCH_SIZE);
+            const results = await Promise.all(
+                batch.map(sym => {
+                    const entry = symbolMap[sym];
+                    const firstDate = entry.transactions[0].date;
+                    return fetchHistoricalPrices(sym, 'day', firstDate, toDate, 2000).catch(() => []);
+                })
+            );
+            batch.forEach((sym, idx) => { priceMap[sym] = results[idx]; });
+            if (i + BATCH_SIZE < allSymbols.length) {
+                await new Promise(r => setTimeout(r, 250));
+            }
+        }
+
+        // Also fetch SPY for comparison
+        const earliestDate = transactions.length > 0 ? transactions[0].date.toISOString().split('T')[0] : '2021-01-01';
+        if (!priceMap['SPY']) {
+            priceMap['SPY'] = await fetchHistoricalPrices('SPY', 'day', earliestDate, toDate, 2000).catch(() => []);
+        }
+        const spyPriceLookup = {};
+        (priceMap['SPY'] || []).forEach(p => {
+            const ds = p.date ? p.date.split('T')[0] : '';
+            if (ds) spyPriceLookup[ds] = p.close;
+        });
+        const spyDates = Object.keys(spyPriceLookup).sort();
+
+        // Build stock-level analytics
+        const stocks = [];
+        for (const sym of allSymbols) {
+            const entry = symbolMap[sym];
+            const prices = priceMap[sym] || [];
+            if (prices.length === 0) continue;
+
+            const isActive = !!currentHoldingsMap[sym] && currentHoldingsMap[sym] > 0.001;
+            const currentShares = isActive ? currentHoldingsMap[sym] : 0;
+            const firstBuyDate = entry.transactions[0].date;
+            const lastTradeDate = entry.transactions[entry.transactions.length - 1].date;
+
+            // Current/last price
+            const lastPrice = prices[prices.length - 1].close;
+            const firstPrice = prices[0].close;
+
+            // Holding period
+            const holdStart = new Date(firstBuyDate);
+            const holdEnd = isActive ? new Date() : new Date(lastTradeDate);
+            const holdingPeriodDays = Math.round((holdEnd - holdStart) / 86400000);
+
+            // Calculate total return
+            let totalReturn, currentValue;
+            if (isActive) {
+                currentValue = currentShares * lastPrice;
+                totalReturn = entry.totalCostBasis > 0 ? ((currentValue + entry.totalSellProceeds - entry.totalCostBasis) / entry.totalCostBasis) * 100 : 0;
+            } else {
+                currentValue = 0;
+                totalReturn = entry.totalCostBasis > 0 ? ((entry.totalSellProceeds - entry.totalCostBasis) / entry.totalCostBasis) * 100 : 0;
+            }
+
+            // CAGR
+            const years = holdingPeriodDays / 365.25;
+            const totalReturnDecimal = totalReturn / 100;
+            const cagr = years > 0.1 ? (Math.pow(1 + totalReturnDecimal, 1 / years) - 1) * 100 : totalReturn;
+
+            // Avg cost basis
+            const avgCostBasis = entry.totalBought > 0 ? entry.totalCostBasis / entry.totalBought : 0;
+
+            // Max drawdown from price history
+            let peak = 0, maxDD = 0;
+            for (const p of prices) {
+                if (p.close > peak) peak = p.close;
+                const dd = peak > 0 ? ((p.close - peak) / peak) * 100 : 0;
+                if (dd < maxDD) maxDD = dd;
+            }
+
+            // SPY return over same period
+            const spyStart = spyPriceLookup[firstBuyDate] || findNearestPrice(spyPriceLookup, spyDates, firstBuyDate);
+            const endDateStr = isActive ? toDate : lastTradeDate;
+            const spyEnd = spyPriceLookup[endDateStr] || findNearestPrice(spyPriceLookup, spyDates, endDateStr);
+            const spyReturnSamePeriod = spyStart > 0 ? ((spyEnd - spyStart) / spyStart) * 100 : 0;
+            const alpha = totalReturn - spyReturnSamePeriod;
+
+            // Price history sampled (max ~200 points for charts)
+            const step = Math.max(1, Math.floor(prices.length / 200));
+            const sampledPrices = [];
+            for (let j = 0; j < prices.length; j += step) {
+                sampledPrices.push({ date: prices[j].date.split('T')[0], close: prices[j].close });
+            }
+            // Always include last point
+            if (sampledPrices.length === 0 || sampledPrices[sampledPrices.length - 1].date !== prices[prices.length - 1].date.split('T')[0]) {
+                sampledPrices.push({ date: prices[prices.length - 1].date.split('T')[0], close: prices[prices.length - 1].close });
+            }
+
+            // Portfolio weight (for active positions)
+            const totalPortfolioValue = currentHoldings.reduce((s, h) => {
+                const p = priceMap[h.symbol];
+                return s + (p && p.length ? h.quantity * p[p.length - 1].close : 0);
+            }, 0) || 1;
+            const weight = isActive ? (currentValue / totalPortfolioValue) * 100 : 0;
+
+            stocks.push({
+                symbol: sym,
+                description: entry.description,
+                status: isActive ? 'active' : 'exited',
+                firstBuyDate,
+                lastTradeDate,
+                holdingPeriodDays,
+                totalSharesBought: Math.round(entry.totalBought * 1000) / 1000,
+                totalSharesSold: Math.round(entry.totalSold * 1000) / 1000,
+                currentShares: Math.round(currentShares * 1000) / 1000,
+                avgCostBasis: Math.round(avgCostBasis * 100) / 100,
+                currentPrice: lastPrice,
+                totalInvested: Math.round(entry.totalCostBasis * 100) / 100,
+                totalSellProceeds: Math.round(entry.totalSellProceeds * 100) / 100,
+                currentValue: Math.round(currentValue * 100) / 100,
+                totalReturn: Math.round(totalReturn * 100) / 100,
+                cagr: Math.round(cagr * 100) / 100,
+                spyReturnSamePeriod: Math.round(spyReturnSamePeriod * 100) / 100,
+                alpha: Math.round(alpha * 100) / 100,
+                maxDrawdown: Math.round(maxDD * 100) / 100,
+                weight: Math.round(weight * 100) / 100,
+                transactions: entry.transactions,
+                priceHistory: sampledPrices
+            });
+        }
+
+        // Sort by total return descending
+        stocks.sort((a, b) => b.totalReturn - a.totalReturn);
+
+        // Summary stats
+        const activeStocks = stocks.filter(s => s.status === 'active');
+        const exitedStocks = stocks.filter(s => s.status === 'exited');
+        const winners = stocks.filter(s => s.totalReturn > 0);
+        const avgReturn = stocks.length > 0 ? stocks.reduce((s, st) => s + st.totalReturn, 0) / stocks.length : 0;
+        const avgAlpha = stocks.length > 0 ? stocks.reduce((s, st) => s + st.alpha, 0) / stocks.length : 0;
+
+        res.json({
+            stocks,
+            summary: {
+                totalStocksTraded: stocks.length,
+                activePositions: activeStocks.length,
+                exitedPositions: exitedStocks.length,
+                bestPerformer: stocks.length > 0 ? { symbol: stocks[0].symbol, return: stocks[0].totalReturn } : null,
+                worstPerformer: stocks.length > 0 ? { symbol: stocks[stocks.length - 1].symbol, return: stocks[stocks.length - 1].totalReturn } : null,
+                avgReturn: Math.round(avgReturn * 100) / 100,
+                avgAlpha: Math.round(avgAlpha * 100) / 100,
+                winRate: stocks.length > 0 ? Math.round((winners.length / stocks.length) * 10000) / 100 : 0
+            }
+        });
+
+    } catch (error) {
+        console.error('Error calculating stock history:', error.message);
+        res.status(500).json({ error: 'Failed to calculate stock history' });
+    }
+});
+
+// Helper: find nearest price in a sorted date map
+function findNearestPrice(lookup, sortedDates, targetDate) {
+    if (lookup[targetDate]) return lookup[targetDate];
+    let best = null;
+    for (const d of sortedDates) {
+        if (d <= targetDate) best = lookup[d];
+        else break;
+    }
+    return best || (sortedDates.length > 0 ? lookup[sortedDates[0]] : 0);
+}
 
 // Error handling middleware
 app.use((error, req, res, next) => {
