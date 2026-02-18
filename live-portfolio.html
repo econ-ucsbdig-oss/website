@@ -1744,33 +1744,34 @@
     let currentSectorBreakdown = null;
     let currentSection = 'all';
 
-    // Current holdings as of Feb 13, 2026 (reconstructed from DIG Activity CSVs 2021-2026)
+    // Current holdings as of Feb 17, 2026 (reconstructed from DIG Activity CSVs 2021-2026)
+    // Static prices updated Feb 17, 2026 — overridden by live API when connected
     const broadMarketETFs = [
-        { symbol: 'VOO', description: 'Vanguard S&P 500 ETF', quantity: 590.669, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 626.89, type: 'etf', change: 0, changePercent: 0 },
-        { symbol: 'VTV', description: 'Vanguard Value ETF', quantity: 131.11, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 197.27, type: 'etf', change: 0, changePercent: 0 },
-        { symbol: 'SPY', description: 'SPDR S&P 500 ETF Trust', quantity: 34.281, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 691.32, type: 'etf', change: 0, changePercent: 0 }
+        { symbol: 'VOO', description: 'Vanguard S&P 500 ETF', quantity: 590.669, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 627.99, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'VTV', description: 'Vanguard Value ETF', quantity: 131.11, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 205.85, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'SPY', description: 'SPDR S&P 500 ETF Trust', quantity: 34.281, sector: 'Broad Market ETF', gicsSector: 'N/A', lastPrice: 682.85, type: 'etf', change: 0, changePercent: 0 }
     ];
 
     const equityHoldings = [
-        { symbol: 'TSM', description: 'Taiwan Semiconductor Manufacturing ADR', quantity: 137.398, sector: 'Semiconductor', gicsSector: 'Information Technology', lastPrice: 209.87, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'GOOGL', description: 'Alphabet Inc Class A', quantity: 137.343, sector: 'Interactive Media', gicsSector: 'Communication Services', lastPrice: 305.72, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'MSFT', description: 'Microsoft Corp', quantity: 55.274, sector: 'Software', gicsSector: 'Information Technology', lastPrice: 401.32, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'AMZN', description: 'Amazon.com Inc', quantity: 112.118, sector: 'Internet Retail', gicsSector: 'Consumer Discretionary', lastPrice: 228.68, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'ASML', description: 'ASML Holding NV', quantity: 19.917, sector: 'Semiconductor Equipment', gicsSector: 'Information Technology', lastPrice: 747.56, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'SNOW', description: 'Snowflake Inc', quantity: 62.096, sector: 'Application Software', gicsSector: 'Information Technology', lastPrice: 186.41, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'NUKZ', description: 'Range Nuclear Renaissance ETF', quantity: 226.815, sector: 'Nuclear Energy ETF', gicsSector: 'Energy', lastPrice: 48.69, type: 'etf', change: 0, changePercent: 0 },
-        { symbol: 'VRT', description: 'Vertiv Holdings Co', quantity: 77, sector: 'Electrical Equipment', gicsSector: 'Industrials', lastPrice: 113.04, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'COST', description: 'Costco Wholesale Corp', quantity: 15, sector: 'Consumer Staples Retail', gicsSector: 'Consumer Staples', lastPrice: 1049.47, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'XLV', description: 'Health Care Select Sector SPDR', quantity: 94.93, sector: 'Health Care ETF', gicsSector: 'Health Care', lastPrice: 148.47, type: 'etf', change: 0, changePercent: 0 },
-        { symbol: 'CEG', description: 'Constellation Energy Corp', quantity: 33.189, sector: 'Independent Power', gicsSector: 'Utilities', lastPrice: 313.33, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'JPM', description: 'JPMorgan Chase & Co', quantity: 40, sector: 'Diversified Banks', gicsSector: 'Financials', lastPrice: 276.32, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'PANW', description: 'Palo Alto Networks Inc', quantity: 54, sector: 'Network Security', gicsSector: 'Information Technology', lastPrice: 197.76, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'FLUT', description: 'Flutter Entertainment PLC', quantity: 35.91, sector: 'Casinos & Gaming', gicsSector: 'Consumer Discretionary', lastPrice: 272.35, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'SCHW', description: 'Charles Schwab Corp', quantity: 92.199, sector: 'Investment Banking', gicsSector: 'Financials', lastPrice: 81.71, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'REMX', description: 'VanEck Rare Earth/Strategic Metals ETF', quantity: 61.438, sector: 'Rare Earth Metals ETF', gicsSector: 'Materials', lastPrice: 89.52, type: 'etf', change: 0, changePercent: 0 },
-        { symbol: 'FCX', description: 'Freeport-McMoRan Inc', quantity: 195.831, sector: 'Copper', gicsSector: 'Materials', lastPrice: 42.31, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'DXCM', description: 'DexCom Inc', quantity: 112.945, sector: 'Health Care Equipment', gicsSector: 'Health Care', lastPrice: 75.52, type: 'stock', change: 0, changePercent: 0 },
-        { symbol: 'PSA', description: 'Public Storage', quantity: 20.725, sector: 'Specialized REITs', gicsSector: 'Real Estate', lastPrice: 316.72, type: 'stock', change: 0, changePercent: 0 }
+        { symbol: 'TSM', description: 'Taiwan Semiconductor Manufacturing ADR', quantity: 137.398, sector: 'Semiconductor', gicsSector: 'Information Technology', lastPrice: 364.20, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'GOOGL', description: 'Alphabet Inc Class A', quantity: 137.343, sector: 'Interactive Media', gicsSector: 'Communication Services', lastPrice: 302.02, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'MSFT', description: 'Microsoft Corp', quantity: 55.274, sector: 'Software', gicsSector: 'Information Technology', lastPrice: 396.86, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'AMZN', description: 'Amazon.com Inc', quantity: 112.118, sector: 'Internet Retail', gicsSector: 'Consumer Discretionary', lastPrice: 201.15, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'ASML', description: 'ASML Holding NV', quantity: 19.917, sector: 'Semiconductor Equipment', gicsSector: 'Information Technology', lastPrice: 1419.78, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'SNOW', description: 'Snowflake Inc', quantity: 62.096, sector: 'Application Software', gicsSector: 'Information Technology', lastPrice: 177.10, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'NUKZ', description: 'Range Nuclear Renaissance ETF', quantity: 226.815, sector: 'Nuclear Energy ETF', gicsSector: 'Energy', lastPrice: 70.80, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'VRT', description: 'Vertiv Holdings Co', quantity: 77, sector: 'Electrical Equipment', gicsSector: 'Industrials', lastPrice: 243.53, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'COST', description: 'Costco Wholesale Corp', quantity: 15, sector: 'Consumer Staples Retail', gicsSector: 'Consumer Staples', lastPrice: 1012.05, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'XLV', description: 'Health Care Select Sector SPDR', quantity: 94.93, sector: 'Health Care ETF', gicsSector: 'Health Care', lastPrice: 157.37, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'CEG', description: 'Constellation Energy Corp', quantity: 33.189, sector: 'Independent Power', gicsSector: 'Utilities', lastPrice: 303.01, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'JPM', description: 'JPMorgan Chase & Co', quantity: 40, sector: 'Diversified Banks', gicsSector: 'Financials', lastPrice: 307.13, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'PANW', description: 'Palo Alto Networks Inc', quantity: 54, sector: 'Network Security', gicsSector: 'Information Technology', lastPrice: 163.50, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'FLUT', description: 'Flutter Entertainment PLC', quantity: 35.91, sector: 'Casinos & Gaming', gicsSector: 'Consumer Discretionary', lastPrice: 123.91, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'SCHW', description: 'Charles Schwab Corp', quantity: 92.199, sector: 'Investment Banking', gicsSector: 'Financials', lastPrice: 93.08, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'REMX', description: 'VanEck Rare Earth/Strategic Metals ETF', quantity: 61.438, sector: 'Rare Earth Metals ETF', gicsSector: 'Materials', lastPrice: 88.99, type: 'etf', change: 0, changePercent: 0 },
+        { symbol: 'FCX', description: 'Freeport-McMoRan Inc', quantity: 195.831, sector: 'Copper', gicsSector: 'Materials', lastPrice: 61.09, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'DXCM', description: 'DexCom Inc', quantity: 112.945, sector: 'Health Care Equipment', gicsSector: 'Health Care', lastPrice: 70.43, type: 'stock', change: 0, changePercent: 0 },
+        { symbol: 'PSA', description: 'Public Storage', quantity: 20.725, sector: 'Specialized REITs', gicsSector: 'Real Estate', lastPrice: 302.00, type: 'stock', change: 0, changePercent: 0 }
     ];
 
     const portfolioData = [...broadMarketETFs, ...equityHoldings];
@@ -2055,13 +2056,15 @@
 
         function applyLiveData(h, live) {
             if (!live) return;
-            // Server now always returns price (from snapshot or agg bars fallback)
+            // Server always returns price (from snapshot or agg bars fallback)
             // and change/changePercent computed from close vs prevClose
             const price = live.price || 0;
             if (price > 0) {
                 h.lastPrice = price;
-                h.change = live.change || 0;
-                h.changePercent = live.changePercent || 0;
+                // Use explicit null checks — change of 0.00 is valid (flat day)
+                h.change = (live.change != null) ? live.change : 0;
+                h.changePercent = (live.changePercent != null) ? live.changePercent : 0;
+                h._hasLiveData = true; // flag that this stock got real API data
                 updatedCount++;
             }
         }
@@ -2149,33 +2152,36 @@
     function updateSummaryCards() {
         let totalValue = 0;
         let totalDayChange = 0;
-        let hasDayChange = false;
+        let liveStockCount = 0;
         portfolioData.forEach(h => {
             const mv = h.quantity * h.lastPrice;
             totalValue += mv;
-            if (h.change) { totalDayChange += h.quantity * h.change; hasDayChange = true; }
+            if (h._hasLiveData) {
+                totalDayChange += h.quantity * (h.change || 0);
+                liveStockCount++;
+            }
         });
 
-        // If no live day change from API, try using perfIntelData for last trading day return
+        // Show day change from live API data, with fallback options
         let dayChangeStr = '';
         let dayChangeClass = '';
-        if (hasDayChange) {
+        if (liveStockCount > 0) {
+            // We have live data — compute day change from real-time price changes
             const base = totalValue - totalDayChange || 1;
             const dayChangePercent = (totalDayChange / base) * 100;
             dayChangeStr = `${formatCurrency(totalDayChange)} (${dayChangePercent >= 0 ? '+' : ''}${dayChangePercent.toFixed(2)}%)`;
             dayChangeClass = totalDayChange >= 0 ? 'positive' : 'negative';
         } else if (perfIntelData && perfIntelData.stockPerformance && perfIntelData.stockPerformance.length > 0) {
-            // Calculate portfolio-weighted 1-day return from perf intel stock data
+            // Fallback: estimate from Performance Intelligence historical data
             let weightedReturn = 0;
             perfIntelData.stockPerformance.forEach(s => {
                 if (s.ret1d != null) weightedReturn += (s.weight / 100) * s.ret1d;
             });
             const estimatedDayChange = totalValue * (weightedReturn / 100);
-            const label = marketClosed ? 'last close' : 'last trading day';
-            dayChangeStr = `${formatCurrency(estimatedDayChange)} (${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(2)}%) ${label}`;
+            dayChangeStr = `${formatCurrency(estimatedDayChange)} (${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(2)}%) last trading day`;
             dayChangeClass = weightedReturn >= 0 ? 'positive' : 'negative';
-        } else if (marketClosed) {
-            dayChangeStr = 'Market closed — prices as of last close';
+        } else if (!isLiveMode) {
+            dayChangeStr = 'Static data — connect to server for live prices';
             dayChangeClass = '';
         } else {
             dayChangeStr = 'Loading market data...';
