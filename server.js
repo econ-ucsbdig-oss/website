@@ -1333,6 +1333,116 @@ function parseActivityCSVs(includeDetails) {
     return transactions;
 }
 
+// Parse external cash flows for Time-Weighted Return (TWR) calculations.
+//
+// The key challenge: wire transfers land on date X, but shares get bought on date Y
+// (often days later). The portfolio equity value only changes when shares are bought/sold,
+// not when wires happen (since we don't track cash).
+//
+// Solution: compute net capital deployment per day = sum(BUY amounts) - sum(SELL amounts).
+// Internal rebalancing (sell A, buy B same day) nets to ~$0.
+// Wire-funded buys (buy B, no sell) show positive cash flow = buy amount.
+// Wire withdrawals (sell A, wire out) show negative cash flow = -(sell amount).
+// Share transfers (RECEIVED FROM YOU) add their market value as inflow.
+//
+// This naturally captures the actual equity impact of external capital, regardless
+// of wire timing, and correctly handles internal rebalancing.
+//
+// Returns a map: dateStr (YYYY-MM-DD) -> net external cash flow (positive = capital in)
+function parseExternalCashFlows() {
+    const years = [2021, 2022, 2023, 2024, 2025, 2026];
+    const cashFlows = {}; // dateStr -> net amount
+
+    for (const year of years) {
+        const filePath = path.join(__dirname, 'data', `DIG_${year}_Activity.csv`);
+        try {
+            const text = fs.readFileSync(filePath, 'utf8');
+            const lines = text.split('\n').filter(l => l.trim());
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length < 12) continue;
+                const dateStr = (parts[0] || '').trim();
+                if (!dateStr) continue;
+                const dp = dateStr.split('/');
+                if (dp.length !== 3) continue;
+                let yr = parseInt(dp[2]);
+                if (yr < 100) yr += 2000;
+                const date = new Date(yr, parseInt(dp[0]) - 1, parseInt(dp[1]));
+                if (isNaN(date.getTime())) continue;
+                const action = (parts[1] || '').trim().toUpperCase();
+                const symbol = (parts[2] || '').trim();
+                const price = parseFloat((parts[5] || '').replace(/[^0-9.\-]/g, '')) || 0;
+                const quantity = parseFloat(parts[6]) || 0;
+                const amount = parseFloat((parts[10] || '').replace(/[^0-9.\-]/g, '')) || 0;
+                const dateKey = date.toISOString().split('T')[0];
+
+                // BUY = capital deployed into equity (positive cash flow, increases portfolio value)
+                // Only count explicit BUYs, NOT reinvestments (dividends are internal portfolio returns)
+                if (action.startsWith('YOU BOUGHT') && symbol && /^[A-Z.]{1,6}$/.test(symbol)) {
+                    const buyAmount = Math.abs(amount) || (Math.abs(quantity) * price);
+                    if (buyAmount > 0) {
+                        cashFlows[dateKey] = (cashFlows[dateKey] || 0) + buyAmount;
+                    }
+                }
+                // SELL = capital withdrawn from equity (negative cash flow, decreases portfolio value)
+                else if (action.startsWith('YOU SOLD') && symbol && /^[A-Z.]{1,6}$/.test(symbol)) {
+                    const sellAmount = Math.abs(amount) || (Math.abs(quantity) * price);
+                    if (sellAmount > 0) {
+                        cashFlows[dateKey] = (cashFlows[dateKey] || 0) - sellAmount;
+                    }
+                }
+                // Share transfer IN = external shares entering the portfolio (like a wire but in shares)
+                else if (action.startsWith('RECEIVED FROM YOU') && symbol && /^[A-Z.]{1,6}$/.test(symbol)) {
+                    const transferValue = Math.abs(amount) || (Math.abs(quantity) * price);
+                    if (transferValue > 0) {
+                        cashFlows[dateKey] = (cashFlows[dateKey] || 0) + transferValue;
+                    }
+                }
+                // Share transfer OUT = external shares leaving the portfolio
+                else if (action.startsWith('DELIVERED TO YOU') && symbol && /^[A-Z.]{1,6}$/.test(symbol)) {
+                    const transferValue = Math.abs(amount) || (Math.abs(quantity) * price);
+                    if (transferValue > 0) {
+                        cashFlows[dateKey] = (cashFlows[dateKey] || 0) - transferValue;
+                    }
+                }
+            }
+        } catch (e) { /* skip missing files */ }
+    }
+    return cashFlows;
+}
+
+// Compute Time-Weighted Return (TWR) adjusted daily returns
+// On days with external cash flows, we adjust: return = (V[i] - V[i-1] - CF[i]) / V[i-1]
+// This removes the impact of cash inflows/outflows from portfolio returns.
+//
+// Cash flows come from parseExternalCashFlows() which computes net(buys - sells) per day.
+// Internal rebalancing (sell A, buy B) nets to ~$0, so no TWR adjustment needed.
+// External-funded buys (wire in → buy stock) net positive → subtracted from day's return.
+// Withdrawals (sell stock → wire out) net negative → added back to day's return.
+function computeTWRAdjustedReturns(dailyValues, cashFlows) {
+    if (!dailyValues || dailyValues.length < 2) return [];
+
+    const returns = [];
+    for (let i = 1; i < dailyValues.length; i++) {
+        const prevVal = dailyValues[i - 1].value;
+        const currVal = dailyValues[i].value;
+        const dateStr = dailyValues[i].date;
+        const cf = cashFlows[dateStr] || 0;
+
+        if (prevVal > 100) {
+            // TWR: subtract net capital deployment from the day's value change
+            // If someone wired $50K and bought stock, the portfolio jumps $50K but
+            // cf = +$50K, so adjusted return = (V_new - V_old - $50K) / V_old ≈ 0
+            // (only actual market movement counts as return)
+            const adjustedReturn = (currVal - prevVal - cf) / prevVal;
+            returns.push(adjustedReturn);
+        } else {
+            returns.push(0);
+        }
+    }
+    return returns;
+}
+
 function reconstructHistoricalHoldings(currentHoldings, transactions) {
     // currentHoldings: [{symbol, quantity}]
     const sharesMap = {};
@@ -1426,6 +1536,9 @@ app.post('/api/portfolio/historical-analytics', async (req, res) => {
             });
         }
 
+        // Parse external cash flows for TWR adjustment (wire transfers, share deposits)
+        const cashFlows = parseExternalCashFlows();
+
         // For each trading day, find applicable holdings snapshot and compute portfolio value
         const dailyValues = [];
         for (const bar of spyPrices) {
@@ -1447,15 +1560,9 @@ app.post('/api/portfolio/historical-analytics', async (req, res) => {
             dailyValues.push({ date: dateStr, value: totalVal });
         }
 
-        // Compute daily portfolio returns
-        const portfolioReturns = [];
-        for (let i = 1; i < dailyValues.length; i++) {
-            if (dailyValues[i - 1].value > 100) { // skip days with near-zero value
-                portfolioReturns.push((dailyValues[i].value - dailyValues[i - 1].value) / dailyValues[i - 1].value);
-            } else {
-                portfolioReturns.push(0);
-            }
-        }
+        // Compute TWR-adjusted daily portfolio returns
+        // This removes the impact of wire transfers and share deposits from returns
+        const portfolioReturns = computeTWRAdjustedReturns(dailyValues, cashFlows);
 
         // SPY daily returns
         const spyReturns = [];
@@ -1855,6 +1962,7 @@ app.post('/api/portfolio/frozen-comparison', async (req, res) => {
 
         const transactions = parseActivityCSVs();
         const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
+        const cashFlows = parseExternalCashFlows(); // Wire transfers + share deposits for TWR
 
         const frozenDateObj = new Date(frozenDate);
         const todayStr = new Date().toISOString().split('T')[0];
@@ -1987,10 +2095,22 @@ app.post('/api/portfolio/frozen-comparison', async (req, res) => {
         }
 
         // --- Compute cumulative returns (as %) ---
+        // Frozen portfolio: simple price-based return (no external cash flows, shares never change)
         const frozenStart = frozenValues[0];
-        const actualStart = actualValues[0];
         const frozenCumReturns = frozenValues.map(v => ((v / frozenStart) - 1) * 100);
-        const actualCumReturns = actualValues.map(v => ((v / actualStart) - 1) * 100);
+
+        // Actual portfolio: TWR-adjusted to remove impact of wire transfers and share deposits
+        // Build daily value array for TWR computation
+        const actualDailyValues = dates.map((d, i) => ({ date: d, value: actualValues[i] }));
+        const actualDailyReturns = computeTWRAdjustedReturns(actualDailyValues, cashFlows);
+
+        // Chain TWR daily returns into cumulative return curve
+        const actualCumReturns = [0]; // start at 0%
+        let cumProduct = 1;
+        for (let i = 0; i < actualDailyReturns.length; i++) {
+            cumProduct *= (1 + actualDailyReturns[i]);
+            actualCumReturns.push((cumProduct - 1) * 100);
+        }
 
         const frozenEndValue = frozenValues[frozenValues.length - 1];
         const actualEndValue = actualValues[actualValues.length - 1];
