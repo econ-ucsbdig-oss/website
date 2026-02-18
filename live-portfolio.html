@@ -1884,10 +1884,9 @@
             });
         }
 
-        // optional auto-connect in dev
+        // Auto-connect to API on any HTTP/HTTPS host (production + dev)
         setTimeout(() => {
-            const allowedHosts = ['localhost', '127.0.0.1'];
-            if (window.location.protocol.startsWith('http') && allowedHosts.includes(window.location.hostname)) {
+            if (window.location.protocol.startsWith('http')) {
                 try {
                     updateStatus('static');
                     testAPIConnection();
@@ -1895,7 +1894,7 @@
                     console.warn('Auto API connection attempt failed:', err.message);
                 }
             }
-        }, 600);
+        }, 300);
 
         // keyboard shortcuts
         document.addEventListener('keydown', e => {
@@ -2003,11 +2002,13 @@
         const provided = window.apiBaseURL;
         const candidates = [];
         if (provided) candidates.push(provided);
+        // Try same-origin first (works on production Vercel), then dev ports
         if (window.location.origin && window.location.origin !== 'null') {
+            candidates.push(window.location.origin);
             candidates.push(window.location.origin.replace(/:\d+$/, ':3002'));
             candidates.push(window.location.origin.replace(/:\d+$/, ':3001'));
         }
-        candidates.push(window.location.origin, 'http://127.0.0.1:3002', 'http://127.0.0.1:3001');
+        candidates.push('http://127.0.0.1:3002', 'http://127.0.0.1:3001');
         let healthyBase = null;
 
         for (const base of candidates) {
