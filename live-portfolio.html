@@ -2042,6 +2042,8 @@
         await refreshData();
     }
 
+    var marketClosed = false; // Track if we detected market is closed
+
     async function refreshData() {
         if (!isLiveMode) {
             updateDashboard();
@@ -2050,6 +2052,27 @@
         const symbols = portfolioData.map(h => h.symbol);
         showProgressIndicator('Refreshing market data for ' + symbols.length + ' holdings...');
         let updatedCount = 0;
+        let closedCount = 0; // how many symbols returned 0 price (market closed)
+
+        function applyLiveData(h, live) {
+            if (!live) return;
+            const effectivePrice = (live.price && live.price > 0) ? live.price : (live.prevClose || live.prev_close || 0);
+            if (effectivePrice > 0) {
+                h.lastPrice = effectivePrice;
+                if (live.price && live.price > 0) {
+                    // Market open — use live intraday change
+                    h.change = live.change ?? (live.price - (live.prevClose || live.prev_close || effectivePrice));
+                    h.changePercent = live.changePercent ?? ((h.change / (live.prevClose || live.prev_close || effectivePrice)) * 100);
+                } else {
+                    // Market closed — use previous day's change (prevClose vs day before that)
+                    h.change = 0;
+                    h.changePercent = 0;
+                    closedCount++;
+                }
+                updatedCount++;
+            }
+        }
+
         try {
             let usedBatch = false;
             if (window.apiBaseURL) {
@@ -2061,28 +2084,9 @@
                     });
                     if (batchRes.ok) {
                         const batchResponse = await batchRes.json();
-                        const batchData = batchResponse.results || batchResponse; // Handle both old and new format
+                        const batchData = batchResponse.results || batchResponse;
                         const map = new Map(batchData.map(d => [d.symbol, d]));
-                        portfolioData.forEach(h => {
-                            const live = map.get(h.symbol);
-                            if (live) {
-                                // Use prevClose as fallback when price is 0 (market closed / weekends)
-                                const effectivePrice = (live.price && live.price > 0) ? live.price : (live.prevClose || live.prev_close || 0);
-                                if (effectivePrice > 0) {
-                                    const prev = h.lastPrice;
-                                    h.lastPrice = effectivePrice;
-                                    // When using prevClose (market closed), change is 0
-                                    if (live.price && live.price > 0) {
-                                        h.change = live.change ?? (live.price - (live.prevClose || prev));
-                                        h.changePercent = live.changePercent ?? (h.change / (live.prevClose || prev) * 100);
-                                    } else {
-                                        h.change = 0;
-                                        h.changePercent = 0;
-                                    }
-                                    updatedCount++;
-                                }
-                            }
-                        });
+                        portfolioData.forEach(h => applyLiveData(h, map.get(h.symbol)));
                         usedBatch = true;
                     }
                 } catch (e) {
@@ -2096,22 +2100,7 @@
                         const res = await fetch(window.apiBaseURL + '/api/stock/' + h.symbol);
                         if (!res.ok) continue;
                         const data = await res.json();
-                        if (data) {
-                            // Use prevClose as fallback when price is 0 (market closed / weekends)
-                            const effectivePrice = (data.price && data.price > 0) ? data.price : (data.prevClose || data.prev_close || 0);
-                            if (effectivePrice > 0) {
-                                const prev = h.lastPrice;
-                                h.lastPrice = effectivePrice;
-                                if (data.price && data.price > 0) {
-                                    h.change = data.change ?? (data.price - (data.prevClose || prev));
-                                    h.changePercent = data.changePercent ?? (h.change / (data.prevClose || prev) * 100);
-                                } else {
-                                    h.change = 0;
-                                    h.changePercent = 0;
-                                }
-                                updatedCount++;
-                            }
-                        }
+                        applyLiveData(h, data);
                     } catch (e) {
                         continue;
                     }
@@ -2119,8 +2108,14 @@
             }
 
             lastUpdateTime = new Date();
+            // Detect market-closed state: if all or most symbols had 0 price
+            marketClosed = (closedCount > symbols.length * 0.8) && updatedCount > 0;
             updateDashboard();
-            showSuccessMessage(`Updated ${updatedCount} of ${symbols.length} holdings from live API.`);
+            if (marketClosed) {
+                showSuccessMessage(`Market is closed. Showing last closing prices for ${updatedCount} holdings.`);
+            } else {
+                showSuccessMessage(`Updated ${updatedCount} of ${symbols.length} holdings from live API.`);
+            }
         } catch (err) {
             console.error(err);
             showError('Error while refreshing data from API. Falling back to static embedded prices.');
@@ -2188,10 +2183,14 @@
                 if (s.ret1d != null) weightedReturn += (s.weight / 100) * s.ret1d;
             });
             const estimatedDayChange = totalValue * (weightedReturn / 100);
-            dayChangeStr = `${formatCurrency(estimatedDayChange)} (${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(2)}%) last trading day`;
+            const label = marketClosed ? 'last close' : 'last trading day';
+            dayChangeStr = `${formatCurrency(estimatedDayChange)} (${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(2)}%) ${label}`;
             dayChangeClass = weightedReturn >= 0 ? 'positive' : 'negative';
+        } else if (marketClosed) {
+            dayChangeStr = 'Market closed — prices as of last close';
+            dayChangeClass = '';
         } else {
-            dayChangeStr = 'Connect API for live day change';
+            dayChangeStr = 'Loading market data...';
             dayChangeClass = '';
         }
 

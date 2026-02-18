@@ -1783,6 +1783,161 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
     }
 });
 
+// Yearly portfolio snapshots — what the portfolio looked like at the start of each year
+app.post('/api/portfolio/yearly-snapshots', async (req, res) => {
+    try {
+        const { currentHoldings } = req.body;
+        if (!Array.isArray(currentHoldings) || currentHoldings.length === 0) {
+            return res.status(400).json({ error: 'currentHoldings array required' });
+        }
+
+        const transactions = parseActivityCSVs();
+        const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
+
+        // Define snapshot dates: Jan 2 of each year from 2022 to current year + today
+        const currentYear = new Date().getFullYear();
+        const snapshotDates = [];
+        for (let y = 2022; y <= currentYear; y++) {
+            snapshotDates.push({ label: `Jan ${y}`, date: `${y}-01-03`, year: y });
+        }
+        // Also add current (today)
+        const todayStr = new Date().toISOString().split('T')[0];
+        snapshotDates.push({ label: 'Current', date: todayStr, year: currentYear });
+
+        // For each snapshot date, find what was held
+        const yearlyData = [];
+
+        for (const sd of snapshotDates) {
+            const targetDate = new Date(sd.date);
+
+            // Find the closest snapshot at or before this date
+            let bestSnap = null;
+            for (const snap of snapshots) {
+                if (snap.date <= targetDate) {
+                    bestSnap = snap;
+                } else {
+                    break;
+                }
+            }
+
+            if (!bestSnap) {
+                yearlyData.push({
+                    label: sd.label,
+                    date: sd.date,
+                    year: sd.year,
+                    holdings: [],
+                    totalValue: 0,
+                    numHoldings: 0
+                });
+                continue;
+            }
+
+            // Get the holdings at this point
+            const holdingsAtDate = Object.entries(bestSnap.holdings)
+                .filter(([sym, qty]) => qty > 0.001 && sym !== 'SPAXX')
+                .map(([sym, qty]) => ({ symbol: sym, quantity: qty }));
+
+            yearlyData.push({
+                label: sd.label,
+                date: sd.date,
+                year: sd.year,
+                holdings: holdingsAtDate,
+                numHoldings: holdingsAtDate.length
+            });
+        }
+
+        // Collect all unique symbols across all snapshots
+        const allSyms = new Set();
+        yearlyData.forEach(yd => yd.holdings.forEach(h => allSyms.add(h.symbol)));
+        allSyms.add('SPY'); // always need SPY for benchmark
+
+        // For each symbol, fetch prices around the snapshot dates
+        // We'll fetch the full daily price series and look up prices by date
+        const symArray = [...allSyms];
+        const BATCH_SIZE = 10;
+        const priceLookups = {}; // symbol -> { date -> close }
+
+        for (let i = 0; i < symArray.length; i += BATCH_SIZE) {
+            const batch = symArray.slice(i, i + BATCH_SIZE);
+            const results = await Promise.all(
+                batch.map(sym =>
+                    fetchHistoricalPrices(sym, 'day', '2021-12-28', todayStr, 2000).catch(() => [])
+                )
+            );
+            batch.forEach((sym, idx) => {
+                const lookup = {};
+                (results[idx] || []).forEach(p => {
+                    const ds = p.date ? p.date.split('T')[0] : '';
+                    if (ds) lookup[ds] = p.close;
+                });
+                priceLookups[sym] = lookup;
+            });
+            if (i + BATCH_SIZE < symArray.length) {
+                await new Promise(r => setTimeout(r, 250));
+            }
+        }
+
+        // Now compute portfolio value for each snapshot
+        const spyLookup = priceLookups['SPY'] || {};
+        const spyDates = Object.keys(spyLookup).sort();
+
+        for (const yd of yearlyData) {
+            let totalValue = 0;
+            const holdingsWithPrices = [];
+
+            for (const h of yd.holdings) {
+                const lookup = priceLookups[h.symbol] || {};
+                const dates = Object.keys(lookup).sort();
+                const price = findNearestPrice(lookup, dates, yd.date);
+                const value = price * h.quantity;
+                totalValue += value;
+                holdingsWithPrices.push({
+                    symbol: h.symbol,
+                    quantity: Math.round(h.quantity * 1000) / 1000,
+                    price: Math.round(price * 100) / 100,
+                    value: Math.round(value * 100) / 100
+                });
+            }
+
+            // Sort by value descending
+            holdingsWithPrices.sort((a, b) => b.value - a.value);
+
+            yd.holdings = holdingsWithPrices;
+            yd.totalValue = Math.round(totalValue * 100) / 100;
+
+            // SPY price at this date
+            yd.spyPrice = Math.round((findNearestPrice(spyLookup, spyDates, yd.date) || 0) * 100) / 100;
+        }
+
+        // Calculate YoY changes and SPY comparison
+        for (let i = 1; i < yearlyData.length; i++) {
+            const prev = yearlyData[i - 1];
+            const curr = yearlyData[i];
+            curr.yoyChange = prev.totalValue > 0
+                ? Math.round(((curr.totalValue - prev.totalValue) / prev.totalValue) * 10000) / 100
+                : null;
+            curr.spyChange = prev.spyPrice > 0
+                ? Math.round(((curr.spyPrice - prev.spyPrice) / prev.spyPrice) * 10000) / 100
+                : null;
+            curr.alphaVsSpy = (curr.yoyChange != null && curr.spyChange != null)
+                ? Math.round((curr.yoyChange - curr.spyChange) * 100) / 100
+                : null;
+
+            // Track which stocks were added/removed
+            const prevSyms = new Set(prev.holdings.map(h => h.symbol));
+            const currSyms = new Set(curr.holdings.map(h => h.symbol));
+            curr.added = [...currSyms].filter(s => !prevSyms.has(s));
+            curr.removed = [...prevSyms].filter(s => !currSyms.has(s));
+        }
+
+        res.json({ snapshots: yearlyData });
+
+    } catch (error) {
+        console.error('Error computing yearly snapshots:', error.message);
+        res.status(500).json({ error: 'Failed to compute yearly snapshots' });
+    }
+});
+
 // Lightweight price history endpoint for What-If analyzer (single symbol)
 app.get('/api/portfolio/price-history/:symbol', async (req, res) => {
     try {
