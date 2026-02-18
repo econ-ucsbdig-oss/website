@@ -2043,8 +2043,6 @@
         await refreshData();
     }
 
-    var marketClosed = false; // Track if we detected market is closed
-
     async function refreshData() {
         if (!isLiveMode) {
             updateDashboard();
@@ -2104,7 +2102,6 @@
             }
 
             lastUpdateTime = new Date();
-            marketClosed = false; // server now handles fallback to agg bars
             updateDashboard();
             showSuccessMessage(`Updated ${updatedCount} of ${symbols.length} holdings from live API.`);
         } catch (err) {
