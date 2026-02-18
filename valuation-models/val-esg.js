@@ -56,6 +56,12 @@ function computeESGScores(details, financials, sector) {
     const latestAssets = latestQ.assets || 0;
     const latestLiabilities = latestQ.liabilities || 0;
     const latestEquity = latestQ.equity || 0;
+    const latestLongTermDebt = latestQ.longTermDebt || 0;
+    const latestNonCurrentLiabilities = latestQ.nonCurrentLiabilities || 0;
+    // Financial debt (not total liabilities) for leverage metrics
+    const latestFinancialDebt = latestLongTermDebt > 0 ? latestLongTermDebt :
+                                 latestNonCurrentLiabilities > 0 ? latestNonCurrentLiabilities * 0.70 :
+                                 latestLiabilities * 0.40;
 
     // Revenue per employee
     const revPerEmployee = (totalEmployees > 0 && ttmRevenue > 0)
@@ -130,9 +136,9 @@ function computeESGScores(details, financials, sector) {
         transparencyScore = 5; // default
     }
 
-    // Debt Management (0-10)
+    // Debt Management (0-10) — use financial debt, not total liabilities
     if (latestEquity > 0) {
-        const debtToEquity = latestLiabilities / latestEquity;
+        const debtToEquity = latestFinancialDebt / latestEquity;
         if (debtToEquity >= 0.3 && debtToEquity <= 0.8) debtScore = 10;
         else if (debtToEquity >= 0.1 && debtToEquity <= 1.5) debtScore = 7;
         else if (debtToEquity >= 0 && debtToEquity <= 3.0) debtScore = 4;
@@ -175,8 +181,8 @@ function computeESGScores(details, financials, sector) {
     else if (rating === 'BB' || rating === 'B') ratingColor = '#fd7e14';
     else ratingColor = '#dc3545';
 
-    // Compute debtToEquity for display
-    const debtToEquity = latestEquity > 0 ? (latestLiabilities / latestEquity) : null;
+    // Compute debtToEquity for display (using financial debt)
+    const debtToEquity = latestEquity > 0 ? (latestFinancialDebt / latestEquity) : null;
     const accruals = (latestAssets > 0 && quarterly.length >= 4)
         ? (ttmNetIncome - ttmCashFlow) / latestAssets : null;
     const cfToNI = (ttmNetIncome > 0 && quarterly.length >= 4)

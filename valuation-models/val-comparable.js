@@ -116,10 +116,18 @@ function _computeMultiples(details, financials, quote) {
     result.latestEquity = financials[0].equity || 0;
     result.latestLiabilities = financials[0].liabilities || 0;
     result.latestAssets = financials[0].assets || 0;
+    result.latestCurrentAssets = financials[0].currentAssets || 0;
+    result.latestNonCurrentLiabilities = financials[0].nonCurrentLiabilities || 0;
+    result.latestLongTermDebt = financials[0].longTermDebt || 0;
 
-    // Enterprise Value
-    var estCash = result.latestAssets * 0.10; // proxy: 10% of assets is cash
-    result.netDebt = result.latestLiabilities - estCash;
+    // Enterprise Value: use financial debt (not total liabilities) for net debt
+    var financialDebt = result.latestLongTermDebt > 0 ? result.latestLongTermDebt :
+                        result.latestNonCurrentLiabilities > 0 ? result.latestNonCurrentLiabilities * 0.70 :
+                        result.latestLiabilities * 0.40;
+    var estCash = result.latestCurrentAssets > 0
+        ? result.latestCurrentAssets * 0.50
+        : result.latestAssets * 0.10;
+    result.netDebt = financialDebt - estCash;
     result.ev = result.marketCap + result.netDebt;
 
     // Multiples

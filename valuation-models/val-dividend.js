@@ -23,18 +23,23 @@ async function runDividendGrowth(symbol, overrides) {
     try {
         // -----------------------------------------------------------
         // 1. Fetch all required data in parallel
+        //    Uses dedicated Polygon /v3/reference/dividends endpoint
+        //    for actual per-share dividend history (cash_flow_statement
+        //    dividends_paid field is unreliable / often missing)
         // -----------------------------------------------------------
-        const [financialsRes, detailsRes, comprehensiveRes, analyticsRes] = await Promise.all([
+        const [financialsRes, detailsRes, comprehensiveRes, analyticsRes, dividendsRes] = await Promise.all([
             fetch(`${apiBaseURL}/api/stock/${symbol}/financials?limit=12`).then(r => r.json()),
             fetch(`${apiBaseURL}/api/stock/${symbol}/details`).then(r => r.json()),
             fetch(`${apiBaseURL}/api/stock/${symbol}/comprehensive`).then(r => r.json()),
-            fetch(`${apiBaseURL}/api/stock/${symbol}/analytics`).then(r => r.json())
+            fetch(`${apiBaseURL}/api/stock/${symbol}/analytics`).then(r => r.json()),
+            fetch(`${apiBaseURL}/api/stock/${symbol}/dividends?limit=20`).then(r => r.json())
         ]);
 
         const financials = financialsRes.financials || financialsRes || [];
         const details = detailsRes || {};
         const quote = comprehensiveRes.quote || comprehensiveRes || {};
         const analytics = analyticsRes.analytics || analyticsRes || {};
+        const rawDividends = dividendsRes.dividends || [];
 
         // -----------------------------------------------------------
         // 2. Extract current price (use prevClose fallback)
@@ -48,53 +53,17 @@ async function runDividendGrowth(symbol, overrides) {
         const quarterly = financials.filter(f => f.fiscalPeriod !== 'FY');
 
         // -----------------------------------------------------------
-        // 4. Extract quarterly dividends (Polygon returns negative values
-        //    for cash outflows, so use Math.abs())
+        // 4. Build dividend data from dedicated dividends endpoint
+        //    Each entry has: cashAmount (per share), payDate, exDividendDate, frequency
         // -----------------------------------------------------------
-        const dividendData = quarterly.map(q => ({
-            period: q.fiscalPeriod,
-            year: q.fiscalYear,
-            dividends: Math.abs(q.dividends || 0),
-            eps: q.epsDiluted || q.eps || 0,
-            cashFlow: q.cashFlow || 0,
-            revenues: q.revenues || 0,
-            netIncome: q.netIncome || 0,
-            liabilities: q.liabilities || 0,
-            equity: q.equity || 0
-        }));
-
-        // -----------------------------------------------------------
-        // 5. Check if dividends exist
-        //    Primary: look for dividends_paid in cash flow statements
-        //    Fallback: check if details/analytics report a dividend yield
-        // -----------------------------------------------------------
-        let hasDividends = dividendData.some(d => d.dividends > 0);
-
-        // Fallback: if Polygon doesn't populate dividends_paid but the company
-        // does pay dividends, the details or analytics may still report a yield
-        const detailsDivYield = details.dividendYield || analytics.dividendYield || 0;
-        if (!hasDividends && detailsDivYield > 0 && currentPrice > 0) {
-            // Estimate annual dividend from reported yield and distribute across quarters
-            const estAnnualDiv = currentPrice * detailsDivYield;
-            const estQuarterlyDiv = estAnnualDiv / 4;
-            const sharesEst = details.weightedSharesOutstanding || details.shareClassSharesOutstanding || 0;
-            if (sharesEst > 0) {
-                const estTotalQDiv = estQuarterlyDiv * sharesEst;
-                // Backfill the most recent 4 quarters with estimated dividends
-                for (let qi = 0; qi < Math.min(4, dividendData.length); qi++) {
-                    dividendData[qi].dividends = estTotalQDiv;
-                    dividendData[qi].estimated = true;
-                }
-                hasDividends = true;
-            }
-        }
+        const hasDividends = rawDividends.length > 0 && rawDividends.some(d => d.cashAmount > 0);
 
         if (!hasDividends) {
             output.innerHTML = `
             <div class="result-grid">
                 <div class="result-card span-2" style="text-align:center;padding:2.5rem;">
                     <div class="verdict-badge fairly-valued">NO DIVIDENDS DETECTED</div>
-                    <div class="verdict-detail" style="margin-top:1rem;">No dividend payments found for ${symbol} in the last ${quarterly.length} quarters. The Dividend Growth Model requires dividend-paying stocks.</div>
+                    <div class="verdict-detail" style="margin-top:1rem;">No dividend payments found for ${symbol}. The Dividend Growth Model requires dividend-paying stocks.</div>
                     <div style="margin-top:1rem;color:rgba(255,255,255,0.6);">
                         <p>Consider using:</p>
                         <ul style="list-style:none;padding:0;margin-top:0.5rem;">
@@ -108,22 +77,56 @@ async function runDividendGrowth(symbol, overrides) {
         }
 
         // -----------------------------------------------------------
-        // 6. Compute all dividend metrics
+        // 5. Compute all dividend metrics using per-share data
         // -----------------------------------------------------------
         const companyName = details.name || symbol;
         const sharesOutstanding = details.weightedSharesOutstanding || details.shareClassSharesOutstanding || 0;
         const beta = analytics.beta || 1.0;
 
-        // --- Annual DPS ---
-        const recentDivQuarters = dividendData.slice(0, Math.min(4, dividendData.length));
-        const totalDividendsLast4Q = recentDivQuarters.reduce((s, q) => s + q.dividends, 0);
-        const annualDPS = sharesOutstanding > 0 ? totalDividendsLast4Q / sharesOutstanding : 0;
+        // --- Annual DPS from actual dividend payments ---
+        // Sum the most recent ~4 payments (quarterly) or ~1 (annual) based on frequency
+        const frequency = rawDividends[0]?.frequency || 4; // default quarterly
+        const paymentsPerYear = frequency;
+        const recentPayments = rawDividends.slice(0, Math.min(paymentsPerYear, rawDividends.length));
+        const annualDPS = recentPayments.reduce((s, d) => s + (d.cashAmount || 0), 0);
 
         // --- Dividend Yield ---
         const dividendYield = currentPrice > 0 ? (annualDPS / currentPrice) * 100 : 0;
 
+        // Build dividendData array for quarterly financial context (for payout ratios, charts)
+        const dividendData = quarterly.map(q => {
+            // Match dividends to this fiscal quarter by pay date
+            const qStart = q.startDate ? new Date(q.startDate) : null;
+            const qEnd = q.endDate ? new Date(q.endDate) : null;
+            let qDividendPerShare = 0;
+            if (qStart && qEnd) {
+                rawDividends.forEach(d => {
+                    const payDate = d.payDate ? new Date(d.payDate) : null;
+                    if (payDate && payDate >= qStart && payDate <= qEnd) {
+                        qDividendPerShare += d.cashAmount || 0;
+                    }
+                });
+            }
+            return {
+                period: q.fiscalPeriod,
+                year: q.fiscalYear,
+                dividendPerShare: qDividendPerShare,
+                dividends: qDividendPerShare * sharesOutstanding, // total dollars for backwards compat
+                eps: q.epsDiluted || q.eps || 0,
+                cashFlow: q.cashFlow || 0,
+                revenues: q.revenues || 0,
+                netIncome: q.netIncome || 0,
+                liabilities: q.liabilities || 0,
+                nonCurrentLiabilities: q.nonCurrentLiabilities || 0,
+                longTermDebt: q.longTermDebt || 0,
+                equity: q.equity || 0
+            };
+        });
+
         // --- TTM EPS ---
+        const recentDivQuarters = dividendData.slice(0, Math.min(4, dividendData.length));
         const ttmEPS = recentDivQuarters.reduce((s, q) => s + q.eps, 0);
+        const totalDividendsLast4Q = annualDPS * sharesOutstanding; // total dollars paid
 
         // --- Payout Ratio (Earnings) ---
         let payoutRatio = null;
@@ -144,15 +147,17 @@ async function runDividendGrowth(symbol, overrides) {
             cfPayoutDisplay = cfPayoutRatio.toFixed(1) + '%';
         }
 
-        // --- Dividend Growth Rate ---
+        // --- Dividend Growth Rate (from actual per-share dividends) ---
         let divGrowthRate = 0.03; // default 3%
-        let growthQuartersUsed = quarterly.length;
-        if (dividendData.length >= 8) {
-            const latest4Q = dividendData.slice(0, 4).reduce((s, q) => s + q.dividends, 0);
-            const oldest4Q = dividendData.slice(-4).reduce((s, q) => s + q.dividends, 0);
-            if (oldest4Q > 0 && latest4Q > 0) {
-                const years = (dividendData.length - 4) / 4; // approximate years between midpoints
-                const rawGrowth = Math.pow(latest4Q / oldest4Q, 1 / Math.max(years, 0.5)) - 1;
+        let growthQuartersUsed = rawDividends.length;
+        // Use oldest vs newest annual DPS from rawDividends
+        if (rawDividends.length >= paymentsPerYear * 2) {
+            const latestAnnual = rawDividends.slice(0, paymentsPerYear).reduce((s, d) => s + (d.cashAmount || 0), 0);
+            const oldestStart = Math.min(rawDividends.length, paymentsPerYear * 3);
+            const oldestAnnual = rawDividends.slice(oldestStart - paymentsPerYear, oldestStart).reduce((s, d) => s + (d.cashAmount || 0), 0);
+            if (oldestAnnual > 0 && latestAnnual > 0) {
+                const years = (oldestStart - paymentsPerYear) / paymentsPerYear;
+                const rawGrowth = Math.pow(latestAnnual / oldestAnnual, 1 / Math.max(years, 0.5)) - 1;
                 if (rawGrowth > 0.50 || rawGrowth < -0.50) {
                     divGrowthRate = 0.03; // extreme -> use default
                 } else {
@@ -233,9 +238,12 @@ async function runDividendGrowth(symbol, overrides) {
             safetyScore++;
         }
 
-        // +1 if debt-to-equity < 1.5
+        // +1 if financial debt-to-equity < 1.5 (use long-term debt or non-current liabilities, not total liabilities)
         const latestQ = dividendData[0] || {};
-        if (latestQ.equity > 0 && (latestQ.liabilities / latestQ.equity) < 1.5) {
+        const latestFinDebt = latestQ.longTermDebt > 0 ? latestQ.longTermDebt :
+                              latestQ.nonCurrentLiabilities > 0 ? latestQ.nonCurrentLiabilities * 0.70 :
+                              (latestQ.liabilities || 0) * 0.40;
+        if (latestQ.equity > 0 && (latestFinDebt / latestQ.equity) < 1.5) {
             safetyScore++;
         }
 

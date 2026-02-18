@@ -294,6 +294,36 @@ async function fetchFinancials(symbol, limit = 4) {
     }
 }
 
+// Get dividend history from Polygon reference endpoint
+async function fetchDividends(symbol, limit = 12) {
+    try {
+        const data = await polygonFetch(`/v3/reference/dividends`, {
+            ticker: symbol,
+            limit: limit,
+            order: 'desc',
+            sort: 'pay_date'
+        });
+
+        if (data.status === 'OK' && data.results) {
+            return data.results.map(d => ({
+                cashAmount: d.cash_amount,
+                currency: d.currency,
+                declarationDate: d.declaration_date,
+                exDividendDate: d.ex_dividend_date,
+                payDate: d.pay_date,
+                recordDate: d.record_date,
+                frequency: d.frequency, // 1=annual, 2=semi, 4=quarterly, 12=monthly
+                dividendType: d.dividend_type // CD=cash, SC=special cash, etc.
+            }));
+        }
+
+        return [];
+    } catch (error) {
+        console.error(`Error fetching dividends for ${symbol}:`, error.message);
+        return []; // Return empty array rather than throwing
+    }
+}
+
 // Get company news
 async function fetchNews(symbol, limit = 10) {
     try {
@@ -632,6 +662,29 @@ app.get('/api/stock/:symbol/financials', async (req, res) => {
     }
 });
 
+// Get dividend history
+app.get('/api/stock/:symbol/dividends', async (req, res) => {
+    try {
+        const { symbol } = req.params;
+        const { limit = 12 } = req.query;
+
+        if (!symbol) {
+            return res.status(400).json({ error: 'Symbol required' });
+        }
+
+        const dividends = await fetchDividends(symbol.toUpperCase(), parseInt(limit));
+        res.json({
+            symbol: symbol.toUpperCase(),
+            dividends,
+            count: dividends.length
+        });
+
+    } catch (error) {
+        console.error(`Error fetching dividends for ${req.params.symbol}:`, error.message);
+        res.status(500).json({ error: 'Failed to fetch dividends' });
+    }
+});
+
 // Get historical valuation metrics (P/E, P/B trends over time)
 app.get('/api/stock/:symbol/valuation-history', async (req, res) => {
     try {
@@ -809,9 +862,12 @@ app.get('/api/stock/:symbol/value-creation', async (req, res) => {
                 ? (financial.operatingIncome / totalCapital) * 100
                 : null;
 
-            // Capital Structure
+            // Capital Structure — use financial debt (not total liabilities)
+            const finDebt = financial.longTermDebt > 0 ? financial.longTermDebt :
+                            financial.nonCurrentLiabilities > 0 ? financial.nonCurrentLiabilities * 0.70 :
+                            (financial.liabilities || 0) * 0.40;
             const debtToEquity = financial.equity && financial.equity > 0
-                ? financial.liabilities / financial.equity
+                ? finDebt / financial.equity
                 : null;
 
             const assetToEquity = equityMultiplier; // Same as equity multiplier

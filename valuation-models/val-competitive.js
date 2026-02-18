@@ -172,6 +172,8 @@ function _compComputeMetrics(details, financials) {
     result.latestEquity = financials[0].equity || 0;
     result.latestAssets = financials[0].assets || 0;
     result.latestLiabilities = financials[0].liabilities || 0;
+    result.latestLongTermDebt = financials[0].longTermDebt || 0;
+    result.latestNonCurrentLiabilities = financials[0].nonCurrentLiabilities || 0;
 
     // ROE, ROA
     if (result.latestEquity > 0) {
@@ -181,9 +183,12 @@ function _compComputeMetrics(details, financials) {
         result.roa = result.ttmNetIncome / result.latestAssets;
     }
 
-    // Debt-to-Equity
+    // Debt-to-Equity (use financial debt, not total liabilities)
     if (result.latestEquity > 0) {
-        result.debtToEquity = result.latestLiabilities / result.latestEquity;
+        var financialDebt = result.latestLongTermDebt > 0 ? result.latestLongTermDebt :
+                            result.latestNonCurrentLiabilities > 0 ? result.latestNonCurrentLiabilities * 0.70 :
+                            result.latestLiabilities * 0.40;
+        result.debtToEquity = financialDebt / result.latestEquity;
     }
 
     // P/E
