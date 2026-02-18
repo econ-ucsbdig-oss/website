@@ -893,7 +893,7 @@
     // UTILITY FUNCTIONS
     // ============================================================
     function fmt(n, dec = 2) { if (n == null || isNaN(n)) return 'N/A'; return n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
-    function fmtCur(n) { if (n == null || isNaN(n)) return 'N/A'; return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtCur(n) { if (n == null || isNaN(n)) return 'N/A'; return (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     function fmtBig(n) {
         if (n == null || isNaN(n)) return 'N/A';
         const abs = Math.abs(n);
@@ -973,7 +973,17 @@
             const ttmOpIncome = recentQ.reduce((s, q) => s + (q.operatingIncome || 0), 0);
             const ttmNetIncome = recentQ.reduce((s, q) => s + (q.netIncome || 0), 0);
             const ttmCashFlow = recentQ.reduce((s, q) => s + (q.cashFlow || 0), 0);
+            const ttmOperatingCF = recentQ.reduce((s, q) => s + (q.operatingCashFlow || 0), 0);
             let avgOpMargin = ttmRevenue > 0 ? ttmOpIncome / ttmRevenue : 0.15;
+
+            // For companies with negative operating margins, use a floor that mean-reverts
+            // toward a modest positive margin over the projection period
+            const hasNegativeMargin = avgOpMargin < 0;
+            const dcfWarnings = [];
+
+            if (hasNegativeMargin) {
+                dcfWarnings.push(`Current TTM operating margin is ${(avgOpMargin * 100).toFixed(1)}% (negative). The model assumes margin improvement toward profitability over 5 years.`);
+            }
 
             // YoY growth rates
             const growthRates = [];
@@ -997,13 +1007,42 @@
             const terminalGrowthRate = overrides.terminalGrowth != null ? overrides.terminalGrowth : 0.03;
             const projections = [];
             let prevRevenue = ttmRevenue;
+
+            // For negative-margin companies, mean-revert toward a target margin (10%) over 5 years
+            const targetMargin = hasNegativeMargin ? 0.10 : 0.15;
+
             for (let yr = 1; yr <= 5; yr++) {
                 const blendedGrowth = historicalGrowth * (1 - yr / 6) + terminalGrowthRate * (yr / 6);
                 const revenue = prevRevenue * (1 + blendedGrowth);
-                const opMargin = avgOpMargin * (1 - yr * 0.01) + 0.15 * (yr * 0.01); // mild mean reversion
+
+                let opMargin;
+                if (hasNegativeMargin) {
+                    // For negative-margin companies, linearly interpolate toward target margin
+                    // This assumes the company is working toward profitability
+                    opMargin = avgOpMargin + (targetMargin - avgOpMargin) * (yr / 5);
+                } else {
+                    opMargin = avgOpMargin * (1 - yr * 0.01) + targetMargin * (yr * 0.01); // mild mean reversion
+                }
+
                 const opIncome = revenue * opMargin;
-                const fcfRatio = ttmOpIncome > 0 ? clamp(ttmCashFlow / ttmOpIncome, 0.4, 1.0) : 0.70;
-                const fcf = opIncome * fcfRatio;
+
+                // FCF conversion ratio: use operating cash flow / operating income if available
+                // For negative operating income companies, use operating cash flow directly if positive
+                let fcf;
+                if (hasNegativeMargin && ttmOperatingCF > 0) {
+                    // Company generates cash despite negative GAAP op income (common for high-growth companies)
+                    const cashMargin = ttmRevenue > 0 ? ttmOperatingCF / ttmRevenue : 0.05;
+                    const projectedCashMargin = cashMargin + (0.12 - cashMargin) * (yr / 5); // mean-revert toward 12%
+                    fcf = revenue * Math.max(projectedCashMargin, opMargin * 0.70);
+                } else if (opIncome > 0) {
+                    const fcfRatio = ttmOpIncome > 0 ? clamp(ttmCashFlow / ttmOpIncome, 0.4, 1.0) : 0.70;
+                    fcf = opIncome * fcfRatio;
+                } else {
+                    // Negative FCF — discount the loss but floor at a fraction of revenue
+                    const fcfRatio = 0.70;
+                    fcf = opIncome * fcfRatio; // will be negative
+                }
+
                 projections.push({ year: yr, revenue, growth: blendedGrowth, opMargin, opIncome, fcf });
                 prevRevenue = revenue;
             }
@@ -1013,9 +1052,20 @@
             const equityRiskPremium = 0.055;
             const costOfEquity = riskFreeRate + beta * equityRiskPremium;
             const latestFinancial = quarterly[0];
-            const totalDebt = latestFinancial.liabilities || 0;
+
+            // Use long-term debt (financial debt) instead of total liabilities
+            // Total liabilities includes accounts payable, deferred revenue, lease obligations, etc.
+            // which shouldn't be treated as financial debt in WACC or net debt calculations
+            const longTermDebt = latestFinancial.longTermDebt || 0;
+            const nonCurrentLiabilities = latestFinancial.nonCurrentLiabilities || 0;
+            // Best estimate of financial debt: long-term debt if available, otherwise non-current liabilities
+            // Fallback: 40% of total liabilities (industry average for non-financial companies)
+            const financialDebt = longTermDebt > 0 ? longTermDebt :
+                                  nonCurrentLiabilities > 0 ? nonCurrentLiabilities * 0.70 :
+                                  (latestFinancial.liabilities || 0) * 0.40;
+
             const totalEquity = latestFinancial.equity || 1;
-            const debtToEquity = totalDebt / totalEquity;
+            const debtToEquity = Math.max(financialDebt, 0) / Math.max(totalEquity, 1);
             const debtWeight = debtToEquity / (1 + debtToEquity);
             const equityWeight = 1 - debtWeight;
             const costOfDebt = riskFreeRate + 0.02;
@@ -1026,10 +1076,27 @@
             // --- STEP 4: Terminal Value ---
             const lastFCF = projections[4].fcf;
             const lastOpIncome = projections[4].opIncome;
-            const tvPerpGrowth = lastFCF * (1 + terminalGrowthRate) / (wacc - terminalGrowthRate);
+
+            // Guard against negative terminal values
+            const tvPerpGrowth = lastFCF > 0
+                ? lastFCF * (1 + terminalGrowthRate) / (wacc - terminalGrowthRate)
+                : 0; // Don't capitalize negative cash flows into perpetuity
             const exitMultiple = overrides.exitMultiple != null ? overrides.exitMultiple : 15;
-            const tvExitMultiple = lastOpIncome * exitMultiple;
-            const terminalValue = (tvPerpGrowth + tvExitMultiple) / 2;
+            const tvExitMultiple = lastOpIncome > 0 ? lastOpIncome * exitMultiple : 0;
+
+            let terminalValue;
+            if (tvPerpGrowth > 0 && tvExitMultiple > 0) {
+                terminalValue = (tvPerpGrowth + tvExitMultiple) / 2; // blend both
+            } else if (tvPerpGrowth > 0) {
+                terminalValue = tvPerpGrowth;
+            } else if (tvExitMultiple > 0) {
+                terminalValue = tvExitMultiple;
+            } else {
+                // Both negative — company isn't projected to be profitable by Year 5
+                // Use revenue multiple as last resort (2x Year 5 revenue as conservative EV)
+                terminalValue = projections[4].revenue * 2;
+                dcfWarnings.push('Terminal value based on revenue multiple (2x) because projected FCF and operating income remain negative in Year 5.');
+            }
 
             // --- STEP 5: DCF ---
             let pvFCFs = 0;
@@ -1037,11 +1104,23 @@
             const pvTerminal = terminalValue / Math.pow(1 + wacc, 5);
             const enterpriseValue = pvFCFs + pvTerminal;
 
-            const estCash = (latestFinancial.assets || 0) * 0.10;
-            const netDebt = totalDebt - estCash;
-            const equityValue = enterpriseValue - Math.max(netDebt, 0);
-            const fairValue = sharesOutstanding > 0 ? equityValue / sharesOutstanding : 0;
+            // Estimate cash: use current assets as proxy (includes cash, receivables, inventory)
+            // A better proxy is ~50% of current assets for cash + short-term investments
+            const currentAssets = latestFinancial.currentAssets || 0;
+            const estCash = currentAssets > 0
+                ? currentAssets * 0.50
+                : (latestFinancial.assets || 0) * 0.10; // fallback
+
+            // Net debt = financial debt - cash (not total liabilities)
+            const netDebt = financialDebt - estCash;
+            // If net cash position (netDebt < 0), ADD cash to equity value
+            const equityValue = enterpriseValue - netDebt;
+            const fairValue = sharesOutstanding > 0 ? Math.max(equityValue / sharesOutstanding, 0) : 0;
             const upside = currentPrice > 0 ? ((fairValue - currentPrice) / currentPrice) * 100 : 0;
+
+            if (fairValue <= 0) {
+                dcfWarnings.push('DCF model produces a non-positive equity value. This typically occurs for highly leveraged or unprofitable companies. Consider adjusting growth or margin assumptions.');
+            }
 
             let verdict, verdictClass;
             if (upside > 15) { verdict = 'UNDERVALUED'; verdictClass = 'undervalued'; }
@@ -1053,13 +1132,19 @@
             for (let w = wacc - 0.015; w <= wacc + 0.0151; w += 0.005) waccRange.push(w);
             const growthRange = [0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045];
             const sensTable = waccRange.map(w => growthRange.map(g => {
-                const tv = lastFCF * (1 + g) / (w - g);
-                const tvBlend = (tv + tvExitMultiple) / 2;
+                // Guard: if lastFCF is negative, perpetuity growth model breaks — use exit multiple only
+                const tvPerp = lastFCF > 0 ? lastFCF * (1 + g) / (w - g) : 0;
+                const tvExit = lastOpIncome > 0 ? tvExitMultiple : 0;
+                let tvBlend;
+                if (tvPerp > 0 && tvExit > 0) tvBlend = (tvPerp + tvExit) / 2;
+                else if (tvPerp > 0) tvBlend = tvPerp;
+                else if (tvExit > 0) tvBlend = tvExit;
+                else tvBlend = projections[4].revenue * 2; // revenue multiple fallback
                 let pv = 0;
                 projections.forEach(p => { pv += p.fcf / Math.pow(1 + w, p.year); });
                 pv += tvBlend / Math.pow(1 + w, 5);
-                const eq = pv - Math.max(netDebt, 0);
-                return sharesOutstanding > 0 ? eq / sharesOutstanding : 0;
+                const eq = pv - netDebt; // netDebt can be negative (net cash), which adds value
+                return sharesOutstanding > 0 ? Math.max(eq / sharesOutstanding, 0) : 0;
             }));
 
             // --- RENDER ---
@@ -1068,7 +1153,7 @@
                 projections, wacc, costOfEquity, costOfDebt, equityWeight, debtWeight, riskFreeRate, taxRate,
                 tvPerpGrowth, tvExitMultiple, terminalValue, pvFCFs, pvTerminal, enterpriseValue,
                 netDebt, equityValue, fairValue, upside, verdict, verdictClass,
-                sensTable, waccRange, growthRange, quarterly);
+                sensTable, waccRange, growthRange, quarterly, dcfWarnings);
 
         } catch (err) {
             console.error('DCF Error:', err);
@@ -1080,7 +1165,7 @@
         ttmRev, ttmOp, ttmNet, ttmFCF, avgMargin, histGrowth,
         projections, wacc, coe, cod, eqW, debtW, rf, taxR,
         tvPerp, tvExit, tv, pvFCFs, pvTV, ev, netDebt, eqVal, fairVal, upside, verdict, verdictClass,
-        sensTable, waccRange, growthRange, quarterly) {
+        sensTable, waccRange, growthRange, quarterly, dcfWarnings) {
 
         const output = document.getElementById('analysisOutput');
 
@@ -1097,6 +1182,14 @@
             <div class="verdict-price" style="color: ${upside >= 0 ? '#28a745' : '#dc3545'};">${fmtCur(fairVal)}</div>
             <div class="verdict-detail">DCF Fair Value vs Current Price of ${fmtCur(currentPrice)} &mdash; ${fmtPct(upside)} ${upside >= 0 ? 'Upside' : 'Downside'}</div>
         </div>
+
+        ${dcfWarnings && dcfWarnings.length > 0 ? `
+        <div class="result-card span-2" style="border-left:3px solid #f0ad4e;background:rgba(240,173,78,0.08);">
+            <h3 style="color:#f0ad4e;margin-bottom:0.5rem;"><i class="fas fa-exclamation-triangle"></i> Model Caveats</h3>
+            <ul style="margin:0;padding-left:1.2rem;font-size:0.85rem;opacity:0.85;">
+                ${dcfWarnings.map(w => `<li style="margin-bottom:0.3rem;">${w}</li>`).join('')}
+            </ul>
+        </div>` : ''}
 
         <div class="result-grid">
             <!-- COMPANY OVERVIEW -->
@@ -1170,7 +1263,7 @@
                     <tr style="border-top:1px solid rgba(255,255,255,0.15);"><td>PV of Projected FCFs</td><td>${fmtBig(pvFCFs)}</td></tr>
                     <tr><td>PV of Terminal Value</td><td>${fmtBig(pvTV)}</td></tr>
                     <tr><td style="font-weight:700;">Enterprise Value</td><td class="highlight">${fmtBig(ev)}</td></tr>
-                    <tr><td>Less: Net Debt</td><td>(${fmtBig(Math.max(netDebt, 0))})</td></tr>
+                    <tr><td>${netDebt >= 0 ? 'Less: Net Debt' : 'Plus: Net Cash'}</td><td>${netDebt >= 0 ? '(' + fmtBig(netDebt) + ')' : fmtBig(Math.abs(netDebt))}</td></tr>
                     <tr><td style="font-weight:700;">Equity Value</td><td class="highlight">${fmtBig(eqVal)}</td></tr>
                     <tr><td style="font-weight:700;">Fair Value Per Share</td><td class="highlight" style="font-size:1.1rem;">${fmtCur(fairVal)}</td></tr>
                 </table>
@@ -1234,7 +1327,7 @@
                 { title: 'Valuation Summary', type: 'metrics', rows: [
                     { label: 'Current Price', formatted: fmtCur(currentPrice), formula: 'Polygon.io quote (prevClose fallback)' },
                     { label: 'DCF Fair Value', formatted: fmtCur(fairVal), formula: 'Equity Value / Shares Outstanding' },
-                    { label: 'Upside/Downside', formatted: fmtPct(upside) + '%', formula: '(Fair Value - Current Price) / Current Price' },
+                    { label: 'Upside/Downside', formatted: fmtPct(upside), formula: '(Fair Value - Current Price) / Current Price' },
                     { label: 'Verdict', formatted: upside > 15 ? 'UNDERVALUED' : upside < -15 ? 'OVERVALUED' : 'FAIRLY VALUED' }
                 ]},
                 { title: 'WACC Inputs', type: 'metrics', rows: [
@@ -1258,7 +1351,7 @@
                     { label: 'PV of Projected FCFs', formatted: fmtBig(pvFCFs) },
                     { label: 'PV of Terminal Value', formatted: fmtBig(pvTV) },
                     { label: 'Enterprise Value', formatted: fmtBig(ev), formula: 'PV(FCFs) + PV(TV)' },
-                    { label: 'Less: Net Debt', formatted: '(' + fmtBig(Math.max(netDebt, 0)) + ')' },
+                    { label: netDebt >= 0 ? 'Less: Net Debt' : 'Plus: Net Cash', formatted: netDebt >= 0 ? '(' + fmtBig(netDebt) + ')' : fmtBig(Math.abs(netDebt)) },
                     { label: 'Equity Value', formatted: fmtBig(eqVal) },
                     { label: 'Shares Outstanding', formatted: fmtBig(sharesOut) },
                     { label: 'Fair Value Per Share', formatted: fmtCur(fairVal) }

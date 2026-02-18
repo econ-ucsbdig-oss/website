@@ -274,9 +274,15 @@ async function fetchFinancials(symbol, limit = 4) {
                 eps: financial.financials?.income_statement?.basic_earnings_per_share?.value,
                 epsDiluted: financial.financials?.income_statement?.diluted_earnings_per_share?.value,
                 assets: financial.financials?.balance_sheet?.assets?.value,
+                currentAssets: financial.financials?.balance_sheet?.current_assets?.value,
                 liabilities: financial.financials?.balance_sheet?.liabilities?.value,
+                currentLiabilities: financial.financials?.balance_sheet?.current_liabilities?.value,
+                nonCurrentLiabilities: financial.financials?.balance_sheet?.noncurrent_liabilities?.value,
                 equity: financial.financials?.balance_sheet?.equity?.value,
+                longTermDebt: financial.financials?.balance_sheet?.long_term_debt?.value,
                 cashFlow: financial.financials?.cash_flow_statement?.net_cash_flow?.value,
+                operatingCashFlow: financial.financials?.cash_flow_statement?.net_cash_flow_from_operating_activities?.value,
+                capEx: financial.financials?.cash_flow_statement?.net_cash_flow_from_investing_activities?.value,
                 dividends: financial.financials?.cash_flow_statement?.dividends_paid?.value
             }));
         }
