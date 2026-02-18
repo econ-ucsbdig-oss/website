@@ -404,81 +404,12 @@
         }
         .wi-reset-btn:hover { border-color: #f87171; color: #f87171; }
 
-        /* ===== YEARLY SNAPSHOTS ===== */
-        .snapshots-section {
-            margin-top: 2.5rem; margin-bottom: 2.5rem;
-        }
-        .snapshot-timeline { position: relative; padding-left: 2rem; }
-        .snapshot-timeline::before {
-            content: ''; position: absolute; left: 8px; top: 10px; bottom: 10px;
-            width: 2px; background: linear-gradient(180deg, #febc11, rgba(254,188,17,0.1));
-        }
-        .snapshot-year {
-            position: relative; margin-bottom: 2rem;
-        }
-        .snapshot-year::before {
-            content: ''; position: absolute; left: -1.55rem; top: 0.4rem;
-            width: 12px; height: 12px; border-radius: 50%;
-            background: #febc11; border: 2px solid rgba(15,20,25,0.9);
-            z-index: 1;
-        }
-        .snapshot-year.current::before { box-shadow: 0 0 8px rgba(254,188,17,0.6); }
-        .snapshot-header {
-            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-            cursor: pointer; user-select: none; padding: 0.4rem 0;
-        }
-        .snapshot-label {
-            font-size: 1.2rem; font-weight: 700; color: #febc11;
-        }
-        .snapshot-value { font-size: 1.1rem; font-weight: 600; color: #fff; }
-        .snapshot-change {
-            font-size: 0.85rem; font-weight: 600; padding: 2px 8px;
-            border-radius: 6px;
-        }
-        .snapshot-change.positive { background: rgba(74,222,128,0.12); color: #4ade80; }
-        .snapshot-change.negative { background: rgba(248,113,113,0.12); color: #f87171; }
-        .snapshot-spy-label { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
-        .snapshot-alpha {
-            font-size: 0.75rem; font-weight: 600;
-            padding: 1px 6px; border-radius: 4px;
-        }
-        .snapshot-alpha.positive { background: rgba(96,165,250,0.12); color: #60a5fa; }
-        .snapshot-alpha.negative { background: rgba(251,146,60,0.12); color: #fb923c; }
-        .snapshot-holdings-count {
-            font-size: 0.75rem; color: rgba(255,255,255,0.3);
-        }
-        .snapshot-details {
-            display: none; margin-top: 0.8rem;
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 12px; padding: 1rem; overflow-x: auto;
-        }
-        .snapshot-details.open { display: block; }
-        .snapshot-changes-row {
-            display: flex; gap: 1rem; margin-bottom: 0.8rem; flex-wrap: wrap;
-        }
+        /* Change tags (used in frozen portfolio comparison) */
         .snapshot-change-tag {
             font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
         }
         .snapshot-change-tag.added { background: rgba(74,222,128,0.1); color: #4ade80; }
         .snapshot-change-tag.removed { background: rgba(248,113,113,0.1); color: #f87171; }
-        .snapshot-table { width: 100%; border-collapse: collapse; }
-        .snapshot-table th {
-            padding: 0.4rem 0.6rem; text-align: left; font-size: 0.65rem;
-            color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .snapshot-table td {
-            padding: 0.35rem 0.6rem; font-size: 0.8rem;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .snapshot-chart-wrap { margin-top: 1.5rem; height: 250px; position: relative; }
-        .snapshot-loading {
-            display: flex; align-items: center; justify-content: center;
-            min-height: 150px; gap: 0.8rem; color: rgba(255,255,255,0.4);
-        }
-        .snapshot-loading .loading-spinner {
-            width: 24px; height: 24px;
-        }
 
         /* Search */
         .search-input {
@@ -615,25 +546,13 @@
                         <button class="what-if-tab" data-tab="add" onclick="switchWhatIfTab('add')">
                             <i class="fas fa-plus-circle"></i> Add Hypothetical
                         </button>
+                        <button class="what-if-tab" data-tab="frozen" onclick="switchWhatIfTab('frozen')">
+                            <i class="fas fa-snowflake"></i> Frozen Portfolio
+                        </button>
                     </div>
                     <div class="what-if-panel" id="whatIfPanel"></div>
                     <div class="what-if-results" id="whatIfResults"></div>
                 </div>
-            </section>
-
-            <!-- Yearly Portfolio Snapshots -->
-            <section class="snapshots-section" id="snapshotsSection">
-                <div class="section-header"><i class="fas fa-camera-retro"></i> Yearly Portfolio Snapshots</div>
-                <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:1.5rem;">
-                    How the portfolio looked at the start of each year — click any year to see full holdings
-                </p>
-                <div id="snapshotsContent">
-                    <div class="snapshot-loading">
-                        <div class="loading-spinner"></div>
-                        <span>Loading yearly snapshots...</span>
-                    </div>
-                </div>
-                <div id="snapshotsChart" style="margin-top:1rem;"></div>
             </section>
 
             <!-- Leaderboard -->
@@ -709,8 +628,6 @@ async function loadStockHistory() {
         renderLeaderboard();
         document.getElementById('loadingOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = '';
-        // Load yearly snapshots asynchronously (separate API call)
-        loadYearlySnapshots();
     } catch (err) {
         console.error('Failed to load stock history:', err);
         document.querySelector('.loading-text').textContent = 'Failed to load stock history';
@@ -1177,6 +1094,8 @@ function renderWhatIfTab(tab) {
         renderModifyTab(panel);
     } else if (tab === 'add') {
         renderAddTab(panel);
+    } else if (tab === 'frozen') {
+        renderFrozenTab(panel);
     }
 }
 
@@ -1776,214 +1695,206 @@ function resetWhatIf() {
     document.getElementById('whatIfResults').innerHTML = '';
 }
 
-// ===== YEARLY SNAPSHOTS =====
-var snapshotData = null;
-var snapshotChart = null;
+// ===== FROZEN PORTFOLIO TAB =====
+var frozenChart = null;
 
-async function loadYearlySnapshots() {
+function renderFrozenTab(panel) {
+    var currentYear = new Date().getFullYear();
+    var opts = '';
+    for (var y = currentYear; y >= 2022; y--) {
+        opts += '<option value="' + y + '-01-03">January ' + y + '</option>';
+    }
+
+    panel.innerHTML = '<p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:1rem;">' +
+        'What if we had kept the exact same portfolio from a past date? ' +
+        'This freezes the holdings as of your chosen date and tracks their performance through today, compared to what actually happened.</p>' +
+        '<div class="wi-form-group">' +
+        '<label>Freeze Portfolio As Of</label>' +
+        '<select class="wi-select" id="wiFrozenDate">' + opts + '</select></div>' +
+        '<button class="wi-analyze-btn" id="wiFrozenBtn" onclick="runFrozenAnalysis()">' +
+        '<span class="spinner"></span><span class="btn-text"><i class="fas fa-snowflake"></i> Compare Frozen vs Actual</span></button>';
+}
+
+async function runFrozenAnalysis() {
+    var frozenDate = document.getElementById('wiFrozenDate').value;
+    if (!frozenDate) return;
+
+    var btn = document.getElementById('wiFrozenBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
     try {
         var holdings = getCurrentHoldings();
-        var resp = await fetch('/api/portfolio/yearly-snapshots', {
+        var resp = await fetch('/api/portfolio/frozen-comparison', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ currentHoldings: holdings })
+            body: JSON.stringify({ currentHoldings: holdings, frozenDate: frozenDate })
         });
         if (!resp.ok) throw new Error('API error: ' + resp.status);
         var data = await resp.json();
         if (data.error) throw new Error(data.error);
-        snapshotData = data.snapshots || [];
-        renderSnapshots();
+
+        showFrozenResults(data, frozenDate);
     } catch (err) {
-        console.error('Failed to load yearly snapshots:', err);
-        document.getElementById('snapshotsContent').innerHTML =
-            '<div style="color:rgba(255,255,255,0.4);font-size:0.85rem;">Failed to load snapshots: ' + err.message + '</div>';
+        alert('Error: ' + err.message);
+    } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
     }
 }
 
-function renderSnapshots() {
-    if (!snapshotData || snapshotData.length === 0) {
-        document.getElementById('snapshotsContent').innerHTML = '<div style="color:rgba(255,255,255,0.4);">No snapshot data available.</div>';
-        return;
+function showFrozenResults(data, frozenDate) {
+    var resultsEl = document.getElementById('whatIfResults');
+    var yearLabel = frozenDate.substring(0, 4);
+
+    var actualReturn = data.actual.totalReturn;
+    var frozenReturn = data.frozen.totalReturn;
+    var diff = frozenReturn - actualReturn;
+    var diffCls = diff >= 0 ? 'positive' : 'negative';
+    var diffSign = diff >= 0 ? '+' : '';
+
+    var html = '<div class="wi-impact-card">' +
+        '<div class="impact-label">Frozen Portfolio from Jan ' + yearLabel + ' vs Actual Trading</div>' +
+        '<div class="impact-value ' + diffCls + '">' + diffSign + diff.toFixed(2) + '% Return Difference</div>' +
+        '<div class="impact-detail">' +
+        (diff >= 0 ? 'Keeping the Jan ' + yearLabel + ' portfolio would have performed better' : 'Active trading improved returns vs holding the Jan ' + yearLabel + ' portfolio') +
+        ' • Frozen value: ' + fmtCurrency(data.frozen.endValue) + ' vs Actual: ' + fmtCurrency(data.actual.endValue) +
+        '</div></div>';
+
+    // Comparison cards
+    html += '<div class="wi-comparison-grid">';
+
+    // Actual
+    html += '<div class="wi-comparison-card"><h4><i class="fas fa-chart-line" style="color:#60a5fa;"></i> Actual Portfolio (Today)</h4>';
+    html += wiMetricRow('Value', fmtCurrency(data.actual.endValue));
+    html += wiMetricRow('Total Return', (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(2) + '%', actualReturn >= 0 ? '#4ade80' : '#f87171');
+    html += wiMetricRow('Holdings', data.actual.numHoldings + ' stocks');
+    if (data.actual.holdings) {
+        var topActual = data.actual.holdings.slice(0, 5);
+        html += wiMetricRow('Top 5', topActual.map(function(h) { return h.symbol; }).join(', '));
     }
+    html += '</div>';
 
-    var html = '<div class="snapshot-timeline">';
-    for (var i = snapshotData.length - 1; i >= 0; i--) {
-        var snap = snapshotData[i];
-        var isCurrent = snap.label === 'Current';
-        var cls = isCurrent ? 'snapshot-year current' : 'snapshot-year';
+    // Frozen
+    html += '<div class="wi-comparison-card"><h4><i class="fas fa-snowflake" style="color:#febc11;"></i> Frozen (Jan ' + yearLabel + ')</h4>';
+    html += wiMetricRow('Value', fmtCurrency(data.frozen.endValue), data.frozen.endValue > data.actual.endValue ? '#4ade80' : '#f87171');
+    html += wiMetricRow('Total Return', (frozenReturn >= 0 ? '+' : '') + frozenReturn.toFixed(2) + '%', frozenReturn >= actualReturn ? '#4ade80' : '#f87171');
+    html += wiMetricRow('Holdings', data.frozen.numHoldings + ' stocks (frozen)');
+    if (data.frozen.holdings) {
+        var topFrozen = data.frozen.holdings.slice(0, 5);
+        html += wiMetricRow('Top 5', topFrozen.map(function(h) { return h.symbol; }).join(', '));
+    }
+    html += '</div></div>';
 
-        html += '<div class="' + cls + '">';
-        html += '<div class="snapshot-header" onclick="toggleSnapshot(' + i + ')">';
-        html += '<span class="snapshot-label">' + snap.label + '</span>';
-        html += '<span class="snapshot-value">' + fmtCurrency(snap.totalValue) + '</span>';
-
-        if (snap.yoyChange != null) {
-            var chgCls = snap.yoyChange >= 0 ? 'positive' : 'negative';
-            html += '<span class="snapshot-change ' + chgCls + '">' + (snap.yoyChange >= 0 ? '+' : '') + snap.yoyChange.toFixed(1) + '%</span>';
-        }
-        if (snap.spyChange != null) {
-            html += '<span class="snapshot-spy-label">SPY: ' + (snap.spyChange >= 0 ? '+' : '') + snap.spyChange.toFixed(1) + '%</span>';
-        }
-        if (snap.alphaVsSpy != null) {
-            var aCls = snap.alphaVsSpy >= 0 ? 'positive' : 'negative';
-            html += '<span class="snapshot-alpha ' + aCls + '">α ' + (snap.alphaVsSpy >= 0 ? '+' : '') + snap.alphaVsSpy.toFixed(1) + '%</span>';
-        }
-        html += '<span class="snapshot-holdings-count">' + snap.numHoldings + ' holdings</span>';
-        html += '<i class="fas fa-chevron-down" style="color:rgba(255,255,255,0.2);font-size:0.7rem;margin-left:auto;" id="snapChev-' + i + '"></i>';
+    // What changed
+    if (data.onlyInFrozen && data.onlyInFrozen.length > 0) {
+        html += '<div style="margin-bottom:1rem;">';
+        html += '<span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">Stocks in frozen but not current: </span>';
+        data.onlyInFrozen.forEach(function(s) {
+            html += '<span class="snapshot-change-tag removed" style="margin:2px;">− ' + s + '</span>';
+        });
         html += '</div>';
-
-        // Detail panel
-        html += '<div class="snapshot-details" id="snapDetail-' + i + '">';
-
-        // Added/removed tags
-        if ((snap.added && snap.added.length > 0) || (snap.removed && snap.removed.length > 0)) {
-            html += '<div class="snapshot-changes-row">';
-            if (snap.added) {
-                snap.added.forEach(function(s) {
-                    html += '<span class="snapshot-change-tag added">+ ' + s + '</span>';
-                });
-            }
-            if (snap.removed) {
-                snap.removed.forEach(function(s) {
-                    html += '<span class="snapshot-change-tag removed">− ' + s + '</span>';
-                });
-            }
-            html += '</div>';
-        }
-
-        // Holdings table
-        if (snap.holdings && snap.holdings.length > 0) {
-            html += '<table class="snapshot-table"><thead><tr><th>Symbol</th><th>Shares</th><th>Price</th><th>Value</th><th>Weight</th></tr></thead><tbody>';
-            for (var j = 0; j < snap.holdings.length; j++) {
-                var h = snap.holdings[j];
-                var weight = snap.totalValue > 0 ? ((h.value / snap.totalValue) * 100).toFixed(1) : '0.0';
-                html += '<tr>';
-                html += '<td style="color:#febc11;font-weight:600;">' + h.symbol + '</td>';
-                html += '<td>' + h.quantity.toFixed(1) + '</td>';
-                html += '<td>$' + h.price.toFixed(2) + '</td>';
-                html += '<td>' + fmtCurrency(h.value) + '</td>';
-                html += '<td style="color:rgba(255,255,255,0.4);">' + weight + '%</td>';
-                html += '</tr>';
-            }
-            html += '</tbody></table>';
-        } else {
-            html += '<div style="color:rgba(255,255,255,0.3);font-size:0.85rem;">No holdings at this date.</div>';
-        }
-
-        html += '</div>'; // snapshot-details
-        html += '</div>'; // snapshot-year
     }
-    html += '</div>'; // snapshot-timeline
+    if (data.onlyInActual && data.onlyInActual.length > 0) {
+        html += '<div style="margin-bottom:1rem;">';
+        html += '<span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">Stocks added since: </span>';
+        data.onlyInActual.forEach(function(s) {
+            html += '<span class="snapshot-change-tag added" style="margin:2px;">+ ' + s + '</span>';
+        });
+        html += '</div>';
+    }
 
-    document.getElementById('snapshotsContent').innerHTML = html;
+    // Chart
+    html += '<div class="wi-chart-container">' +
+        '<h4><i class="fas fa-chart-area"></i> Cumulative Return: Actual vs Frozen (Jan ' + yearLabel + ')</h4>' +
+        '<div class="wi-chart-wrap"><canvas id="whatIfChart"></canvas></div></div>';
 
-    // Draw the value-over-time chart
-    renderSnapshotChart();
+    html += '<button class="wi-reset-btn" onclick="resetWhatIf()"><i class="fas fa-times"></i> Clear Results</button>';
+
+    resultsEl.innerHTML = html;
+    resultsEl.classList.add('visible');
+
+    // Draw chart
+    setTimeout(function() {
+        drawFrozenChart(data);
+    }, 50);
+
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function toggleSnapshot(idx) {
-    var panel = document.getElementById('snapDetail-' + idx);
-    var chev = document.getElementById('snapChev-' + idx);
-    if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
-        if (chev) chev.style.transform = '';
-    } else {
-        panel.classList.add('open');
-        if (chev) chev.style.transform = 'rotate(180deg)';
-    }
-}
-
-function renderSnapshotChart() {
-    if (!snapshotData || snapshotData.length < 2) return;
-
-    var chartContainer = document.getElementById('snapshotsChart');
-    chartContainer.innerHTML = '<div class="wi-chart-container">' +
-        '<h4><i class="fas fa-chart-bar"></i> Portfolio Value Over Time vs S&P 500</h4>' +
-        '<div class="wi-chart-wrap"><canvas id="snapshotBarChart"></canvas></div></div>';
-
-    var canvas = document.getElementById('snapshotBarChart');
+function drawFrozenChart(data) {
+    var canvas = document.getElementById('whatIfChart');
     if (!canvas) return;
 
-    var labels = snapshotData.map(function(s) { return s.label; });
-    var values = snapshotData.map(function(s) { return s.totalValue; });
+    if (frozenChart) { frozenChart.destroy(); frozenChart = null; }
+    if (whatIfChart) { whatIfChart.destroy(); whatIfChart = null; }
 
-    // Normalize SPY to match portfolio's starting value for comparison
-    var spyPrices = snapshotData.map(function(s) { return s.spyPrice || 0; });
-    var spyNormalized = [];
-    if (spyPrices[0] > 0 && values[0] > 0) {
-        var spyBaseFactor = values[0] / spyPrices[0];
-        spyNormalized = spyPrices.map(function(p) { return p * spyBaseFactor; });
+    var dates = data.dates || [];
+    var actualReturns = data.actualCumReturns || [];
+    var frozenReturns = data.frozenCumReturns || [];
+
+    if (dates.length < 2) return;
+
+    // Sample for performance (max ~200 pts)
+    var step = Math.max(1, Math.floor(dates.length / 200));
+    var sampledDates = [], sampledActual = [], sampledFrozen = [];
+    for (var i = 0; i < dates.length; i += step) {
+        sampledDates.push(dates[i]);
+        sampledActual.push(actualReturns[i]);
+        sampledFrozen.push(frozenReturns[i]);
+    }
+    // Always include last point
+    if (sampledDates[sampledDates.length - 1] !== dates[dates.length - 1]) {
+        sampledDates.push(dates[dates.length - 1]);
+        sampledActual.push(actualReturns[actualReturns.length - 1]);
+        sampledFrozen.push(frozenReturns[frozenReturns.length - 1]);
     }
 
-    var datasets = [
-        {
-            label: 'DIG Portfolio',
-            data: values,
-            backgroundColor: 'rgba(254,188,17,0.6)',
-            borderColor: '#febc11',
-            borderWidth: 2,
-            borderRadius: 6,
-            barPercentage: 0.6,
-            order: 2
-        }
-    ];
-
-    if (spyNormalized.length > 0) {
-        datasets.push({
-            label: 'S&P 500 (normalized)',
-            data: spyNormalized,
-            type: 'line',
-            borderColor: '#60a5fa',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            borderDash: [6, 3],
-            pointRadius: 4,
-            pointBackgroundColor: '#60a5fa',
-            tension: 0.2,
-            order: 1
-        });
-    }
-
-    if (snapshotChart) { snapshotChart.destroy(); }
-    snapshotChart = new Chart(canvas, {
-        type: 'bar',
-        data: { labels: labels, datasets: datasets },
+    frozenChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: sampledDates,
+            datasets: [
+                {
+                    label: 'Actual Portfolio',
+                    data: sampledActual,
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1
+                },
+                {
+                    label: 'Frozen Portfolio',
+                    data: sampledFrozen,
+                    borderColor: '#febc11',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [6, 3],
+                    pointRadius: 0,
+                    tension: 0.1
+                }
+            ]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: true,
-                    labels: { color: 'rgba(255,255,255,0.6)', font: { size: 10 }, boxWidth: 12 }
-                },
+                legend: { display: true, labels: { color: 'rgba(255,255,255,0.6)', font: { size: 10 }, boxWidth: 12 } },
                 tooltip: {
                     backgroundColor: 'rgba(15,20,25,0.95)',
                     titleColor: '#febc11',
                     bodyColor: '#fff',
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
-                        label: function(ctx) {
-                            return ctx.dataset.label + ': ' + fmtCurrency(ctx.parsed.y);
-                        }
+                        label: function(ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(2) + '%'; }
                     }
                 }
             },
             scales: {
-                x: {
-                    ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 11, weight: 'bold' } },
-                    grid: { display: false }
-                },
-                y: {
-                    ticks: {
-                        color: 'rgba(255,255,255,0.3)',
-                        font: { size: 9 },
-                        callback: function(v) {
-                            if (v >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'M';
-                            if (v >= 1000) return '$' + (v / 1000).toFixed(0) + 'K';
-                            return '$' + v;
-                        }
-                    },
-                    grid: { color: 'rgba(255,255,255,0.04)' }
-                }
+                x: { ticks: { color: 'rgba(255,255,255,0.3)', maxTicksLimit: 10, maxRotation: 0, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 }, callback: function(v) { return v.toFixed(0) + '%'; } }, grid: { color: 'rgba(255,255,255,0.04)' } }
             }
         }
     });

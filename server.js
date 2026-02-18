@@ -86,35 +86,93 @@ async function polygonFetch(endpoint, params = {}) {
     return await response.json();
 }
 
-// Get real-time quote data
+// Get real-time quote data — uses snapshot with aggregate bars fallback
 async function fetchStockQuote(symbol) {
     try {
-        // Get snapshot for real-time data
-        const data = await polygonFetch(`/v2/snapshot/locale/us/markets/stocks/tickers/${symbol}`);
+        // Try snapshot first (best for intraday)
+        try {
+            const data = await polygonFetch(`/v2/snapshot/locale/us/markets/stocks/tickers/${symbol}`);
+            if (data.status === 'OK' && data.ticker) {
+                const ticker = data.ticker;
+                const day = ticker.day || {};
+                const prevDay = ticker.prevDay || {};
+                const min = ticker.min || {};
 
-        if (data.status === 'OK' && data.ticker) {
-            const ticker = data.ticker;
-            const day = ticker.day || {};
-            const prevDay = ticker.prevDay || {};
-            const min = ticker.min || {};
+                const price = day.c || min.c || ticker.lastTrade?.p || 0;
+                const prevClose = prevDay.c || 0;
+
+                if (price > 0 && prevClose > 0) {
+                    return {
+                        symbol: ticker.ticker,
+                        price,
+                        change: price - prevClose,
+                        changePercent: ((price - prevClose) / prevClose) * 100,
+                        high: day.h || 0,
+                        low: day.l || 0,
+                        open: day.o || 0,
+                        close: day.c || 0,
+                        volume: day.v || 0,
+                        prevClose,
+                        timestamp: new Date().toISOString(),
+                        updated: ticker.updated || Date.now()
+                    };
+                }
+                // If snapshot returned but prices are 0, fall through to aggs
+            }
+        } catch (snapErr) {
+            // Snapshot failed (plan limitation, rate limit, etc.) — fall through to aggs
+            console.warn(`Snapshot failed for ${symbol}, trying aggregate bars:`, snapErr.message);
+        }
+
+        // Fallback: use last 5 trading days of aggregate bars
+        // This works on ALL Polygon tiers and gives us reliable close prices
+        const to = new Date().toISOString().split('T')[0];
+        const from = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const aggData = await polygonFetch(`/v2/aggs/ticker/${symbol}/range/1/day/${from}/${to}`, {
+            adjusted: 'true',
+            sort: 'desc',
+            limit: 5
+        });
+
+        if (aggData.results && aggData.results.length >= 2) {
+            const latest = aggData.results[0];  // most recent day
+            const prev = aggData.results[1];    // day before that
+            const price = latest.c;
+            const prevClose = prev.c;
 
             return {
-                symbol: ticker.ticker,
-                price: day.c || min.c || ticker.lastTrade?.p || 0,
-                change: day.c && prevDay.c ? day.c - prevDay.c : 0,
-                changePercent: day.c && prevDay.c ? ((day.c - prevDay.c) / prevDay.c) * 100 : 0,
-                high: day.h || 0,
-                low: day.l || 0,
-                open: day.o || 0,
-                close: day.c || 0,
-                volume: day.v || 0,
-                prevClose: prevDay.c || 0,
-                timestamp: new Date().toISOString(),
-                updated: ticker.updated || Date.now()
+                symbol: symbol,
+                price,
+                change: price - prevClose,
+                changePercent: prevClose > 0 ? ((price - prevClose) / prevClose) * 100 : 0,
+                high: latest.h || 0,
+                low: latest.l || 0,
+                open: latest.o || 0,
+                close: latest.c || 0,
+                volume: latest.v || 0,
+                prevClose,
+                timestamp: new Date(latest.t).toISOString(),
+                updated: latest.t
+            };
+        } else if (aggData.results && aggData.results.length === 1) {
+            const latest = aggData.results[0];
+            return {
+                symbol: symbol,
+                price: latest.c,
+                change: 0,
+                changePercent: 0,
+                high: latest.h || 0,
+                low: latest.l || 0,
+                open: latest.o || 0,
+                close: latest.c || 0,
+                volume: latest.v || 0,
+                prevClose: latest.o || latest.c,
+                timestamp: new Date(latest.t).toISOString(),
+                updated: latest.t
             };
         }
 
-        throw new Error('Invalid response from Polygon.io');
+        throw new Error('No price data available from Polygon.io');
     } catch (error) {
         console.error(`Error fetching quote for ${symbol}:`, error.message);
         throw error;
@@ -1784,84 +1842,70 @@ app.post('/api/portfolio/stock-history', async (req, res) => {
 });
 
 // Yearly portfolio snapshots — what the portfolio looked like at the start of each year
-app.post('/api/portfolio/yearly-snapshots', async (req, res) => {
+// Frozen portfolio comparison: compare what-if holding a past portfolio vs actual trading
+app.post('/api/portfolio/frozen-comparison', async (req, res) => {
     try {
-        const { currentHoldings } = req.body;
+        const { currentHoldings, frozenDate } = req.body;
         if (!Array.isArray(currentHoldings) || currentHoldings.length === 0) {
             return res.status(400).json({ error: 'currentHoldings array required' });
+        }
+        if (!frozenDate) {
+            return res.status(400).json({ error: 'frozenDate required (YYYY-MM-DD)' });
         }
 
         const transactions = parseActivityCSVs();
         const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
 
-        // Define snapshot dates: Jan 2 of each year from 2022 to current year + today
-        const currentYear = new Date().getFullYear();
-        const snapshotDates = [];
-        for (let y = 2022; y <= currentYear; y++) {
-            snapshotDates.push({ label: `Jan ${y}`, date: `${y}-01-03`, year: y });
-        }
-        // Also add current (today)
+        const frozenDateObj = new Date(frozenDate);
         const todayStr = new Date().toISOString().split('T')[0];
-        snapshotDates.push({ label: 'Current', date: todayStr, year: currentYear });
 
-        // For each snapshot date, find what was held
-        const yearlyData = [];
-
-        for (const sd of snapshotDates) {
-            const targetDate = new Date(sd.date);
-
-            // Find the closest snapshot at or before this date
-            let bestSnap = null;
-            for (const snap of snapshots) {
-                if (snap.date <= targetDate) {
-                    bestSnap = snap;
-                } else {
-                    break;
-                }
+        // --- Find frozen holdings at the chosen date ---
+        let frozenHoldings = {}; // symbol -> quantity
+        for (const snap of snapshots) {
+            if (snap.date <= frozenDateObj) {
+                frozenHoldings = { ...snap.holdings };
+            } else {
+                break;
             }
-
-            if (!bestSnap) {
-                yearlyData.push({
-                    label: sd.label,
-                    date: sd.date,
-                    year: sd.year,
-                    holdings: [],
-                    totalValue: 0,
-                    numHoldings: 0
-                });
-                continue;
+        }
+        // Filter out cash/SPAXX and negligible positions
+        Object.keys(frozenHoldings).forEach(sym => {
+            if (sym === 'SPAXX' || frozenHoldings[sym] < 0.001) {
+                delete frozenHoldings[sym];
             }
+        });
 
-            // Get the holdings at this point
-            const holdingsAtDate = Object.entries(bestSnap.holdings)
-                .filter(([sym, qty]) => qty > 0.001 && sym !== 'SPAXX')
-                .map(([sym, qty]) => ({ symbol: sym, quantity: qty }));
-
-            yearlyData.push({
-                label: sd.label,
-                date: sd.date,
-                year: sd.year,
-                holdings: holdingsAtDate,
-                numHoldings: holdingsAtDate.length
-            });
+        if (Object.keys(frozenHoldings).length === 0) {
+            return res.status(400).json({ error: 'No holdings found at the frozen date. Try a later date.' });
         }
 
-        // Collect all unique symbols across all snapshots
-        const allSyms = new Set();
-        yearlyData.forEach(yd => yd.holdings.forEach(h => allSyms.add(h.symbol)));
-        allSyms.add('SPY'); // always need SPY for benchmark
+        // --- Collect all symbols we need prices for ---
+        const allSymbols = new Set();
+        // Frozen holdings
+        Object.keys(frozenHoldings).forEach(s => allSymbols.add(s));
+        // All actual holdings over the period (from snapshots)
+        for (const snap of snapshots) {
+            if (snap.date >= frozenDateObj) {
+                Object.keys(snap.holdings).forEach(s => {
+                    if (s !== 'SPAXX') allSymbols.add(s);
+                });
+            }
+        }
+        // Current holdings
+        currentHoldings.forEach(h => allSymbols.add(h.symbol));
 
-        // For each symbol, fetch prices around the snapshot dates
-        // We'll fetch the full daily price series and look up prices by date
-        const symArray = [...allSyms];
+        const equitySymbols = [...allSymbols].filter(s => /^[A-Z.]{1,6}$/.test(s));
+
+        // --- Fetch daily prices for all symbols from frozen date to today ---
         const BATCH_SIZE = 10;
-        const priceLookups = {}; // symbol -> { date -> close }
+        const priceLookup = {}; // symbol -> { dateStr -> close }
+        const maxBars = 1500;
 
-        for (let i = 0; i < symArray.length; i += BATCH_SIZE) {
-            const batch = symArray.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < equitySymbols.length; i += BATCH_SIZE) {
+            const batch = equitySymbols.slice(i, i + BATCH_SIZE);
             const results = await Promise.all(
                 batch.map(sym =>
-                    fetchHistoricalPrices(sym, 'day', '2021-12-28', todayStr, 2000).catch(() => [])
+                    fetchHistoricalPrices(sym, 'day', frozenDate, todayStr, maxBars).catch(() => [])
                 )
             );
             batch.forEach((sym, idx) => {
@@ -1870,71 +1914,139 @@ app.post('/api/portfolio/yearly-snapshots', async (req, res) => {
                     const ds = p.date ? p.date.split('T')[0] : '';
                     if (ds) lookup[ds] = p.close;
                 });
-                priceLookups[sym] = lookup;
+                priceLookup[sym] = lookup;
             });
-            if (i + BATCH_SIZE < symArray.length) {
-                await new Promise(r => setTimeout(r, 250));
+            if (i + BATCH_SIZE < equitySymbols.length) {
+                await new Promise(r => setTimeout(r, 200));
             }
         }
 
-        // Now compute portfolio value for each snapshot
-        const spyLookup = priceLookups['SPY'] || {};
-        const spyDates = Object.keys(spyLookup).sort();
+        // --- Build date index from a well-traded symbol (use SPY if available, else first symbol) ---
+        // Get all unique trading dates
+        const allDates = new Set();
+        for (const lookup of Object.values(priceLookup)) {
+            Object.keys(lookup).forEach(d => allDates.add(d));
+        }
+        const sortedDates = [...allDates].sort();
+        if (sortedDates.length < 2) {
+            return res.status(400).json({ error: 'Insufficient price data for this date range' });
+        }
 
-        for (const yd of yearlyData) {
-            let totalValue = 0;
-            const holdingsWithPrices = [];
+        // --- Walk forward day by day, computing both portfolios ---
+        // Frozen portfolio: same shares every day (frozenHoldings)
+        // Actual portfolio: shares change based on snapshots (backward-reconstructed)
+        const frozenValues = [];
+        const actualValues = [];
+        const dates = [];
 
-            for (const h of yd.holdings) {
-                const lookup = priceLookups[h.symbol] || {};
-                const dates = Object.keys(lookup).sort();
-                const price = findNearestPrice(lookup, dates, yd.date);
-                const value = price * h.quantity;
-                totalValue += value;
-                holdingsWithPrices.push({
-                    symbol: h.symbol,
-                    quantity: Math.round(h.quantity * 1000) / 1000,
-                    price: Math.round(price * 100) / 100,
-                    value: Math.round(value * 100) / 100
-                });
+        for (const dateStr of sortedDates) {
+            const d = new Date(dateStr);
+
+            // Frozen portfolio value (same shares throughout)
+            let frozenVal = 0;
+            for (const [sym, qty] of Object.entries(frozenHoldings)) {
+                const lookup = priceLookup[sym] || {};
+                const price = lookup[dateStr];
+                if (price) frozenVal += qty * price;
+                else {
+                    // Use nearest earlier price
+                    const symDates = Object.keys(lookup).sort();
+                    const nearest = findNearestPrice(lookup, symDates, dateStr);
+                    if (nearest) frozenVal += qty * nearest;
+                }
             }
 
-            // Sort by value descending
-            holdingsWithPrices.sort((a, b) => b.value - a.value);
+            // Actual portfolio value (shares change with transactions)
+            let actualSnap = snapshots[0].holdings;
+            for (const s of snapshots) {
+                if (s.date <= d) actualSnap = s.holdings;
+                else break;
+            }
+            let actualVal = 0;
+            for (const [sym, qty] of Object.entries(actualSnap)) {
+                if (sym === 'SPAXX' || qty < 0.001) continue;
+                const lookup = priceLookup[sym] || {};
+                const price = lookup[dateStr];
+                if (price) actualVal += qty * price;
+                else {
+                    const symDates = Object.keys(lookup).sort();
+                    const nearest = findNearestPrice(lookup, symDates, dateStr);
+                    if (nearest) actualVal += qty * nearest;
+                }
+            }
 
-            yd.holdings = holdingsWithPrices;
-            yd.totalValue = Math.round(totalValue * 100) / 100;
-
-            // SPY price at this date
-            yd.spyPrice = Math.round((findNearestPrice(spyLookup, spyDates, yd.date) || 0) * 100) / 100;
+            if (frozenVal > 100 && actualVal > 100) {
+                frozenValues.push(frozenVal);
+                actualValues.push(actualVal);
+                dates.push(dateStr);
+            }
         }
 
-        // Calculate YoY changes and SPY comparison
-        for (let i = 1; i < yearlyData.length; i++) {
-            const prev = yearlyData[i - 1];
-            const curr = yearlyData[i];
-            curr.yoyChange = prev.totalValue > 0
-                ? Math.round(((curr.totalValue - prev.totalValue) / prev.totalValue) * 10000) / 100
-                : null;
-            curr.spyChange = prev.spyPrice > 0
-                ? Math.round(((curr.spyPrice - prev.spyPrice) / prev.spyPrice) * 10000) / 100
-                : null;
-            curr.alphaVsSpy = (curr.yoyChange != null && curr.spyChange != null)
-                ? Math.round((curr.yoyChange - curr.spyChange) * 100) / 100
-                : null;
-
-            // Track which stocks were added/removed
-            const prevSyms = new Set(prev.holdings.map(h => h.symbol));
-            const currSyms = new Set(curr.holdings.map(h => h.symbol));
-            curr.added = [...currSyms].filter(s => !prevSyms.has(s));
-            curr.removed = [...prevSyms].filter(s => !currSyms.has(s));
+        if (dates.length < 2) {
+            return res.status(400).json({ error: 'Not enough valid price data to compare portfolios' });
         }
 
-        res.json({ snapshots: yearlyData });
+        // --- Compute cumulative returns (as %) ---
+        const frozenStart = frozenValues[0];
+        const actualStart = actualValues[0];
+        const frozenCumReturns = frozenValues.map(v => ((v / frozenStart) - 1) * 100);
+        const actualCumReturns = actualValues.map(v => ((v / actualStart) - 1) * 100);
+
+        const frozenEndValue = frozenValues[frozenValues.length - 1];
+        const actualEndValue = actualValues[actualValues.length - 1];
+        const frozenTotalReturn = frozenCumReturns[frozenCumReturns.length - 1];
+        const actualTotalReturn = actualCumReturns[actualCumReturns.length - 1];
+
+        // --- Build holdings summaries ---
+        const frozenHoldingsList = Object.entries(frozenHoldings)
+            .map(([sym, qty]) => {
+                const lookup = priceLookup[sym] || {};
+                const symDates = Object.keys(lookup).sort();
+                const latestPrice = symDates.length > 0 ? lookup[symDates[symDates.length - 1]] : 0;
+                return { symbol: sym, quantity: Math.round(qty * 1000) / 1000, value: Math.round(qty * latestPrice * 100) / 100 };
+            })
+            .filter(h => h.value > 1)
+            .sort((a, b) => b.value - a.value);
+
+        const actualHoldingsList = currentHoldings
+            .map(h => {
+                const lookup = priceLookup[h.symbol] || {};
+                const symDates = Object.keys(lookup).sort();
+                const latestPrice = symDates.length > 0 ? lookup[symDates[symDates.length - 1]] : 0;
+                return { symbol: h.symbol, quantity: Math.round(h.quantity * 1000) / 1000, value: Math.round(h.quantity * latestPrice * 100) / 100 };
+            })
+            .filter(h => h.value > 1)
+            .sort((a, b) => b.value - a.value);
+
+        // --- Holdings diff ---
+        const frozenSyms = new Set(Object.keys(frozenHoldings));
+        const actualSyms = new Set(currentHoldings.map(h => h.symbol));
+        const onlyInFrozen = [...frozenSyms].filter(s => !actualSyms.has(s)).sort();
+        const onlyInActual = [...actualSyms].filter(s => !frozenSyms.has(s)).sort();
+
+        res.json({
+            actual: {
+                totalReturn: Math.round(actualTotalReturn * 100) / 100,
+                endValue: Math.round(actualEndValue * 100) / 100,
+                numHoldings: actualHoldingsList.length,
+                holdings: actualHoldingsList
+            },
+            frozen: {
+                totalReturn: Math.round(frozenTotalReturn * 100) / 100,
+                endValue: Math.round(frozenEndValue * 100) / 100,
+                numHoldings: frozenHoldingsList.length,
+                holdings: frozenHoldingsList
+            },
+            dates,
+            actualCumReturns: actualCumReturns.map(v => Math.round(v * 100) / 100),
+            frozenCumReturns: frozenCumReturns.map(v => Math.round(v * 100) / 100),
+            onlyInFrozen,
+            onlyInActual
+        });
 
     } catch (error) {
-        console.error('Error computing yearly snapshots:', error.message);
-        res.status(500).json({ error: 'Failed to compute yearly snapshots' });
+        console.error('Error computing frozen comparison:', error.message);
+        res.status(500).json({ error: 'Failed to compute frozen portfolio comparison' });
     }
 });
 

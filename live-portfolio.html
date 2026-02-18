@@ -2052,23 +2052,16 @@
         const symbols = portfolioData.map(h => h.symbol);
         showProgressIndicator('Refreshing market data for ' + symbols.length + ' holdings...');
         let updatedCount = 0;
-        let closedCount = 0; // how many symbols returned 0 price (market closed)
 
         function applyLiveData(h, live) {
             if (!live) return;
-            const effectivePrice = (live.price && live.price > 0) ? live.price : (live.prevClose || live.prev_close || 0);
-            if (effectivePrice > 0) {
-                h.lastPrice = effectivePrice;
-                if (live.price && live.price > 0) {
-                    // Market open — use live intraday change
-                    h.change = live.change ?? (live.price - (live.prevClose || live.prev_close || effectivePrice));
-                    h.changePercent = live.changePercent ?? ((h.change / (live.prevClose || live.prev_close || effectivePrice)) * 100);
-                } else {
-                    // Market closed — use previous day's change (prevClose vs day before that)
-                    h.change = 0;
-                    h.changePercent = 0;
-                    closedCount++;
-                }
+            // Server now always returns price (from snapshot or agg bars fallback)
+            // and change/changePercent computed from close vs prevClose
+            const price = live.price || 0;
+            if (price > 0) {
+                h.lastPrice = price;
+                h.change = live.change || 0;
+                h.changePercent = live.changePercent || 0;
                 updatedCount++;
             }
         }
@@ -2108,14 +2101,9 @@
             }
 
             lastUpdateTime = new Date();
-            // Detect market-closed state: if all or most symbols had 0 price
-            marketClosed = (closedCount > symbols.length * 0.8) && updatedCount > 0;
+            marketClosed = false; // server now handles fallback to agg bars
             updateDashboard();
-            if (marketClosed) {
-                showSuccessMessage(`Market is closed. Showing last closing prices for ${updatedCount} holdings.`);
-            } else {
-                showSuccessMessage(`Updated ${updatedCount} of ${symbols.length} holdings from live API.`);
-            }
+            showSuccessMessage(`Updated ${updatedCount} of ${symbols.length} holdings from live API.`);
         } catch (err) {
             console.error(err);
             showError('Error while refreshing data from API. Falling back to static embedded prices.');
