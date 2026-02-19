@@ -509,6 +509,33 @@
         /* Buy/sell markers on chart tooltip */
         .chart-marker-buy { color: #4ade80; }
         .chart-marker-sell { color: #f87171; }
+
+        /* Methodology panel (shared with live-portfolio) */
+        .methodology-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+        .methodology-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: none; border: none; color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 600; cursor: pointer; text-align: left; }
+        .methodology-toggle:hover { color: #febc11; background: rgba(254,188,17,0.04); }
+        .methodology-toggle i.fa-flask { color: #febc11; margin-right: 0.5rem; }
+        #scenarioMethodologyChevron { transition: transform 0.25s; }
+        .methodology-body { padding: 0 1.25rem 1.25rem; }
+        .methodology-intro { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-bottom: 1.25rem; line-height: 1.6; }
+        .methodology-intro p { margin: 0 0 0.5rem; }
+        .methodology-intro strong { color: rgba(255,255,255,0.75); }
+        .methodology-intro ul { margin: 0.5rem 0 0 1.2rem; }
+        .methodology-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+        .meth-block { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 0.9rem 1rem; }
+        .meth-title { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 0.4rem; }
+        .meth-title i { color: #febc11; margin-right: 0.4rem; }
+        .meth-formula { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #febc11; background: rgba(254,188,17,0.07); border-radius: 4px; padding: 0.3rem 0.5rem; margin-bottom: 0.5rem; }
+        .meth-desc { font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.5; margin-bottom: 0.5rem; }
+        .meth-replicate { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+        .meth-replicate code { background: rgba(255,255,255,0.06); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.72rem; }
+        .meth-tag { background: rgba(254,188,17,0.15); color: #febc11; border-radius: 3px; padding: 0.1rem 0.4rem; font-size: 0.7rem; font-weight: 600; margin-right: 0.4rem; }
+        .meth-datasources { margin-top: 0.5rem; }
+        .meth-ds-title { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem; }
+        .meth-ds-title i { color: #febc11; margin-right: 0.4rem; }
+        .meth-ds-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        .meth-ds-table td { padding: 0.35rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.45); }
+        .meth-ds-table td:first-child { color: rgba(255,255,255,0.65); font-weight: 600; width: 220px; }
     </style>
 </head>
 <body>
@@ -1578,7 +1605,10 @@ function computeStockMetrics(txs, stock) {
     };
 }
 
+var _lastScenarioData = null; // stored for CSV export
+
 function showComparisonResults(stock, actual, whatIf, diff, mode, removedTxs) {
+    _lastScenarioData = { type: mode === 'undo' ? 'undo' : 'modify', stock: stock, actual: actual, whatIf: whatIf, diff: diff, removedTxs: removedTxs };
     var resultsEl = document.getElementById('whatIfResults');
     var isBetter = diff.valueDiff >= 0;
     var heroSign = diff.valueDiff >= 0 ? '+' : '-';
@@ -1664,6 +1694,7 @@ function showComparisonResults(stock, actual, whatIf, diff, mode, removedTxs) {
 }
 
 function showHypotheticalResults(hypoStock, priceLookup, dates) {
+    _lastScenarioData = { type: 'hypothetical', hypoStock: hypoStock };
     var resultsEl = document.getElementById('whatIfResults');
     var retCls = hypoStock.totalReturn >= 0 ? 'positive' : 'negative';
     var retSign = hypoStock.totalReturn >= 0 ? '+' : '';
@@ -1906,6 +1937,7 @@ async function runFrozenAnalysis() {
 }
 
 function showFrozenResults(data, frozenDate) {
+    _lastScenarioData = { type: 'frozen', data: data, frozenDate: frozenDate };
     var resultsEl = document.getElementById('whatIfResults');
     var yearLabel = frozenDate.substring(0, 4);
     var monthLabel = frozenDate.substring(5, 7) === '01' ? 'Jan' :
@@ -2117,6 +2149,149 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load data
     loadStockHistory();
 });
+
+function exportScenarioCSV() {
+    if (!_lastScenarioData) {
+        alert('Run a scenario first, then download the CSV.');
+        return;
+    }
+    var d = _lastScenarioData;
+    var today = new Date().toISOString().split('T')[0];
+    function fmt(v, dec) { return (v == null || isNaN(v)) ? 'N/A' : Number(v).toFixed(dec == null ? 2 : dec); }
+    function fmtD(v) { return v != null ? '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : 'N/A'; }
+
+    var lines = ['DIG Scenario Lab Export', 'Generated,' + today, ''];
+
+    if (d.type === 'undo' || d.type === 'modify') {
+        var scenarioLabel = d.type === 'undo'
+            ? 'Undo ' + d.removedTxs.length + ' trade(s) on ' + d.stock.symbol
+            : 'Modify trades on ' + d.stock.symbol;
+        lines.push('SCENARIO,' + scenarioLabel);
+        lines.push('');
+        lines.push('METRIC,ACTUAL,WHAT-IF,DIFFERENCE');
+        lines.push('Amount Invested,' + fmtD(d.actual.totalCost) + ',' + fmtD(d.whatIf.totalCost) + ',' + fmtD(d.whatIf.totalCost - d.actual.totalCost));
+        lines.push('Current Value,' + fmtD(d.actual.currentValue) + ',' + fmtD(d.whatIf.currentValue) + ',' + fmtD(d.whatIf.currentValue - d.actual.currentValue));
+        lines.push('Sell Proceeds,' + fmtD(d.actual.totalSellProceeds) + ',' + fmtD(d.whatIf.totalSellProceeds) + ',' + fmtD(d.whatIf.totalSellProceeds - d.actual.totalSellProceeds));
+        lines.push('Total Return,' + fmt(d.actual.totalReturn) + '%,' + fmt(d.whatIf.totalReturn) + '%,' + fmt(d.diff.returnDiff) + '%');
+        lines.push('CAGR,' + fmt(d.actual.cagr) + '%,' + fmt(d.whatIf.cagr) + '%,' + fmt(d.diff.cagrDiff) + '%');
+        lines.push('Shares,' + fmt(d.actual.netShares, 3) + ',' + fmt(d.whatIf.netShares, 3) + ',' + fmt(d.whatIf.netShares - d.actual.netShares, 3));
+        lines.push('Value Difference (P&L impact),,,'+fmtD(d.diff.valueDiff));
+        if (d.removedTxs && d.removedTxs.length) {
+            lines.push('');
+            lines.push('REMOVED TRANSACTIONS');
+            lines.push('Date,Type,Shares,Price,Amount');
+            d.removedTxs.forEach(function(tx) {
+                lines.push([tx.date, tx.type, fmt(tx.quantity,3), fmt(tx.price,2), fmtD(tx.amount)].join(','));
+            });
+        }
+    } else if (d.type === 'hypothetical') {
+        var h = d.hypoStock;
+        var tx = h.transactions[0];
+        lines.push('SCENARIO,Hypothetical trade — ' + h.symbol);
+        lines.push('');
+        lines.push('METRIC,VALUE');
+        lines.push('Symbol,' + h.symbol);
+        lines.push('Trade Type,' + (tx.type === 'BUY' ? 'Buy' : 'Sell'));
+        lines.push('Trade Date,' + tx.date);
+        lines.push('Price at Entry,$' + fmt(tx.price, 2));
+        lines.push('Shares,' + fmt(tx.quantity, 3));
+        lines.push('Amount Invested,' + fmtD(h.totalInvested));
+        lines.push('Status,' + (h.status === 'active' ? 'Still Holding' : 'Exited'));
+        lines.push('Current / Exit Value,' + fmtD(h.currentValue || h.totalSellProceeds));
+        lines.push('P&L,' + fmtD((h.currentValue || h.totalSellProceeds) - h.totalInvested));
+        lines.push('Total Return,' + fmt(h.totalReturn, 2) + '%');
+        lines.push('CAGR,' + fmt(h.cagr, 2) + '%');
+        lines.push('Holding Period,' + h.holdingPeriodDays + ' days');
+    } else if (d.type === 'frozen') {
+        var fd = d.data;
+        var diff = fd.actual.totalReturn - fd.frozen.totalReturn;
+        lines.push('SCENARIO,Frozen portfolio comparison since ' + d.frozenDate);
+        lines.push('');
+        lines.push('METRIC,ACTUAL (TWR),FROZEN (BUY-AND-HOLD),DIFFERENCE');
+        lines.push('Total Return,' + fmt(fd.actual.totalReturn) + '%,' + fmt(fd.frozen.totalReturn) + '%,' + fmt(diff) + '%');
+        lines.push('End Value,' + fmtD(fd.actual.endValue) + ',' + fmtD(fd.frozen.endValue) + ',' + fmtD(fd.actual.endValue - fd.frozen.endValue));
+        lines.push('Number of Holdings,' + fd.actual.numHoldings + ',' + fd.frozen.numHoldings + ',');
+        lines.push('Active Edge,' + fmt(diff) + '%,,(positive = active trading won)');
+        lines.push('');
+        lines.push('NOTE,Actual uses Time-Weighted Return stripping out capital additions. Frozen assumes the Jan 1 portfolio held unchanged.');
+    }
+
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'DIG_Scenario_' + today + '.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function toggleScenarioMethodology() {
+    var body = document.getElementById('scenarioMethodologyBody');
+    var chevron = document.getElementById('scenarioMethodologyChevron');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        body.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
 </script>
+
+<!-- Scenario Methodology — bottom of page -->
+<div class="methodology-panel" style="max-width:1400px;margin:2rem auto;padding:0 1.5rem;">
+    <button class="methodology-toggle" onclick="toggleScenarioMethodology()">
+        <span><i class="fas fa-flask"></i> How These Scenarios Are Calculated</span>
+        <span style="display:flex;align-items:center;gap:1rem;">
+            <a href="#" onclick="event.stopPropagation();exportScenarioCSV();return false;" style="font-size:0.78rem;color:#febc11;text-decoration:none;opacity:0.85;"><i class="fas fa-download" style="margin-right:0.3rem;"></i>Download CSV</a>
+            <i class="fas fa-chevron-down" id="scenarioMethodologyChevron"></i>
+        </span>
+    </button>
+    <div class="methodology-body" id="scenarioMethodologyBody" style="display:none;">
+        <div class="methodology-intro">
+            <p>All scenario calculations use transaction records from Fidelity activity CSVs. Four scenario modes are available:</p>
+            <ul>
+                <li><strong>Undo Trades</strong> — removes selected buy/sell(s) and recomputes cost basis, value, and return as if they never happened.</li>
+                <li><strong>Modify Trades</strong> — lets you change the price or quantity of a transaction and see the dollar and return impact.</li>
+                <li><strong>Hypothetical Trade</strong> — simulates buying or selling a given dollar amount on any date and computes holding period return and CAGR.</li>
+                <li><strong>Frozen Portfolio</strong> — compares active trading (Time-Weighted Return) against a buy-and-hold baseline frozen at the start of the year.</li>
+            </ul>
+        </div>
+        <div class="methodology-grid">
+            <div class="meth-block">
+                <div class="meth-title"><i class="fas fa-dollar-sign"></i> Total Return</div>
+                <div class="meth-formula">R = (End Value − Cost Basis) / Cost Basis × 100</div>
+                <div class="meth-desc">End Value = current market value of remaining shares + total proceeds from any sales. Cost Basis = sum of all buy amounts. For undo/modify scenarios, both actual and what-if are computed independently using their respective transaction sets.</div>
+                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=(current_value + sell_proceeds - total_cost) / total_cost</code></div>
+            </div>
+            <div class="meth-block">
+                <div class="meth-title"><i class="fas fa-chart-line"></i> CAGR</div>
+                <div class="meth-formula">CAGR = (1 + R/100)<sup>1/years</sup> − 1</div>
+                <div class="meth-desc">Compound Annual Growth Rate annualizes the total return over the holding period. Holding period = days from first buy to today (or last sell). Requires at least ~36 days to be meaningful.</div>
+                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=(1 + total_return)^(1 / (days/365.25)) - 1</code></div>
+            </div>
+            <div class="meth-block">
+                <div class="meth-title"><i class="fas fa-snowflake"></i> Frozen Portfolio (TWR)</div>
+                <div class="meth-formula">TWR = Π (1 + r<sub>t</sub>) − 1</div>
+                <div class="meth-desc">The actual portfolio return uses Time-Weighted Return — daily price returns chained together using the previous day's holdings as weights. This strips out the effect of capital additions (wire transfers, donations) so the comparison reflects pure investment skill, not fund size changes. The frozen portfolio uses a simple price return on the holdings as they stood at the start of the year.</div>
+                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Build a cumulative series: <code>C[t] = C[t-1] × (1 + daily_return)</code>, then <code>TWR = C[final] - 1</code>.</div>
+            </div>
+            <div class="meth-block">
+                <div class="meth-title"><i class="fas fa-flask"></i> Hypothetical Trade</div>
+                <div class="meth-formula">Shares = $ Amount / Entry Price</div>
+                <div class="meth-desc">Simulates buying a fixed dollar amount at the closing price on the selected date. If a sell date is chosen, it computes the exit P&L. If still holding, current market price is used. All prices sourced from Polygon.io adjusted closing prices.</div>
+                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=shares * current_price - shares * entry_price</code> for P&L; divide by cost for return.</div>
+            </div>
+        </div>
+        <div class="meth-datasources">
+            <div class="meth-ds-title"><i class="fas fa-database"></i> Data Sources</div>
+            <table class="meth-ds-table">
+                <tr><td>Transaction Data</td><td>Fidelity activity CSVs (buys, sells, dividend reinvestments, transfers)</td></tr>
+                <tr><td>Price Data</td><td>Polygon.io daily closing prices (adjusted for splits and dividends)</td></tr>
+                <tr><td>CAGR Denominator</td><td>365.25 days per year (accounts for leap years)</td></tr>
+                <tr><td>TWR Method</td><td>Snapshot-based: previous day's holdings used as weights each day</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
 </body>
 </html>
