@@ -1820,115 +1820,6 @@
                 <div class="heatmap-grid" id="heatmapGrid"></div>
             </div>
 
-            <!-- Methodology / Replication Instructions -->
-            <div class="methodology-panel" id="methodologyPanel">
-                <button class="methodology-toggle" onclick="toggleMethodology()">
-                    <span><i class="fas fa-flask"></i> How These Numbers Are Calculated</span>
-                    <span style="display:flex;align-items:center;gap:1rem;">
-                        <a href="#" onclick="event.stopPropagation();exportAnalyticsCSV();return false;" style="font-size:0.78rem;color:#febc11;text-decoration:none;opacity:0.85;" title="Download analytics as CSV"><i class="fas fa-download" style="margin-right:0.3rem;"></i>Download CSV</a>
-                        <i class="fas fa-chevron-down" id="methodologyChevron"></i>
-                    </span>
-                </button>
-                <div class="methodology-body" id="methodologyBody" style="display:none;">
-                    <div class="methodology-intro">
-                        <p>All metrics are computed from daily closing prices sourced from <strong>Polygon.io</strong>. The two modes differ in how portfolio weights are determined:</p>
-                        <ul>
-                            <li><strong>Current Weights</strong> — applies today's holdings weights to the entire lookback period (simulated).</li>
-                            <li><strong>True Historical (default)</strong> — reconstructs actual day-by-day holdings from transaction records, computing a pure price TWR that excludes capital additions (wire transfers, donations).</li>
-                        </ul>
-                    </div>
-
-                    <div class="methodology-grid">
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-chart-line"></i> Daily Returns</div>
-                            <div class="meth-formula">r<sub>t</sub> = (P<sub>t</sub> − P<sub>t−1</sub>) / P<sub>t−1</sub></div>
-                            <div class="meth-desc">Simple price return for each holding each day. Portfolio daily return = weighted sum of holding returns. In True Historical mode, yesterday's holdings snapshot is used as weights — new capital enters the denominator only on the following day, eliminating distortion from donations/wire transfers.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=( B2 - B1 ) / B1</code> down a daily price column, then <code>=SUMPRODUCT(weights, returns)</code> for the portfolio.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-layer-group"></i> Cumulative Return</div>
-                            <div class="meth-formula">C<sub>t</sub> = C<sub>t−1</sub> × (1 + r<sub>t</sub>) &nbsp;, &nbsp; C<sub>0</sub> = 1</div>
-                            <div class="meth-desc">Chain-linked (geometric) compounding. Reported return = (C<sub>final</sub> − 1) × 100%. Period sub-returns (1M, 3M, 6M, YTD) use the ratio of cumulative values at the relevant start date.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Start with 1 in row 2. Each subsequent row: <code>=C1*(1+r)</code>. Final return: <code>=(C_last - 1)</code>.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-ruler"></i> Annualized Volatility</div>
-                            <div class="meth-formula">σ<sub>ann</sub> = σ<sub>daily</sub> × √252</div>
-                            <div class="meth-desc">Sample standard deviation of daily returns (divides by n−1), annualized by multiplying by √252 (trading days per year). Expressed as a percentage.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=STDEV(daily_returns) * SQRT(252)</code></div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-balance-scale"></i> Sharpe Ratio</div>
-                            <div class="meth-formula">S = (r̄<sub>excess</sub> / σ<sub>excess</sub>) × √252</div>
-                            <div class="meth-desc">Excess return = daily return − (4.3% ÷ 252). The ratio of mean daily excess return to sample std dev of daily excess returns, scaled to annual. Risk-free rate: <strong>4.3% per annum</strong> (≈ current T-Bill rate).</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=AVERAGE(excess_rets)/STDEV(excess_rets)*SQRT(252)</code> where <code>excess_rets = daily_rets - (0.043/252)</code>.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-arrow-down"></i> Sortino Ratio</div>
-                            <div class="meth-formula">Sortino = (r̄<sub>excess</sub> / σ<sub>down</sub>) × √252</div>
-                            <div class="meth-formula" style="font-size:0.78rem; margin-top:0.3rem;">σ<sub>down</sub> = √( Σ<sub>all days</sub> min(r<sub>excess</sub>, 0)² / n )</div>
-                            <div class="meth-desc">Like Sharpe, but penalises only downside volatility. Downside deviation = RMS of negative excess returns, summed over <em>all</em> n days (positive days contribute 0). Dividing by n (all days) — not just the count of negative days — is the standard formula; using negative-day count only would artificially inflate the ratio.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=AVERAGE(excess)/SQRT(SUMPRODUCT(MIN(excess,0)^2)/COUNT(excess))*SQRT(252)</code></div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-magnet"></i> Beta</div>
-                            <div class="meth-formula">β = Cov(r<sub>port</sub>, r<sub>SPY</sub>) / Var(r<sub>SPY</sub>)</div>
-                            <div class="meth-desc">OLS slope of portfolio daily returns on SPY daily returns over the selected period. Benchmark: S&P 500 via SPY ETF. β > 1 = amplified market moves; β < 1 = dampened.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=COVARIANCE.P(port_rets, spy_rets)/VAR.P(spy_rets)</code> or use <code>=SLOPE(port_rets, spy_rets)</code>.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-star"></i> Jensen's Alpha</div>
-                            <div class="meth-formula">α = (R<sub>port</sub> − r<sub>f</sub>) − β × (R<sub>SPY</sub> − r<sub>f</sub>)</div>
-                            <div class="meth-desc">Annualized excess return above the CAPM expected return. R<sub>port</sub> and R<sub>SPY</sub> are geometric annualizations: (C<sub>final</sub>)<sup>252/n</sup> − 1. r<sub>f</sub> = 4.3%. Positive alpha = outperformance after adjusting for market risk taken.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Annualize with <code>=(1+total_ret)^(252/n)-1</code>, then <code>=ann_port - rf - beta*(ann_spy - rf)</code>.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-water"></i> Max Drawdown</div>
-                            <div class="meth-formula">MDD = max<sub>t</sub>( (Peak<sub>t</sub> − C<sub>t</sub>) / Peak<sub>t</sub> )</div>
-                            <div class="meth-desc">Largest peak-to-trough decline in the cumulative return series over the selected period. Peak<sub>t</sub> = running maximum of the cumulative series up to day t. Expressed as a negative percentage.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Add a running-max column with <code>=MAX($C$2:C2)</code>, drawdown column <code>=(C2-peak)/peak</code>, then <code>=MIN(drawdown_col)</code>.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-th"></i> Effective Positions (HHI)</div>
-                            <div class="meth-formula">N<sub>eff</sub> = 1 / Σ w<sub>i</sub>²</div>
-                            <div class="meth-desc">Inverse of the Herfindahl-Hirschman Index (HHI). Ranges from 1 (100% in one stock) to N (equally weighted across N stocks). Measures concentration: an equally-weighted 30-stock portfolio scores ~30; a portfolio with 80% in one stock scores much lower.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=1/SUMPRODUCT(weights^2)</code> where weights are the market-value fractions summing to 1.</div>
-                        </div>
-
-                        <div class="meth-block">
-                            <div class="meth-title"><i class="fas fa-calendar-alt"></i> Calendar Year Returns</div>
-                            <div class="meth-formula">R<sub>yr</sub> = (C<sub>Dec 31</sub> / C<sub>Dec 31 prior yr</sub>) − 1</div>
-                            <div class="meth-desc">Computed from the sparkline (weekly-sampled cumulative return series). Each % value is first converted to a multiplier (p/100 + 1), then year-over-year return = (end multiplier / start-of-year multiplier − 1) × 100. Years with fewer than 8 data points are excluded as incomplete.</div>
-                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Use the cumulative return column, find Jan 1 and Dec 31 values for each year, then <code>=(dec31/jan1)-1</code>.</div>
-                        </div>
-
-                    </div><!-- end methodology-grid -->
-
-                    <div class="meth-datasources">
-                        <div class="meth-ds-title"><i class="fas fa-database"></i> Data Sources & Assumptions</div>
-                        <table class="meth-ds-table">
-                            <tr><td>Price Data</td><td>Polygon.io daily closing prices (adjusted for splits)</td></tr>
-                            <tr><td>Benchmark</td><td>SPY ETF (S&P 500 proxy)</td></tr>
-                            <tr><td>Risk-Free Rate</td><td>4.3% per annum (≈ US T-Bill rate), applied as 4.3%/252 per trading day</td></tr>
-                            <tr><td>Trading Days/Year</td><td>252</td></tr>
-                            <tr><td>Lookback Windows</td><td>3M = 70 days · 6M = 135 days · 1Y = 260 days · 2Y = 510 days · All = 1,300 days</td></tr>
-                            <tr><td>Std Dev Convention</td><td>Sample (n−1) for Sharpe/Vol; population (n) for Sortino downside deviation</td></tr>
-                            <tr><td>True Historical TWR</td><td>Transaction records from Fidelity activity CSVs; holdings reconstructed day-by-day</td></tr>
-                        </table>
-                    </div>
-
-                </div><!-- end methodology-body -->
-            </div><!-- end methodology-panel -->
-
             <!-- Chart Modal -->
             <div class="chart-modal-overlay" id="chartModal" style="display:none;" onclick="closeChartModalBackdrop(event)">
                 <div class="chart-modal-content">
@@ -4882,5 +4773,100 @@
     }, 3000);
 
     </script>
+
+    <!-- Methodology / Replication Instructions — bottom of page -->
+    <div class="methodology-panel" id="methodologyPanel" style="max-width:1400px;margin:2rem auto;padding:0 1.5rem;">
+        <button class="methodology-toggle" onclick="toggleMethodology()">
+            <span><i class="fas fa-flask"></i> How These Numbers Are Calculated</span>
+            <span style="display:flex;align-items:center;gap:1rem;">
+                <a href="#" onclick="event.stopPropagation();exportAnalyticsCSV();return false;" style="font-size:0.78rem;color:#febc11;text-decoration:none;opacity:0.85;" title="Download analytics as CSV"><i class="fas fa-download" style="margin-right:0.3rem;"></i>Download CSV</a>
+                <i class="fas fa-chevron-down" id="methodologyChevron"></i>
+            </span>
+        </button>
+        <div class="methodology-body" id="methodologyBody" style="display:none;">
+            <div class="methodology-intro">
+                <p>All metrics are computed from daily closing prices sourced from <strong>Polygon.io</strong>. The two modes differ in how portfolio weights are determined:</p>
+                <ul>
+                    <li><strong>Current Weights</strong> — applies today's holdings weights to the entire lookback period (simulated).</li>
+                    <li><strong>True Historical (default)</strong> — reconstructs actual day-by-day holdings from transaction records, computing a pure price TWR that excludes capital additions (wire transfers, donations).</li>
+                </ul>
+            </div>
+            <div class="methodology-grid">
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-chart-line"></i> Daily Returns</div>
+                    <div class="meth-formula">r<sub>t</sub> = (P<sub>t</sub> − P<sub>t−1</sub>) / P<sub>t−1</sub></div>
+                    <div class="meth-desc">Simple price return for each holding each day. Portfolio daily return = weighted sum of holding returns. In True Historical mode, yesterday's holdings snapshot is used as weights — new capital enters the denominator only on the following day, eliminating distortion from donations/wire transfers.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=( B2 - B1 ) / B1</code> down a daily price column, then <code>=SUMPRODUCT(weights, returns)</code> for the portfolio.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-layer-group"></i> Cumulative Return</div>
+                    <div class="meth-formula">C<sub>t</sub> = C<sub>t−1</sub> × (1 + r<sub>t</sub>) &nbsp;, &nbsp; C<sub>0</sub> = 1</div>
+                    <div class="meth-desc">Chain-linked (geometric) compounding. Reported return = (C<sub>final</sub> − 1) × 100%. Period sub-returns (1M, 3M, 6M, YTD) use the ratio of cumulative values at the relevant start date.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Start with 1 in row 2. Each subsequent row: <code>=C1*(1+r)</code>. Final return: <code>=(C_last - 1)</code>.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-ruler"></i> Annualized Volatility</div>
+                    <div class="meth-formula">σ<sub>ann</sub> = σ<sub>daily</sub> × √252</div>
+                    <div class="meth-desc">Sample standard deviation of daily returns (divides by n−1), annualized by multiplying by √252 (trading days per year). Expressed as a percentage.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=STDEV(daily_returns) * SQRT(252)</code></div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-balance-scale"></i> Sharpe Ratio</div>
+                    <div class="meth-formula">S = (r̄<sub>excess</sub> / σ<sub>excess</sub>) × √252</div>
+                    <div class="meth-desc">Excess return = daily return − (4.3% ÷ 252). The ratio of mean daily excess return to sample std dev of daily excess returns, scaled to annual. Risk-free rate: <strong>4.3% per annum</strong> (≈ current T-Bill rate).</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=AVERAGE(excess_rets)/STDEV(excess_rets)*SQRT(252)</code> where <code>excess_rets = daily_rets - (0.043/252)</code>.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-arrow-down"></i> Sortino Ratio</div>
+                    <div class="meth-formula">Sortino = (r̄<sub>excess</sub> / σ<sub>down</sub>) × √252</div>
+                    <div class="meth-formula" style="font-size:0.78rem; margin-top:0.3rem;">σ<sub>down</sub> = √( Σ<sub>all days</sub> min(r<sub>excess</sub>, 0)² / n )</div>
+                    <div class="meth-desc">Like Sharpe, but penalises only downside volatility. Downside deviation = RMS of negative excess returns, summed over <em>all</em> n days (positive days contribute 0). Dividing by n (all days) — not just the count of negative days — is the standard formula; using negative-day count only would artificially inflate the ratio.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=AVERAGE(excess)/SQRT(SUMPRODUCT(MIN(excess,0)^2)/COUNT(excess))*SQRT(252)</code></div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-magnet"></i> Beta</div>
+                    <div class="meth-formula">β = Cov(r<sub>port</sub>, r<sub>SPY</sub>) / Var(r<sub>SPY</sub>)</div>
+                    <div class="meth-desc">OLS slope of portfolio daily returns on SPY daily returns over the selected period. Benchmark: S&P 500 via SPY ETF. β > 1 = amplified market moves; β < 1 = dampened.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=COVARIANCE.P(port_rets, spy_rets)/VAR.P(spy_rets)</code> or use <code>=SLOPE(port_rets, spy_rets)</code>.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-star"></i> Jensen's Alpha</div>
+                    <div class="meth-formula">α = (R<sub>port</sub> − r<sub>f</sub>) − β × (R<sub>SPY</sub> − r<sub>f</sub>)</div>
+                    <div class="meth-desc">Annualized excess return above the CAPM expected return. R<sub>port</sub> and R<sub>SPY</sub> are geometric annualizations: (C<sub>final</sub>)<sup>252/n</sup> − 1. r<sub>f</sub> = 4.3%. Positive alpha = outperformance after adjusting for market risk taken.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Annualize with <code>=(1+total_ret)^(252/n)-1</code>, then <code>=ann_port - rf - beta*(ann_spy - rf)</code>.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-water"></i> Max Drawdown</div>
+                    <div class="meth-formula">MDD = max<sub>t</sub>( (Peak<sub>t</sub> − C<sub>t</sub>) / Peak<sub>t</sub> )</div>
+                    <div class="meth-desc">Largest peak-to-trough decline in the cumulative return series over the selected period. Peak<sub>t</sub> = running maximum of the cumulative series up to day t. Expressed as a negative percentage.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Add a running-max column with <code>=MAX($C$2:C2)</code>, drawdown column <code>=(C2-peak)/peak</code>, then <code>=MIN(drawdown_col)</code>.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-th"></i> Effective Positions (HHI)</div>
+                    <div class="meth-formula">N<sub>eff</sub> = 1 / Σ w<sub>i</sub>²</div>
+                    <div class="meth-desc">Inverse of the Herfindahl-Hirschman Index (HHI). Ranges from 1 (100% in one stock) to N (equally weighted across N stocks). Measures concentration: an equally-weighted 30-stock portfolio scores ~30; a portfolio with 80% in one stock scores much lower.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=1/SUMPRODUCT(weights^2)</code> where weights are the market-value fractions summing to 1.</div>
+                </div>
+                <div class="meth-block">
+                    <div class="meth-title"><i class="fas fa-calendar-alt"></i> Calendar Year Returns</div>
+                    <div class="meth-formula">R<sub>yr</sub> = (C<sub>Dec 31</sub> / C<sub>Dec 31 prior yr</sub>) − 1</div>
+                    <div class="meth-desc">Computed from the sparkline (weekly-sampled cumulative return series). Each % value is first converted to a multiplier (p/100 + 1), then year-over-year return = (end multiplier / start-of-year multiplier − 1) × 100. Years with fewer than 8 data points are excluded as incomplete.</div>
+                    <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Use the cumulative return column, find Jan 1 and Dec 31 values for each year, then <code>=(dec31/jan1)-1</code>.</div>
+                </div>
+            </div><!-- end methodology-grid -->
+            <div class="meth-datasources">
+                <div class="meth-ds-title"><i class="fas fa-database"></i> Data Sources & Assumptions</div>
+                <table class="meth-ds-table">
+                    <tr><td>Price Data</td><td>Polygon.io daily closing prices (adjusted for splits)</td></tr>
+                    <tr><td>Benchmark</td><td>SPY ETF (S&P 500 proxy)</td></tr>
+                    <tr><td>Risk-Free Rate</td><td>4.3% per annum (≈ US T-Bill rate), applied as 4.3%/252 per trading day</td></tr>
+                    <tr><td>Trading Days/Year</td><td>252</td></tr>
+                    <tr><td>Lookback Windows</td><td>3M = 70 days · 6M = 135 days · 1Y = 260 days · 2Y = 510 days · All = 1,300 days</td></tr>
+                    <tr><td>Std Dev Convention</td><td>Sample (n−1) for Sharpe/Vol; population (n) for Sortino downside deviation</td></tr>
+                    <tr><td>True Historical TWR</td><td>Transaction records from Fidelity activity CSVs; holdings reconstructed day-by-day</td></tr>
+                </table>
+            </div>
+        </div><!-- end methodology-body -->
+    </div><!-- end methodology-panel -->
 </body>
 </html>
