@@ -1694,9 +1694,6 @@
                     <button class="btn btn-warning" onclick="exportCSV()">
                         <i class="fas fa-file-csv"></i> Export CSV
                     </button>
-                    <button class="btn btn-info" onclick="exportAnalyticsCSV()" id="exportAnalyticsBtn" title="Download all computed analytics metrics as CSV">
-                        <i class="fas fa-calculator"></i> Export Analytics
-                    </button>
                 </div>
             </div>
         </section>
@@ -3228,109 +3225,6 @@
     }
 
     /* ── Analytics CSV export ── */
-    function exportAnalyticsCSV() {
-        if (!perfIntelData || !perfIntelData.portfolio) {
-            showSuccessMessage('Load analytics first by connecting to the server.');
-            return;
-        }
-        var p = perfIntelData.portfolio;
-        var b = perfIntelData.benchmark || {};
-        var today = new Date().toISOString().split('T')[0];
-        var mode = currentPerfMode === 'historical' ? 'True Historical (TWR)' : 'Current Weights';
-        var periodLabel = { '3m':'3-Month','6m':'6-Month','ytd':'YTD','1y':'1-Year','2y':'2-Year','all':'All-Time' }[currentPerfPeriod] || '1-Year';
-
-        function fmt(v, decimals) {
-            if (v == null || isNaN(v)) return 'N/A';
-            return Number(v).toFixed(decimals == null ? 4 : decimals);
-        }
-
-        // ── Section 1: Portfolio summary metrics ──
-        var lines = [];
-        lines.push('DIG Portfolio Analytics Export');
-        lines.push('Generated,' + today);
-        lines.push('Period,' + periodLabel);
-        lines.push('Mode,' + mode);
-        lines.push('Risk-Free Rate,4.3% per annum');
-        lines.push('Benchmark,SPY (S&P 500 ETF)');
-        lines.push('');
-
-        lines.push('SECTION 1: PORTFOLIO METRICS');
-        lines.push('Metric,Portfolio,SPY Benchmark,Formula');
-        lines.push('Return (period),' + fmt(p.return1y,2) + '%,' + fmt(b.return1y,2) + '%,(C_final/C_start - 1) × 100');
-        lines.push('Return 1M,' + fmt(p.return1m,2) + '%,' + fmt(b.return1m,2) + '%,(C_t / C_{t-22} - 1) × 100');
-        lines.push('Return 3M,' + fmt(p.return3m,2) + '%,' + fmt(b.return3m,2) + '%,(C_t / C_{t-63} - 1) × 100');
-        lines.push('Return 6M,' + fmt(p.return6m,2) + '%,' + fmt(b.return6m,2) + '%,(C_t / C_{t-126} - 1) × 100');
-        lines.push('Return YTD,' + fmt(p.returnYtd,2) + '%,' + fmt(b.returnYtd,2) + '%,(C_t / C_{Jan1} - 1) × 100');
-        lines.push('Annualized Volatility,' + fmt(p.annualizedVol,2) + '%,N/A,STDEV(daily_rets) × sqrt(252)');
-        lines.push('Sharpe Ratio,' + fmt(p.sharpe,4) + ',N/A,(mean_excess / stdev_excess) × sqrt(252)  rf=4.3%/252');
-        lines.push('Sortino Ratio,' + fmt(p.sortino,4) + ',N/A,(mean_excess / downside_dev) × sqrt(252)  downside_dev=sqrt(sum(min(r_ex 0)^2)/n)');
-        lines.push('Beta (vs SPY),' + fmt(p.beta,4) + ',1.0000,cov(r_port r_spy) / var(r_spy)');
-        lines.push("Jensen's Alpha," + fmt(p.alpha,2) + '%,N/A,(ann_port - rf) - beta×(ann_spy - rf)  rf=4.3%');
-        lines.push('Max Drawdown,' + fmt(-Math.abs(p.maxDrawdown),2) + '%,N/A,max((peak - C_t) / peak)');
-        lines.push('Effective Positions,' + fmt(p.effectivePositions,1) + ',N/A,1 / sum(weight_i^2)');
-        lines.push('');
-
-        // ── Section 2: Per-holding returns ──
-        lines.push('SECTION 2: PER-HOLDING PERFORMANCE');
-        if (perfIntelData.stockPerformance && perfIntelData.stockPerformance.length) {
-            lines.push('Symbol,Weight (%),Price,1D (%),1W (%),1M (%),3M (%),YTD (%)');
-            perfIntelData.stockPerformance.forEach(function(s) {
-                lines.push([
-                    s.symbol,
-                    fmt(s.weight,2),
-                    fmt(s.price,2),
-                    fmt(s.ret1d,2),
-                    s.ret1w != null ? fmt(s.ret1w,2) : 'N/A',
-                    s.ret1m != null ? fmt(s.ret1m,2) : 'N/A',
-                    s.ret3m != null ? fmt(s.ret3m,2) : 'N/A',
-                    s.retYtd != null ? fmt(s.retYtd,2) : 'N/A'
-                ].join(','));
-            });
-        }
-        lines.push('');
-
-        // ── Section 3: Cumulative return time series ──
-        lines.push('SECTION 3: CUMULATIVE RETURN SERIES (sparkline — weekly sampled)');
-        lines.push('NOTE: Values are cumulative % return from period start. Multiply by holdings value to get $ P&L.');
-        lines.push('Date,Portfolio Cum. Return (%),SPY Cum. Return (%)');
-        if (perfIntelData.sparkline) {
-            var spDates = perfIntelData.sparkline.dates || [];
-            var spPort = perfIntelData.sparkline.portfolio || [];
-            var spSpy = perfIntelData.sparkline.spy || [];
-            for (var i = 0; i < spDates.length; i++) {
-                lines.push(spDates[i] + ',' + fmt(spPort[i],4) + ',' + fmt(spSpy[i],4));
-            }
-        }
-        lines.push('');
-
-        // ── Section 4: Replication methodology notes ──
-        lines.push('SECTION 4: REPLICATION NOTES');
-        lines.push('"Step 1: Get daily closing prices for each holding from Polygon.io (or Yahoo Finance / Bloomberg)."');
-        lines.push('"Step 2: Compute daily return for each holding: r = (P_t - P_{t-1}) / P_{t-1}."');
-        lines.push('"Step 3: Compute portfolio daily return as weighted sum of holding returns."');
-        lines.push('"  - Current Weights mode: use today\'s market-value weights throughout."');
-        lines.push('"  - True Historical mode: use yesterday\'s actual share counts as weights (TWR)."');
-        lines.push('"Step 4: Build cumulative series: C[0]=1, C[t] = C[t-1] × (1 + r[t])."');
-        lines.push('"Step 5: Vol = STDEV(daily_rets) × sqrt(252).  [sample std dev, n-1]"');
-        lines.push('"Step 6: Excess returns = daily_rets - 0.043/252.  Sharpe = AVERAGE(excess)/STDEV(excess) × sqrt(252)."');
-        lines.push('"Step 7: Sortino downside_dev = sqrt(SUMPRODUCT(MIN(excess,0)^2) / COUNT(excess)).  Sortino = AVERAGE(excess)/downside_dev × sqrt(252)."');
-        lines.push('"Step 8: Beta = SLOPE(port_rets, spy_rets)  or  COVARIANCE.P(port,spy)/VAR.P(spy)."');
-        lines.push('"Step 9: Annualize port & SPY: ann_r = (C_final)^(252/n) - 1.  Alpha = (ann_port - 0.043) - beta×(ann_spy - 0.043)."');
-        lines.push('"Step 10: Max Drawdown: running peak = MAX($C$2:C_t). DD = (peak - C_t)/peak. MDD = MIN(DD_col)."');
-
-        var csvContent = lines.join('\n');
-        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'DIG_Analytics_' + today + '.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showSuccessMessage('Analytics CSV downloaded — includes metrics, per-holding data, return series, and replication notes.');
-    }
-
     function exportCSV() {
         const headers = ['Symbol','Description','GICS Sector','Quantity','Price','Market Value'];
         const rows = portfolioData.map(h => {
