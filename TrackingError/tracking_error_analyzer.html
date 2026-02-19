@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio Tracking Error Analyzer</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -747,9 +748,125 @@
             font-size: 14px;
             color: #666;
         }
+
+        /* Sortable Table Styles */
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .sortable:hover {
+            background: #5a6fc0 !important;
+        }
+
+        .sortable i {
+            margin-left: 5px;
+            opacity: 0.6;
+        }
+
+        .sortable.sorted-asc i,
+        .sortable.sorted-desc i {
+            opacity: 1;
+        }
+
+        /* Rolling Analysis Styles */
+        .rolling-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 2px solid #dee2e6;
+        }
+
+        .rolling-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .rolling-results {
+            margin-top: 20px;
+        }
+
+        .rolling-metric-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .rolling-metric {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .rolling-metric.positive {
+            border-left-color: #28a745;
+        }
+
+        .rolling-metric.negative {
+            border-left-color: #dc3545;
+        }
+
+        .rolling-metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rolling-metric-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .rolling-chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .rolling-chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .beta-positive { color: #28a745; }
+        .beta-negative { color: #dc3545; }
+        
+        /* Spinner for loading states */
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .btn-loading::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
+======= REPLACE
+
+======= REPLACE
+
     <!-- Header -->
     <header>
         <nav>
@@ -963,6 +1080,9 @@
 
             <button class="btn btn-primary" onclick="calculateTrackingError()" style="margin-top: 20px;">
                 Calculate Tracking Error
+            </button>
+            <button class="btn btn-secondary" onclick="calculateRollingBeta()" style="margin-top: 20px; margin-left: 10px;">
+                <i class="fas fa-chart-line"></i> Calculate Rolling Beta & TE
             </button>
         </div>
 
@@ -2823,10 +2943,495 @@
             });
         }
 
+        // ========== SORTABLE COLUMNS FUNCTIONALITY ==========
+        let equitySortField = 'cte';
+        let equitySortAsc = false;
+        let sectorSortField = 'cte';
+        let sectorSortAsc = false;
+
+        function initSortableTables() {
+            // Add sort icons to equity results table headers
+            const equityThs = document.querySelectorAll('#equityResults th');
+            const equityFields = ['ticker', 'sector', 'sleeve', 'portfolioWeight', 'benchmarkWeight', 'activeWeight', 'return', 'activeReturn', 'mcte', 'cte'];
+            
+            equityThs.forEach((th, index) => {
+                if (index < equityFields.length) {
+                    th.classList.add('sortable');
+                    th.setAttribute('data-sort', equityFields[index]);
+                    th.innerHTML = th.innerHTML + ' <i class="fas fa-sort"></i>';
+                    th.onclick = () => sortEquityTable(equityFields[index]);
+                }
+            });
+
+            // Add sort icons to sector results table headers
+            const sectorThs = document.querySelectorAll('#sectorResults th');
+            const sectorFields = ['sector', 'return', 'activeReturn', 'cte'];
+            
+            sectorThs.forEach((th, index) => {
+                if (index < sectorFields.length) {
+                    th.classList.add('sortable');
+                    th.setAttribute('data-sort', sectorFields[index]);
+                    th.innerHTML = th.innerHTML + ' <i class="fas fa-sort"></i>';
+                    th.onclick = () => sortSectorTable(sectorFields[index]);
+                }
+            });
+        }
+
+        function sortEquityTable(field) {
+            if (equitySortField === field) {
+                equitySortAsc = !equitySortAsc;
+            } else {
+                equitySortField = field;
+                equitySortAsc = false;
+            }
+
+            // Update header icons
+            document.querySelectorAll('#equityResults th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                const icon = th.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-sort';
+                }
+            });
+
+            const header = document.querySelector(`#equityResults th[data-sort="${field}"]`);
+            if (header) {
+                header.classList.add(equitySortAsc ? 'sorted-asc' : 'sorted-desc');
+                const icon = header.querySelector('i');
+                if (icon) {
+                    icon.className = equitySortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                }
+            }
+
+            // Sort the data
+            if (lastResults && lastResults.equityResults) {
+                lastResults.equityResults.sort((a, b) => {
+                    let va = a[field];
+                    let vb = b[field];
+
+                    // Handle string fields
+                    if (typeof va === 'string') {
+                        va = va.toLowerCase();
+                        vb = vb.toLowerCase();
+                    }
+
+                    if (va < vb) return equitySortAsc ? -1 : 1;
+                    if (va > vb) return equitySortAsc ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-render the table
+                renderEquityResultsTable(lastResults.equityResults);
+            }
+        }
+
+        function sortSectorTable(field) {
+            if (sectorSortField === field) {
+                sectorSortAsc = !sectorSortAsc;
+            } else {
+                sectorSortField = field;
+                sectorSortAsc = false;
+            }
+
+            // Update header icons
+            document.querySelectorAll('#sectorResults th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+                const icon = th.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-sort';
+                }
+            });
+
+            const header = document.querySelector(`#sectorResults th[data-sort="${field}"]`);
+            if (header) {
+                header.classList.add(sectorSortAsc ? 'sorted-asc' : 'sorted-desc');
+                const icon = header.querySelector('i');
+                if (icon) {
+                    icon.className = sectorSortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                }
+            }
+
+            // Sort the data
+            if (lastResults && lastResults.sectorResults) {
+                lastResults.sectorResults.sort((a, b) => {
+                    let va = a[field];
+                    let vb = b[field];
+
+                    if (typeof va === 'string') {
+                        va = va.toLowerCase();
+                        vb = vb.toLowerCase();
+                    }
+
+                    if (va < vb) return sectorSortAsc ? -1 : 1;
+                    if (va > vb) return sectorSortAsc ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-render the table
+                renderSectorResultsTable(lastResults.sectorResults, lastResults.portfolioTE);
+            }
+        }
+
+        function renderEquityResultsTable(equityResults) {
+            const equityTbody = document.getElementById('equityResultsBody');
+            equityTbody.innerHTML = '';
+
+            equityResults.forEach(eq => {
+                const row = equityTbody.insertRow();
+                row.innerHTML = `
+                    <td>${eq.ticker}</td>
+                    <td>${eq.sector}</td>
+                    <td><span class="sleeve-badge sleeve-${(eq.sleeve || 'Managed Core').toLowerCase().replace(' ', '-')}">${eq.sleeve || 'Managed Core'}</span></td>
+                    <td>${eq.portfolioWeight.toFixed(2)}</td>
+                    <td>${eq.benchmarkWeight.toFixed(2)}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}">${eq.activeReturn.toFixed(2)}</td>
+                    <td>${eq.mcte.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}">${eq.cte.toFixed(2)}</td>
+                `;
+            });
+        }
+
+        function renderSectorResultsTable(sectorResults, portfolioTE) {
+            const sectorTbody = document.getElementById('sectorResultsBody');
+            sectorTbody.innerHTML = '';
+
+            sectorResults.forEach(sector => {
+                const pctOfTotal = (sector.cte / portfolioTE) * 100;
+                const row = sectorTbody.insertRow();
+                row.innerHTML = `
+                    <td>${sector.sector}</td>
+                    <td class="${sector.return >= 0 ? 'positive' : 'negative'}">${sector.return.toFixed(2)}</td>
+                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
+                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
+                    <td>${pctOfTotal.toFixed(1)}%</td>
+                `;
+            });
+        }
+
+        // ========== ROLLING BETA & TRACKING ERROR FUNCTIONALITY ==========
+        let rollingData = null;
+
+        async function calculateRollingBeta() {
+            // Aggregate holdings from all sleeves
+            const aggregatedHoldings = aggregatePortfolioHoldings();
+
+            if (!aggregatedHoldings) {
+                return;
+            }
+
+            if (aggregatedHoldings.length === 0) {
+                alert('Please add at least one holding to any sleeve');
+                return;
+            }
+
+            // Get parameters
+            const benchmark = document.getElementById('benchmark').value;
+            const period = document.getElementById('period').value;
+            const frequency = document.getElementById('frequency').value;
+            
+            // Get rolling window size
+            const windowSize = parseInt(document.getElementById('rollingWindow')?.value || 60);
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                // Fetch benchmark weights
+                benchmarkWeights = await fetchBenchmarkWeights(benchmark);
+
+                // Fetch price data
+                const tickers = [...new Set([...aggregatedHoldings.map(h => h.ticker), benchmark])];
+                const priceData = await fetchPriceData(tickers, period, frequency);
+                
+                // Calculate returns
+                const returns = calculateReturns(priceData);
+                
+                // Get benchmark returns
+                let benchmarkReturns = returns[benchmark];
+                if (!benchmarkReturns || benchmarkReturns.length === 0) {
+                    throw new Error(`Failed to get benchmark returns for ${benchmark}`);
+                }
+
+                // Calculate rolling beta
+                const rollingBeta = calculateRollingMetric(returns, benchmarkReturns, windowSize, 'beta');
+                const rollingTE = calculateRollingMetric(returns, benchmarkReturns, windowSize, 'te');
+
+                // Store for display
+                rollingData = {
+                    dates: getDateLabels(period, benchmarkReturns.length),
+                    rollingBeta,
+                    rollingTE,
+                    benchmarkReturns,
+                    windowSize
+                };
+
+                // Display rolling analysis results
+                displayRollingResults(rollingBeta, rollingTE);
+
+                document.getElementById('loading').style.display = 'none';
+
+            } catch (error) {
+                console.error('Rolling analysis error:', error);
+                document.getElementById('error').textContent = 'Error: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function calculateRollingMetric(returns, benchmarkReturns, windowSize, metricType) {
+            const result = [];
+            const numPeriods = Math.min(returns[Object.keys(returns)[0]]?.length || 0, benchmarkReturns.length);
+
+            for (let i = windowSize; i < numPeriods; i++) {
+                // Get rolling window data
+                const windowReturns = {};
+                Object.keys(returns).forEach(ticker => {
+                    windowReturns[ticker] = returns[ticker].slice(i - windowSize, i);
+                });
+                const windowBenchmark = benchmarkReturns.slice(i - windowSize, i);
+
+                if (metricType === 'beta') {
+                    // Calculate rolling beta
+                    const portfolioReturns = calculatePortfolioReturns(windowReturns, windowBenchmark);
+                    const beta = calculateBeta(portfolioReturns, windowBenchmark);
+                    result.push(beta);
+                } else if (metricType === 'te') {
+                    // Calculate rolling tracking error
+                    const portfolioReturns = calculatePortfolioReturns(windowReturns, windowBenchmark);
+                    const activeReturns = portfolioReturns.map((pr, idx) => pr - windowBenchmark[idx]);
+                    const te = standardDeviation(activeReturns) * Math.sqrt(252);
+                    result.push(te);
+                }
+            }
+
+            return result;
+        }
+
+        function calculatePortfolioReturns(returns, benchmarkReturns) {
+            // Assume equal weights for simplicity, or use actual weights
+            const tickers = Object.keys(returns);
+            const numPeriods = tickers.length > 0 ? returns[tickers[0]].length : 0;
+            const portfolioReturns = [];
+
+            for (let i = 0; i < numPeriods; i++) {
+                let sum = 0;
+                tickers.forEach(ticker => {
+                    if (returns[ticker][i] !== undefined) {
+                        sum += returns[ticker][i] / tickers.length; // Equal weight
+                    }
+                });
+                portfolioReturns.push(sum);
+            }
+
+            return portfolioReturns;
+        }
+
+        function calculateBeta(portfolioReturns, benchmarkReturns) {
+            if (portfolioReturns.length !== benchmarkReturns.length || portfolioReturns.length === 0) {
+                return 0;
+            }
+
+            const n = portfolioReturns.length;
+            const meanPortfolio = portfolioReturns.reduce((a, b) => a + b, 0) / n;
+            const meanBenchmark = benchmarkReturns.reduce((a, b) => a + b, 0) / n;
+
+            let covariance = 0;
+            let variance = 0;
+
+            for (let i = 0; i < n; i++) {
+                const diffP = portfolioReturns[i] - meanPortfolio;
+                const diffB = benchmarkReturns[i] - meanBenchmark;
+                covariance += diffP * diffB;
+                variance += diffB * diffB;
+            }
+
+            return variance !== 0 ? covariance / variance : 0;
+        }
+
+        function getDateLabels(period, numPoints) {
+            const labels = [];
+            const now = new Date();
+            
+            for (let i = numPoints - 1; i >= 0; i--) {
+                const date = new Date(now);
+                if (period === '3mo') {
+                    date.setMonth(date.getMonth() - Math.ceil(i / 21));
+                } else if (period === '1y') {
+                    date.setDate(date.getDate() - i);
+                } else if (period === '3y') {
+                    date.setFullYear(date.getFullYear() - Math.floor(i / 252));
+                }
+                labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            }
+
+            return labels;
+        }
+
+        function displayRollingResults(rollingBeta, rollingTE) {
+            // Calculate summary statistics
+            const avgBeta = rollingBeta.length > 0 ? rollingBeta.reduce((a, b) => a + b, 0) / rollingBeta.length : 0;
+            const minBeta = rollingBeta.length > 0 ? Math.min(...rollingBeta) : 0;
+            const maxBeta = rollingBeta.length > 0 ? Math.max(...rollingBeta) : 0;
+            const currentBeta = rollingBeta.length > 0 ? rollingBeta[rollingBeta.length - 1] : 0;
+
+            const avgTE = rollingTE.length > 0 ? rollingTE.reduce((a, b) => a + b, 0) / rollingTE.length : 0;
+            const minTE = rollingTE.length > 0 ? Math.min(...rollingTE) : 0;
+            const maxTE = rollingTE.length > 0 ? Math.max(...rollingTE) : 0;
+            const currentTE = rollingTE.length > 0 ? rollingTE[rollingTE.length - 1] : 0;
+
+            // Create or update rolling results section
+            let rollingSection = document.getElementById('rollingResultsSection');
+            if (!rollingSection) {
+                // Insert after the main results section
+                const resultsSection = document.getElementById('results');
+                rollingSection = document.createElement('div');
+                rollingSection.id = 'rollingResultsSection';
+                rollingSection.className = 'rolling-section';
+                rollingSection.innerHTML = `
+                    <h2 class="section-title">Rolling Beta & Tracking Error Analysis</h2>
+                    <div class="rolling-controls">
+                        <div class="input-group">
+                            <label for="rollingWindow">Rolling Window (days):</label>
+                            <select id="rollingWindow" onchange="calculateRollingBeta()">
+                                <option value="21">21 days (1 month)</option>
+                                <option value="60" selected>60 days (3 months)</option>
+                                <option value="126">126 days (6 months)</option>
+                                <option value="252">252 days (1 year)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="calculateRollingBeta()">
+                            <i class="fas fa-sync-alt"></i> Recalculate
+                        </button>
+                    </div>
+                    <div class="rolling-results" id="rollingResults">
+                        <!-- Results will be inserted here -->
+                    </div>
+                `;
+                resultsSection.parentNode.insertBefore(rollingSection, resultsSection.nextSibling);
+            }
+
+            const rollingResults = document.getElementById('rollingResults');
+            
+            // Determine beta class
+            const betaClass = currentBeta > 1 ? 'negative' : (currentBeta >= 0.8 ? '' : 'positive');
+            const betaLabel = currentBeta > 1 ? 'Aggressive (>1.0)' : (currentBeta >= 0.8 ? 'Moderate (0.8-1.0)' : 'Defensive (<0.8)');
+
+            rollingResults.innerHTML = `
+                <div class="rolling-metric-cards">
+                    <div class="rolling-metric">
+                        <div class="rolling-metric-label">Current Beta</div>
+                        <div class="rolling-metric-value ${betaClass}">${currentBeta.toFixed(2)}</div>
+                        <div style="font-size: 11px; color: #666;">${betaLabel}</div>
+                    </div>
+                    <div class="rolling-metric">
+                        <div class="rolling-metric-label">Average Beta</div>
+                        <div class="rolling-metric-value">${avgBeta.toFixed(2)}</div>
+                        <div style="font-size: 11px; color: #666;">Range: ${minBeta.toFixed(2)} - ${maxBeta.toFixed(2)}</div>
+                    </div>
+                    <div class="rolling-metric">
+                        <div class="rolling-metric-label">Current TE</div>
+                        <div class="rolling-metric-value">${(currentTE * 100).toFixed(2)}%</div>
+                        <div style="font-size: 11px; color: #666;">Annualized</div>
+                    </div>
+                    <div class="rolling-metric">
+                        <div class="rolling-metric-label">Average TE</div>
+                        <div class="rolling-metric-value">${(avgTE * 100).toFixed(2)}%</div>
+                        <div style="font-size: 11px; color: #666;">Range: ${(minTE * 100).toFixed(2)}% - ${(maxTE * 100).toFixed(2)}%</div>
+                    </div>
+                </div>
+                <div class="rolling-chart-container">
+                    <div class="rolling-chart-title">Rolling Beta (${document.getElementById('rollingWindow').value}-day window)</div>
+                    <canvas id="rollingBetaChart" style="height: 200px;"></canvas>
+                </div>
+                <div class="rolling-chart-container">
+                    <div class="rolling-chart-title">Rolling Tracking Error (${document.getElementById('rollingWindow').value}-day window)</div>
+                    <canvas id="rollingTEChart" style="height: 200px;"></canvas>
+                </div>
+            `;
+
+            // Render charts if Chart.js is available
+            if (typeof Chart !== 'undefined') {
+                renderRollingChart('rollingBetaChart', rollingBeta, 'Beta', '#667eea', 0);
+                renderRollingChart('rollingTEChart', rollingTE.map(v => v * 100), 'Tracking Error (%)', '#fd7e14', 2);
+            }
+        }
+
+        function renderRollingChart(canvasId, data, label, color, decimals) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            // Sample data if too many points
+            let labels = [];
+            let sampledData = data;
+            
+            if (data.length > 100) {
+                const step = Math.ceil(data.length / 100);
+                labels = [];
+                sampledData = [];
+                for (let i = 0; i < data.length; i += step) {
+                    labels.push(`t${i}`);
+                    sampledData.push(data[i]);
+                }
+            } else {
+                labels = data.map((_, i) => `t${i}`);
+            }
+
+            new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: sampledData,
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return label + ': ' + context.parsed.y.toFixed(decimals);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize sortable tables when results are displayed
+        const originalDisplayResults = displayResults;
+        displayResults = function(results) {
+            originalDisplayResults(results);
+            setTimeout(initSortableTables, 100);
+        };
+
         // Initialize mobile menu when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMobileMenu();
+            initSortableTables();
         });
     </script>
 </body>
 </html>
+======= REPLACE
+
