@@ -1694,9 +1694,6 @@
                     <button class="btn btn-warning" onclick="exportCSV()">
                         <i class="fas fa-file-csv"></i> Export CSV
                     </button>
-                    <button class="btn btn-info" onclick="exportAnalyticsCSV()" title="Download analytics metrics as CSV">
-                        <i class="fas fa-calculator"></i> Export Analytics
-                    </button>
                 </div>
             </div>
         </section>
@@ -1823,35 +1820,14 @@
                 <div class="heatmap-grid" id="heatmapGrid"></div>
             </div>
 
-            <!-- Chart Modal -->
-            <div class="chart-modal-overlay" id="chartModal" style="display:none;" onclick="closeChartModalBackdrop(event)">
-                <div class="chart-modal-content">
-                    <div class="chart-modal-header">
-                        <h3 id="chartModalTitle"></h3>
-                        <button onclick="closeChartModal()" class="chart-modal-close">&times;</button>
-                    </div>
-                    <div class="chart-modal-body" id="chartModalBody">
-                        <canvas id="chartModalCanvas"></canvas>
-                        <div id="chartModalHeatmap" class="modal-heatmap-grid" style="display:none;"></div>
-                    </div>
-                    <div class="chart-modal-actions">
-                        <button onclick="downloadChartPNG()" class="chart-download-btn"><i class="fas fa-download"></i> Download PNG</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Loading state -->
-            <div class="perf-loading" id="perfLoading">
-                <div class="spinner"></div>
-                <div>Loading Performance Intelligence...</div>
-                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Usually instant — server pre-computes analytics on startup</div>
-            </div>
-
             <!-- Methodology / Replication Instructions -->
             <div class="methodology-panel" id="methodologyPanel">
                 <button class="methodology-toggle" onclick="toggleMethodology()">
                     <span><i class="fas fa-flask"></i> How These Numbers Are Calculated</span>
-                    <i class="fas fa-chevron-down" id="methodologyChevron"></i>
+                    <span style="display:flex;align-items:center;gap:1rem;">
+                        <a href="#" onclick="event.stopPropagation();exportAnalyticsCSV();return false;" style="font-size:0.78rem;color:#febc11;text-decoration:none;opacity:0.85;" title="Download analytics as CSV"><i class="fas fa-download" style="margin-right:0.3rem;"></i>Download CSV</a>
+                        <i class="fas fa-chevron-down" id="methodologyChevron"></i>
+                    </span>
                 </button>
                 <div class="methodology-body" id="methodologyBody" style="display:none;">
                     <div class="methodology-intro">
@@ -1952,6 +1928,30 @@
 
                 </div><!-- end methodology-body -->
             </div><!-- end methodology-panel -->
+
+            <!-- Chart Modal -->
+            <div class="chart-modal-overlay" id="chartModal" style="display:none;" onclick="closeChartModalBackdrop(event)">
+                <div class="chart-modal-content">
+                    <div class="chart-modal-header">
+                        <h3 id="chartModalTitle"></h3>
+                        <button onclick="closeChartModal()" class="chart-modal-close">&times;</button>
+                    </div>
+                    <div class="chart-modal-body" id="chartModalBody">
+                        <canvas id="chartModalCanvas"></canvas>
+                        <div id="chartModalHeatmap" class="modal-heatmap-grid" style="display:none;"></div>
+                    </div>
+                    <div class="chart-modal-actions">
+                        <button onclick="downloadChartPNG()" class="chart-download-btn"><i class="fas fa-download"></i> Download PNG</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading state -->
+            <div class="perf-loading" id="perfLoading">
+                <div class="spinner"></div>
+                <div>Loading Performance Intelligence...</div>
+                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Usually instant — server pre-computes analytics on startup</div>
+            </div>
 
         </section>
 
