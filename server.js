@@ -1190,12 +1190,15 @@ app.post('/api/portfolio/analytics', async (req, res) => {
             : 0;
         const sharpe = excessStd > 0 ? (avgExcess / excessStd) * Math.sqrt(252) : 0;
 
-        // --- Sortino Ratio (downside deviation from 0, not from mean) ---
-        const downsideReturns = excessReturns.filter(r => r < 0);
-        const downsideStd = downsideReturns.length > 1
-            ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / (downsideReturns.length - 1))
+        // --- Sortino Ratio ---
+        // Downside deviation: sqrt( sum_alldays(min(excess_r, 0)^2) / n )
+        // Denominator is ALL n days, not just the negative ones — this is the standard formula.
+        // Dividing by negative-day count only would artificially shrink the denominator and inflate Sortino.
+        const downsideSumSq = excessReturns.reduce((s, r) => s + Math.pow(Math.min(r, 0), 2), 0);
+        const downsideStd = excessReturns.length > 0
+            ? Math.sqrt(downsideSumSq / excessReturns.length)
             : 0.0001;
-        const sortino = (avgExcess / downsideStd) * Math.sqrt(252);
+        const sortino = downsideStd > 0 ? (avgExcess / downsideStd) * Math.sqrt(252) : 0;
 
         // --- Max Drawdown ---
         let peak = cumPort[0], maxDD = 0;
@@ -1311,12 +1314,13 @@ function computeRiskMetrics(portfolioReturns, spyReturns, numDays) {
         : 0;
     const sharpe = excessStd > 0 ? (avgExcess / excessStd) * Math.sqrt(252) : 0;
 
-    // Sortino: downside deviation from zero
-    const downsideReturns = excessReturns.filter(r => r < 0);
-    const downsideStd = downsideReturns.length > 1
-        ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / (downsideReturns.length - 1))
+    // Sortino: downside deviation = sqrt( sum_alldays(min(excess_r, 0)^2) / n )
+    // Uses ALL n observations in denominator — not just negative-return days.
+    const downsideSumSq = excessReturns.reduce((s, r) => s + Math.pow(Math.min(r, 0), 2), 0);
+    const downsideStd = excessReturns.length > 0
+        ? Math.sqrt(downsideSumSq / excessReturns.length)
         : 0.0001;
-    const sortino = (avgExcess / downsideStd) * Math.sqrt(252);
+    const sortino = downsideStd > 0 ? (avgExcess / downsideStd) * Math.sqrt(252) : 0;
 
     let peak = cumPort[0], maxDD = 0;
     for (let i = 1; i < cumPort.length; i++) {
