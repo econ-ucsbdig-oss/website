@@ -1954,7 +1954,7 @@
             <div class="perf-loading" id="perfLoading">
                 <div class="spinner"></div>
                 <div>Loading Performance Intelligence...</div>
-                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Fetching price history for 22 holdings — ~15s first load, instant on period/mode changes after that</div>
+                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Fetching price data — usually loads in a few seconds</div>
             </div>
         </section>
 
@@ -4011,6 +4011,10 @@
         if (perfAbortController) { try { perfAbortController.abort(); } catch(e) {} }
         perfAbortController = new AbortController();
         const sig = perfAbortController.signal;
+        // Hard 45-second timeout — prevents infinite loading spinner
+        var perfTimeout = setTimeout(function() {
+            try { perfAbortController.abort(); } catch(e) {}
+        }, 45000);
 
         const isFirstLoad = !perfIntelData;
         if (isFirstLoad) {
@@ -4052,24 +4056,32 @@
                 symSet.add('SPY');
                 var symbols = Array.from(symSet).filter(function(s){ return /^[A-Z]{1,6}$/.test(s); });
 
-                // 4. Fetch all symbol prices in parallel (each call is fast)
-                if (inlineLoading && !isFirstLoad) {
-                    inlineMsg.textContent = 'Fetching ' + symbols.length + ' symbols…';
-                    inlineLoading.style.display = 'flex';
-                } else if (loadingEl) {
-                    loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;padding:1rem;text-align:center"><i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;color:#febc11"></i>Fetching ' + symbols.length + ' symbols in parallel…</div>';
-                    loadingEl.style.display = '';
-                }
+                // 4. Fetch symbol prices with concurrency limit to avoid rate limiting
+                var setLoadingMsg = function(msg) {
+                    if (inlineLoading && !isFirstLoad) {
+                        inlineMsg.textContent = msg;
+                        inlineLoading.style.display = 'flex';
+                    } else if (loadingEl) {
+                        loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;padding:1rem;text-align:center"><i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;color:#febc11"></i>' + msg + '</div>';
+                        loadingEl.style.display = '';
+                    }
+                };
+                setLoadingMsg('Loading ' + symbols.length + ' symbols (0/' + symbols.length + ')…');
 
                 var priceMap = {};
-                var fetchPromises = symbols.map(function(sym) {
-                    var url = apiBase + '/api/portfolio/prices?symbol=' + sym + '&from=' + fromDate + '&to=' + toDate;
-                    return fetch(url, { signal: sig })
-                        .then(function(r){ return r.ok ? r.json() : null; })
-                        .then(function(j){ if (j && j.prices) priceMap[sym] = j.prices; })
-                        .catch(function(){});
-                });
-                await Promise.all(fetchPromises);
+                var CONCURRENCY = 5;
+                var done = 0;
+                for (var bi = 0; bi < symbols.length; bi += CONCURRENCY) {
+                    var batch = symbols.slice(bi, bi + CONCURRENCY);
+                    await Promise.all(batch.map(function(sym) {
+                        var url = apiBase + '/api/portfolio/prices?symbol=' + sym + '&from=' + fromDate + '&to=' + toDate;
+                        return fetch(url, { signal: sig })
+                            .then(function(r){ return r.ok ? r.json() : null; })
+                            .then(function(j){ if (j && j.prices) priceMap[sym] = j.prices; done++; })
+                            .catch(function(){ done++; });
+                    }));
+                    setLoadingMsg('Loading ' + symbols.length + ' symbols (' + done + '/' + symbols.length + ')…');
+                }
 
                 var spyPrices = priceMap['SPY'] || [];
                 if (spyPrices.length < 10) throw new Error('Insufficient SPY data');
@@ -4196,16 +4208,20 @@
             perfIntelData = data;
             if (perfIntelData.error && perfIntelData.partial) throw new Error('Insufficient data');
 
+            clearTimeout(perfTimeout);
             if (loadingEl) loadingEl.style.display = 'none';
             if (inlineLoading) inlineLoading.style.display = 'none';
             renderPerformanceIntel();
         } catch (err) {
-            if (err.name === 'AbortError') return;
+            clearTimeout(perfTimeout);
+            if (err.name === 'AbortError') {
+                if (loadingEl) loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:0.85rem;"><i class="fas fa-exclamation-triangle" style="margin-right:0.5rem;"></i>Analytics timed out — check API connection and try again.</div>';
+                if (inlineLoading) inlineLoading.style.display = 'none';
+                return;
+            }
             console.warn('Performance Intelligence error:', err.message);
             if (inlineLoading) inlineLoading.style.display = 'none';
-            if (isFirstLoad && loadingEl) {
-                loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:0.85rem;"><i class="fas fa-chart-line" style="margin-right:0.5rem;"></i>Performance Intelligence requires API connection.</div>';
-            }
+            if (loadingEl) loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:0.85rem;"><i class="fas fa-chart-line" style="margin-right:0.5rem;"></i>Performance Intelligence unavailable: ' + err.message + '</div>';
         }
     }
 
