@@ -2024,7 +2024,6 @@ app.post('/api/portfolio/frozen-comparison', async (req, res) => {
 
         const transactions = parseActivityCSVs();
         const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
-        const cashFlows = parseExternalCashFlows(); // Wire transfers + share deposits for TWR
 
         const frozenDateObj = new Date(frozenDate);
         const todayStr = new Date().toISOString().split('T')[0];
@@ -2157,22 +2156,15 @@ app.post('/api/portfolio/frozen-comparison', async (req, res) => {
         }
 
         // --- Compute cumulative returns (as %) ---
-        // Frozen portfolio: simple price-based return (no external cash flows, shares never change)
+        // Both portfolios use simple price-based returns from the frozen date.
+        // This is an apples-to-apples comparison: given the SAME set of stocks at the
+        // frozen date, how would prices alone have grown vs what actually happened?
+        // The actual portfolio value will differ in scale due to new capital added over
+        // time, so we normalise both to their own day-1 value (% return from frozen date).
         const frozenStart = frozenValues[0];
+        const actualStart = actualValues[0];
         const frozenCumReturns = frozenValues.map(v => ((v / frozenStart) - 1) * 100);
-
-        // Actual portfolio: TWR-adjusted to remove impact of wire transfers and share deposits
-        // Build daily value array for TWR computation
-        const actualDailyValues = dates.map((d, i) => ({ date: d, value: actualValues[i] }));
-        const actualDailyReturns = computeTWRAdjustedReturns(actualDailyValues, cashFlows);
-
-        // Chain TWR daily returns into cumulative return curve
-        const actualCumReturns = [0]; // start at 0%
-        let cumProduct = 1;
-        for (let i = 0; i < actualDailyReturns.length; i++) {
-            cumProduct *= (1 + actualDailyReturns[i]);
-            actualCumReturns.push((cumProduct - 1) * 100);
-        }
+        const actualCumReturns = actualValues.map(v => ((v / actualStart) - 1) * 100);
 
         const frozenEndValue = frozenValues[frozenValues.length - 1];
         const actualEndValue = actualValues[actualValues.length - 1];

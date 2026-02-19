@@ -3971,24 +3971,34 @@
         // ── Calendar Year Returns ──
         var calEl = document.getElementById('perfCalendarYears');
         if (calEl) {
-            // Helper: build {year: returnPct} from sparkline dates + cumulative array
-            function sparklineToCalYears(dates, cumArr) {
-                if (!dates || !cumArr || dates.length < 2) return {};
+            // Helper: build {year: returnPct} from sparkline dates + % return array.
+            // The sparkline stores cumulative % returns FROM THE PERIOD START (e.g. 15.3 = +15.3%).
+            // Convert to multipliers first, then compute year-over-year return as
+            // (endMultiplier / startMultiplier - 1) * 100.
+            function sparklineToCalYears(dates, pctArr) {
+                if (!dates || !pctArr || dates.length < 2) return {};
+                // Convert % array to cumulative multiplier array (index 0 = 1.0 baseline)
+                var mults = pctArr.map(function(p) { return p / 100 + 1; });
                 var byYear = {};
                 for (var i = 0; i < dates.length; i++) {
                     var yr = String(dates[i]).slice(0, 4);
+                    if (!yr || yr.length !== 4) continue;
                     if (!byYear[yr]) byYear[yr] = { first: i, last: i };
                     byYear[yr].last = i;
                 }
                 var result = {};
-                Object.keys(byYear).forEach(function(yr) {
+                var years = Object.keys(byYear).sort();
+                years.forEach(function(yr, idx) {
                     var fi = byYear[yr].first;
                     var li = byYear[yr].last;
-                    // Use value at start of year relative to the series start (index 0 = 1.0)
-                    var startVal = fi === 0 ? 1 : cumArr[fi - 1];
-                    var endVal   = cumArr[li];
-                    if (startVal && startVal !== 0) {
-                        result[yr] = (endVal / startVal - 1) * 100;
+                    // Start of year = multiplier just before first data point for that year.
+                    // For the first year in our window, start = 1.0 (= the period's own baseline).
+                    // For subsequent years, start = multiplier at the last day of the prior year.
+                    var prevYr = years[idx - 1];
+                    var startMult = (idx === 0) ? 1.0 : mults[byYear[prevYr].last];
+                    var endMult   = mults[li];
+                    if (startMult && startMult > 0) {
+                        result[yr] = (endMult / startMult - 1) * 100;
                     }
                 });
                 return result;
@@ -4006,22 +4016,51 @@
                 calSpyYears = sparklineToCalYears(spark.dates, spark.spy);
             }
 
+            // Count data points per year to filter out partial/edge years with too few days
+            var yearPointCount = {};
+            if (spark.dates) {
+                spark.dates.forEach(function(dt) {
+                    var yr = String(dt).slice(0, 4);
+                    yearPointCount[yr] = (yearPointCount[yr] || 0) + 1;
+                });
+            }
+            var totalPoints = spark.dates ? spark.dates.length : 0;
+
             if (calYears && Object.keys(calYears).length > 0) {
-                var vals = Object.values(calYears);
-                var maxAbs = Math.max.apply(null, vals.map(Math.abs)) || 1;
-                calEl.innerHTML = Object.keys(calYears).sort().reverse().map(function(yr) {
+                // Filter: exclude partial years with < 8 data points (edge of window),
+                // unless there are only 1-2 years total (short periods like 3M)
+                var allYrs = Object.keys(calYears).sort();
+                var minPoints = allYrs.length > 2 ? 8 : 1;
+                var filteredYrs = allYrs.filter(function(yr) {
+                    return (yearPointCount[yr] || 0) >= minPoints;
+                });
+
+                if (filteredYrs.length === 0) filteredYrs = allYrs; // fallback: show all
+
+                var filteredVals = filteredYrs.map(function(yr) { return Math.abs(calYears[yr]); });
+                var maxAbs = Math.max.apply(null, filteredVals) || 1;
+
+                calEl.innerHTML = filteredYrs.slice().reverse().map(function(yr) {
                     var v = calYears[yr];
                     var spyV = calSpyYears ? calSpyYears[yr] : null;
                     var pct = Math.min(Math.abs(v) / maxAbs * 100, 100);
                     var posClass = v >= 0 ? 'cal-pos' : 'cal-neg';
                     var spyStr = spyV != null ? ' vs ' + (spyV >= 0 ? '+' : '') + spyV.toFixed(1) + '%' : '';
+                    var partialNote = (yearPointCount[yr] || 0) < 20 ? ' *' : '';
                     return '<div class="cal-year-row">' +
-                        '<span class="cal-year-label">' + yr + '</span>' +
+                        '<span class="cal-year-label">' + yr + partialNote + '</span>' +
                         '<div class="cal-bar-track"><div class="cal-bar-fill ' + posClass + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
                         '<span class="cal-year-val ' + posClass + '">' + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>' +
                         (spyStr ? '<span class="cal-spy-val">' + spyStr + '</span>' : '') +
                         '</div>';
                 }).join('');
+
+                // Add mode disclaimer
+                if (d.mode !== 'historical') {
+                    calEl.innerHTML += '<div style="color:rgba(255,255,255,0.2);font-size:0.62rem;margin-top:0.5rem;">' +
+                        '* Current weights applied to past prices. Switch to True Historical for actual annual returns.' +
+                    '</div>';
+                }
             } else {
                 calEl.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:0.75rem;">No historical data available</div>';
             }

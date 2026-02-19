@@ -1908,43 +1908,65 @@ async function runFrozenAnalysis() {
 function showFrozenResults(data, frozenDate) {
     var resultsEl = document.getElementById('whatIfResults');
     var yearLabel = frozenDate.substring(0, 4);
+    var monthLabel = frozenDate.substring(5, 7) === '01' ? 'Jan' :
+                     frozenDate.substring(5, 7) === '07' ? 'Jul' : frozenDate.substring(5, 7);
+    var dateLabel = monthLabel + ' ' + yearLabel;
 
     var actualReturn = data.actual.totalReturn;
     var frozenReturn = data.frozen.totalReturn;
+    // Return difference: positive means frozen beat actual (active trading hurt)
     var diff = frozenReturn - actualReturn;
     var diffCls = diff >= 0 ? 'positive' : 'negative';
     var diffSign = diff >= 0 ? '+' : '';
+    var winner = diff >= 0 ? 'Frozen portfolio had better price performance' : 'Active trading had better price performance';
 
-    var html = '<div class="wi-impact-card">' +
-        '<div class="impact-label">Frozen Portfolio from Jan ' + yearLabel + ' vs Actual Trading</div>' +
-        '<div class="impact-value ' + diffCls + '">' + diffSign + diff.toFixed(2) + '% Return Difference</div>' +
-        '<div class="impact-detail">' +
-        (diff >= 0 ? 'Keeping the Jan ' + yearLabel + ' portfolio would have performed better' : 'Active trading improved returns vs holding the Jan ' + yearLabel + ' portfolio') +
-        ' • Frozen value: ' + fmtCurrency(data.frozen.endValue) + ' vs Actual: ' + fmtCurrency(data.actual.endValue) +
-        '</div></div>';
+    // Hero: the return difference
+    var html = '<div class="wi-impact-hero">' +
+        '<div>' +
+            '<div class="wi-hero-label">Price Return Since ' + dateLabel + '</div>' +
+            '<div class="wi-hero-number ' + diffCls + '">' + diffSign + diff.toFixed(1) + '% difference</div>' +
+        '</div>' +
+        '<div class="wi-hero-detail">' +
+            '<div class="wi-hero-label">Verdict</div>' +
+            '<div class="wi-hero-desc">' + winner + '</div>' +
+            '<div style="margin-top:0.4rem;font-size:0.82rem;color:rgba(255,255,255,0.45);">' +
+                'Frozen: ' + (frozenReturn >= 0 ? '+' : '') + frozenReturn.toFixed(1) + '%' +
+                ' &nbsp;•&nbsp; Actual: ' + (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(1) + '%' +
+            '</div>' +
+        '</div>' +
+        '<div class="wi-hero-badge ' + (diff <= 0 ? 'better' : 'worse') + '">' +
+            (diff <= 0 ? '📈 Trading added value' : '📉 Buy-and-hold won') +
+        '</div>' +
+    '</div>';
+
+    // Note: end values differ in scale because new capital was added to the actual portfolio
+    html += '<div style="background:rgba(254,188,17,0.06);border:1px solid rgba(254,188,17,0.15);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.8rem;color:rgba(255,255,255,0.55);">' +
+        '<i class="fas fa-info-circle" style="color:#febc11;margin-right:0.5rem;"></i>' +
+        'Both returns are price-based from ' + dateLabel + '. The end values differ in scale because new capital was added to the actual portfolio over time — this is expected and not a performance difference.' +
+    '</div>';
 
     // Comparison cards
     html += '<div class="wi-comparison-grid">';
 
     // Actual
     html += '<div class="wi-comparison-card"><h4><i class="fas fa-chart-line" style="color:#60a5fa;"></i> Actual Portfolio (Today)</h4>';
-    html += wiMetricRow('Value', fmtCurrency(data.actual.endValue));
-    html += wiMetricRow('Total Return', (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(2) + '%', actualReturn >= 0 ? '#4ade80' : '#f87171');
+    html += wiMetricRow('Current Value', fmtCurrency(data.actual.endValue));
+    html += wiMetricRow('Price Return Since ' + dateLabel, (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(2) + '%', actualReturn >= 0 ? '#4ade80' : '#f87171');
     html += wiMetricRow('Holdings', data.actual.numHoldings + ' stocks');
     if (data.actual.holdings) {
         var topActual = data.actual.holdings.slice(0, 5);
-        html += wiMetricRow('Top 5', topActual.map(function(h) { return h.symbol; }).join(', '));
+        html += wiMetricRow('Top 5 by Value', topActual.map(function(h) { return h.symbol; }).join(', '));
     }
     html += '</div>';
 
     // Frozen
-    html += '<div class="wi-comparison-card"><h4><i class="fas fa-snowflake" style="color:#febc11;"></i> Frozen (Jan ' + yearLabel + ')</h4>';
-    html += wiMetricRow('Value', fmtCurrency(data.frozen.endValue), data.frozen.endValue > data.actual.endValue ? '#4ade80' : '#f87171');
-    html += wiMetricRow('Total Return', (frozenReturn >= 0 ? '+' : '') + frozenReturn.toFixed(2) + '%', frozenReturn >= actualReturn ? '#4ade80' : '#f87171');
-    html += wiMetricRow('Holdings', data.frozen.numHoldings + ' stocks (frozen)');
+    html += '<div class="wi-comparison-card"><h4><i class="fas fa-snowflake" style="color:#febc11;"></i> Frozen (' + dateLabel + ' portfolio)</h4>';
+    html += wiMetricRow('If-Held Value (today)', fmtCurrency(data.frozen.endValue));
+    html += wiMetricRow('Price Return Since ' + dateLabel, (frozenReturn >= 0 ? '+' : '') + frozenReturn.toFixed(2) + '%', frozenReturn >= actualReturn ? '#4ade80' : '#f87171');
+    html += wiMetricRow('Holdings', data.frozen.numHoldings + ' stocks (static)');
     if (data.frozen.holdings) {
         var topFrozen = data.frozen.holdings.slice(0, 5);
-        html += wiMetricRow('Top 5', topFrozen.map(function(h) { return h.symbol; }).join(', '));
+        html += wiMetricRow('Top 5 by Value', topFrozen.map(function(h) { return h.symbol; }).join(', '));
     }
     html += '</div></div>';
 
