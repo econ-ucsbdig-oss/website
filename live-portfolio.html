@@ -1694,6 +1694,9 @@
                     <button class="btn btn-warning" onclick="exportCSV()">
                         <i class="fas fa-file-csv"></i> Export CSV
                     </button>
+                    <button class="btn btn-info" onclick="exportAnalyticsCSV()" title="Download analytics metrics as CSV">
+                        <i class="fas fa-calculator"></i> Export Analytics
+                    </button>
                 </div>
             </div>
         </section>
@@ -3224,7 +3227,71 @@
         chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
     }
 
-    /* ── Analytics CSV export ── */
+    function exportAnalyticsCSV() {
+        if (!perfIntelData || !perfIntelData.portfolio) {
+            showSuccessMessage('Load analytics first — connect to the API then wait for Performance Intelligence to render.');
+            return;
+        }
+        var p = perfIntelData.portfolio;
+        var b = perfIntelData.benchmark || {};
+        var today = new Date().toISOString().split('T')[0];
+        var periodLabel = { '3m':'3-Month','6m':'6-Month','ytd':'YTD','1y':'1-Year','2y':'2-Year','all':'All-Time' }[currentPerfPeriod] || '1-Year';
+        function fmt(v, d) { return (v == null || isNaN(v)) ? 'N/A' : Number(v).toFixed(d == null ? 4 : d); }
+
+        var lines = [
+            'DIG Portfolio Analytics Export',
+            'Generated,' + today,
+            'Period,' + periodLabel,
+            'Mode,True Historical (TWR)',
+            'Risk-Free Rate,4.3% per annum',
+            'Benchmark,SPY',
+            '',
+            'PORTFOLIO METRICS',
+            'Metric,Portfolio,SPY Benchmark',
+            'Return (period),' + fmt(p.return1y,2) + '%,' + fmt(b.return1y,2) + '%',
+            'Return 1M,' + fmt(p.return1m,2) + '%,' + fmt(b.return1m,2) + '%',
+            'Return 3M,' + fmt(p.return3m,2) + '%,' + fmt(b.return3m,2) + '%',
+            'Return 6M,' + fmt(p.return6m,2) + '%,' + fmt(b.return6m,2) + '%',
+            'Return YTD,' + fmt(p.returnYtd,2) + '%,' + fmt(b.returnYtd,2) + '%',
+            'Ann. Volatility,' + fmt(p.annualizedVol,2) + '%,',
+            'Sharpe Ratio,' + fmt(p.sharpe,4) + ',',
+            'Sortino Ratio,' + fmt(p.sortino,4) + ',',
+            'Beta,' + fmt(p.beta,4) + ',1.0000',
+            "Jensen's Alpha," + fmt(p.alpha,2) + '%,',
+            'Max Drawdown,-' + fmt(Math.abs(p.maxDrawdown),2) + '%,',
+            ''
+        ];
+
+        if (perfIntelData.stockPerformance && perfIntelData.stockPerformance.length) {
+            lines.push('PER-HOLDING PERFORMANCE');
+            lines.push('Symbol,Weight (%),Price,1D (%),1W (%),1M (%),3M (%),YTD (%)');
+            perfIntelData.stockPerformance.forEach(function(s) {
+                lines.push([s.symbol, fmt(s.weight,2), fmt(s.price,2), fmt(s.ret1d,2),
+                    s.ret1w != null ? fmt(s.ret1w,2) : 'N/A',
+                    s.ret1m != null ? fmt(s.ret1m,2) : 'N/A',
+                    s.ret3m != null ? fmt(s.ret3m,2) : 'N/A',
+                    s.retYtd != null ? fmt(s.retYtd,2) : 'N/A'].join(','));
+            });
+            lines.push('');
+        }
+
+        if (perfIntelData.sparkline) {
+            lines.push('CUMULATIVE RETURN SERIES');
+            lines.push('Date,Portfolio (%),SPY (%)');
+            var sd = perfIntelData.sparkline.dates || [], sp = perfIntelData.sparkline.portfolio || [], ss = perfIntelData.sparkline.spy || [];
+            for (var i = 0; i < sd.length; i++) lines.push(sd[i] + ',' + fmt(sp[i],4) + ',' + fmt(ss[i],4));
+        }
+
+        var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'DIG_Analytics_' + today + '.csv';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+        showSuccessMessage('Analytics CSV downloaded.');
+    }
+
+    /* ── Holdings CSV export ── */
     function exportCSV() {
         const headers = ['Symbol','Description','GICS Sector','Quantity','Price','Market Value'];
         const rows = portfolioData.map(h => {
