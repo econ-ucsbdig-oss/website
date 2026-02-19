@@ -180,7 +180,18 @@ async function fetchStockQuote(symbol) {
 }
 
 // Get historical price data for charts
+// In-memory price cache: key → { data, expiresAt }
+// Prices are cached for 15 minutes — period/mode switches reuse cached data instantly.
+const _priceCache = new Map();
+const PRICE_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 async function fetchHistoricalPrices(symbol, timespan = 'day', from, to, limit = 120) {
+    const cacheKey = `${symbol}|${timespan}|${from}|${to}`;
+    const cached = _priceCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.data;
+    }
+
     try {
         const data = await polygonFetch(`/v2/aggs/ticker/${symbol}/range/1/${timespan}/${from}/${to}`, {
             adjusted: 'true',
@@ -189,7 +200,7 @@ async function fetchHistoricalPrices(symbol, timespan = 'day', from, to, limit =
         });
 
         if (data.results && data.results.length > 0) {
-            return data.results.map(bar => ({
+            const result = data.results.map(bar => ({
                 timestamp: bar.t,
                 date: new Date(bar.t).toISOString(),
                 open: bar.o,
@@ -200,9 +211,13 @@ async function fetchHistoricalPrices(symbol, timespan = 'day', from, to, limit =
                 vwap: bar.vw,
                 transactions: bar.n
             }));
+            _priceCache.set(cacheKey, { data: result, expiresAt: Date.now() + PRICE_CACHE_TTL_MS });
+            return result;
         }
 
-        return [];
+        const empty = [];
+        _priceCache.set(cacheKey, { data: empty, expiresAt: Date.now() + PRICE_CACHE_TTL_MS });
+        return empty;
     } catch (error) {
         console.error(`Error fetching historical prices for ${symbol}:`, error.message);
         throw error;
