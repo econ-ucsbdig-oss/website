@@ -1561,14 +1561,14 @@
                     <table class="holdings-table" id="holdingsTable">
                         <thead>
                             <tr>
-                                <th>Symbol</th>
-                                <th>Description</th>
-                                <th>GICS Sector</th>
-                                <th>Quantity</th>
-                                <th>Price</th>
-                                <th>Market Value</th>
-                                <th>% of Portfolio</th>
-                                <th>Day Change</th>
+                                <th data-holdkey="symbol" onclick="sortHoldingsTable('symbol')" style="cursor:pointer;">Symbol<span class="h-sort-arrow"> ↕</span></th>
+                                <th data-holdkey="description" onclick="sortHoldingsTable('description')" style="cursor:pointer;">Description<span class="h-sort-arrow"> ↕</span></th>
+                                <th data-holdkey="sector" onclick="sortHoldingsTable('sector')" style="cursor:pointer;">GICS Sector<span class="h-sort-arrow"> ↕</span></th>
+                                <th data-holdkey="quantity" onclick="sortHoldingsTable('quantity')" style="cursor:pointer;">Quantity<span class="h-sort-arrow"> ↕</span></th>
+                                <th data-holdkey="price" onclick="sortHoldingsTable('price')" style="cursor:pointer;">Price<span class="h-sort-arrow"> ↕</span></th>
+                                <th data-holdkey="mv" onclick="sortHoldingsTable('mv')" style="cursor:pointer;">Market Value<span class="h-sort-arrow"> ↕</span></th>
+                                <th data-holdkey="weight" onclick="sortHoldingsTable('weight')" style="cursor:pointer;">% of Portfolio<span class="h-sort-arrow"> ↓</span></th>
+                                <th data-holdkey="daychange" onclick="sortHoldingsTable('daychange')" style="cursor:pointer;">Day Change<span class="h-sort-arrow"> ↕</span></th>
                             </tr>
                         </thead>
                         <tbody id="holdingsBody"></tbody>
@@ -1668,7 +1668,12 @@
                         <h3><i class="fas fa-table"></i> Dividends by Holding</h3>
                         <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
                             <table class="history-table" id="dividendTable">
-                                <thead><tr><th>Symbol</th><th>Total Dividends</th><th>Count</th><th>Avg per Payment</th></tr></thead>
+                                <thead><tr>
+                                    <th data-divkey="symbol" onclick="sortDividendTable('symbol')" style="cursor:pointer;">Symbol<span class="div-sort-arrow"> ↕</span></th>
+                                    <th data-divkey="total" onclick="sortDividendTable('total')" style="cursor:pointer;">Total Dividends<span class="div-sort-arrow"> ↓</span></th>
+                                    <th data-divkey="count" onclick="sortDividendTable('count')" style="cursor:pointer;">Count<span class="div-sort-arrow"> ↕</span></th>
+                                    <th data-divkey="avg" onclick="sortDividendTable('avg')" style="cursor:pointer;">Avg per Payment<span class="div-sort-arrow"> ↕</span></th>
+                                </tr></thead>
                                 <tbody id="dividendBody"></tbody>
                             </table>
                         </div>
@@ -1707,7 +1712,14 @@
                         <h3><i class="fas fa-table"></i> Annual Summary</h3>
                         <div style="overflow-x:auto;">
                             <table class="history-table" id="turnoverTable">
-                                <thead><tr><th>Year</th><th>Total Buys ($)</th><th>Total Sells ($)</th><th>Net Trades</th><th>Dividends</th><th>Total Transactions</th></tr></thead>
+                                <thead><tr>
+                                    <th data-tokey="year" onclick="sortTurnoverTable('year')" style="cursor:pointer;">Year<span class="to-sort-arrow"> ↕</span></th>
+                                    <th data-tokey="buys" onclick="sortTurnoverTable('buys')" style="cursor:pointer;">Total Buys ($)<span class="to-sort-arrow"> ↕</span></th>
+                                    <th data-tokey="sells" onclick="sortTurnoverTable('sells')" style="cursor:pointer;">Total Sells ($)<span class="to-sort-arrow"> ↕</span></th>
+                                    <th data-tokey="net" onclick="sortTurnoverTable('net')" style="cursor:pointer;">Net Trades<span class="to-sort-arrow"> ↕</span></th>
+                                    <th data-tokey="divs" onclick="sortTurnoverTable('divs')" style="cursor:pointer;">Dividends<span class="to-sort-arrow"> ↕</span></th>
+                                    <th data-tokey="total" onclick="sortTurnoverTable('total')" style="cursor:pointer;">Total Transactions<span class="to-sort-arrow"> ↕</span></th>
+                                </tr></thead>
                                 <tbody id="turnoverBody"></tbody>
                             </table>
                         </div>
@@ -2229,7 +2241,32 @@
         document.getElementById('summaryCards').innerHTML = html;
     }
 
+    let holdingsSortField = 'weight';
+    let holdingsSortAsc = false;
+    let lastHoldingsSectionFilter = 'all';
+
+    function sortHoldingsTable(field) {
+        if (holdingsSortField === field) {
+            holdingsSortAsc = !holdingsSortAsc;
+        } else {
+            holdingsSortField = field;
+            holdingsSortAsc = false;
+        }
+        // Update header arrows
+        document.querySelectorAll('#holdingsTable thead th[data-holdkey]').forEach(th => {
+            const arrow = th.querySelector('.h-sort-arrow');
+            if (!arrow) return;
+            if (th.dataset.holdkey === field) {
+                arrow.textContent = holdingsSortAsc ? ' ↑' : ' ↓';
+            } else {
+                arrow.textContent = ' ↕';
+            }
+        });
+        updateHoldingsTable(lastHoldingsSectionFilter);
+    }
+
     function updateHoldingsTable(sectionFilter = 'all') {
+        lastHoldingsSectionFilter = sectionFilter;
         const tbody = document.getElementById('holdingsBody');
         const titleEl = document.getElementById('sectionTitle');
         const statsEl = document.getElementById('sectionStats');
@@ -2240,6 +2277,23 @@
         else if (sectionFilter === 'equity') data = equityHoldings;
 
         const totalPortfolioValue = portfolioData.reduce((s, h) => s + (h.quantity * h.lastPrice), 0) || 1;
+
+        // Sort data
+        data = data.slice().sort((a, b) => {
+            let aVal, bVal;
+            switch (holdingsSortField) {
+                case 'symbol':      aVal = a.symbol; bVal = b.symbol; return holdingsSortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                case 'description': aVal = a.description; bVal = b.description; return holdingsSortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                case 'sector':      aVal = a.gicsSector || ''; bVal = b.gicsSector || ''; return holdingsSortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                case 'quantity':    aVal = a.quantity; bVal = b.quantity; break;
+                case 'price':       aVal = a.lastPrice; bVal = b.lastPrice; break;
+                case 'mv':          aVal = a.quantity * a.lastPrice; bVal = b.quantity * b.lastPrice; break;
+                case 'weight':      aVal = a.quantity * a.lastPrice; bVal = b.quantity * b.lastPrice; break;
+                case 'daychange':   aVal = a.changePercent || 0; bVal = b.changePercent || 0; break;
+                default:            aVal = a.quantity * a.lastPrice; bVal = b.quantity * b.lastPrice;
+            }
+            return holdingsSortAsc ? aVal - bVal : bVal - aVal;
+        });
         const rowsHtml = data.map(h => {
             const mv = h.quantity * h.lastPrice;
             const weight = mv / totalPortfolioValue * 100;
@@ -3220,9 +3274,8 @@
             <div class="history-stat"><div class="stat-label">Avg/Year</div><div class="stat-value">$${years.length > 0 ? (totalDivs / years.length).toFixed(2) : '0'}</div></div>`;
 
         // Table
-        document.getElementById('dividendBody').innerHTML = symbolList.map(([sym, data]) =>
-            `<tr><td style="color:#febc11;font-weight:600;">${sym}</td><td>$${data.total.toFixed(2)}</td><td>${data.count}</td><td>$${(data.total / data.count).toFixed(2)}</td></tr>`
-        ).join('');
+        _lastDivList = symbolList;
+        _renderDividendBody(symbolList);
 
         // Chart
         if (historyCharts.dividend) historyCharts.dividend.destroy();
@@ -3298,6 +3351,69 @@
     }
 
     // --- TURNOVER ---
+    // ---- Dividend table sort ----
+    let _divSortField = 'total', _divSortAsc = false;
+    let _lastDivList = [];
+
+    function _renderDividendBody(list) {
+        document.getElementById('dividendBody').innerHTML = list.map(([sym, data]) =>
+            `<tr><td style="color:#febc11;font-weight:600;">${sym}</td><td>$${data.total.toFixed(2)}</td><td>${data.count}</td><td>$${(data.total / data.count).toFixed(2)}</td></tr>`
+        ).join('');
+    }
+
+    function sortDividendTable(field) {
+        if (_divSortField === field) { _divSortAsc = !_divSortAsc; } else { _divSortField = field; _divSortAsc = false; }
+        document.querySelectorAll('#dividendTable thead th[data-divkey]').forEach(th => {
+            const arrow = th.querySelector('.div-sort-arrow');
+            if (!arrow) return;
+            arrow.textContent = th.dataset.divkey === field ? (_divSortAsc ? ' ↑' : ' ↓') : ' ↕';
+        });
+        const sorted = _lastDivList.slice().sort((a, b) => {
+            let aVal, bVal;
+            if (field === 'symbol') { return _divSortAsc ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]); }
+            if (field === 'total') { aVal = a[1].total; bVal = b[1].total; }
+            else if (field === 'count') { aVal = a[1].count; bVal = b[1].count; }
+            else if (field === 'avg') { aVal = a[1].total / a[1].count; bVal = b[1].total / b[1].count; }
+            return _divSortAsc ? aVal - bVal : bVal - aVal;
+        });
+        _renderDividendBody(sorted);
+    }
+
+    // ---- Turnover table sort ----
+    let _toSortField = 'year', _toSortAsc = false;
+    let _lastTurnoverData = [];
+
+    function _renderTurnoverBody(data) {
+        document.getElementById('turnoverBody').innerHTML = data.map(d => `<tr>
+            <td style="font-weight:700;">${d.year}</td>
+            <td style="color:#28a745;">$${d.buys.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+            <td style="color:#dc3545;">$${d.sells.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+            <td>${d.buys + d.sells > 0 ? Math.round((d.buys + d.sells) / 2).toLocaleString() : '0'}</td>
+            <td style="color:#febc11;">$${d.dividends.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+            <td>${d.total}</td>
+        </tr>`).join('');
+    }
+
+    function sortTurnoverTable(field) {
+        if (_toSortField === field) { _toSortAsc = !_toSortAsc; } else { _toSortField = field; _toSortAsc = false; }
+        document.querySelectorAll('#turnoverTable thead th[data-tokey]').forEach(th => {
+            const arrow = th.querySelector('.to-sort-arrow');
+            if (!arrow) return;
+            arrow.textContent = th.dataset.tokey === field ? (_toSortAsc ? ' ↑' : ' ↓') : ' ↕';
+        });
+        const sorted = _lastTurnoverData.slice().sort((a, b) => {
+            let aVal, bVal;
+            if (field === 'year')  { aVal = a.year;      bVal = b.year; }
+            else if (field === 'buys')  { aVal = a.buys;      bVal = b.buys; }
+            else if (field === 'sells') { aVal = a.sells;     bVal = b.sells; }
+            else if (field === 'net')   { aVal = a.buys + a.sells; bVal = b.buys + b.sells; }
+            else if (field === 'divs')  { aVal = a.dividends; bVal = b.dividends; }
+            else if (field === 'total') { aVal = a.total;     bVal = b.total; }
+            return _toSortAsc ? aVal - bVal : bVal - aVal;
+        });
+        _renderTurnoverBody(sorted);
+    }
+
     function renderTurnover() {
         const years = [2021, 2022, 2023, 2024, 2025, 2026];
         const annualData = years.map(yr => {
@@ -3308,14 +3424,8 @@
             return { year: yr, buys, sells, dividends: divs, total: yearTxns.length };
         });
 
-        document.getElementById('turnoverBody').innerHTML = annualData.map(d => `<tr>
-            <td style="font-weight:700;">${d.year}</td>
-            <td style="color:#28a745;">$${d.buys.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
-            <td style="color:#dc3545;">$${d.sells.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
-            <td>${d.buys + d.sells > 0 ? Math.round((d.buys + d.sells) / 2).toLocaleString() : '0'}</td>
-            <td style="color:#febc11;">$${d.dividends.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
-            <td>${d.total}</td>
-        </tr>`).join('');
+        _lastTurnoverData = annualData;
+        _renderTurnoverBody(annualData);
 
         if (historyCharts.turnover) historyCharts.turnover.destroy();
         const ctx = document.getElementById('turnoverChart');

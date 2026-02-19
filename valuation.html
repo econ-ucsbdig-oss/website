@@ -1595,8 +1595,12 @@
             <div class="result-card">
                 <h3><i class="fas fa-chart-pie"></i> Sector Concentration</h3>
                 <table class="val-table">
-                    <thead><tr><th>Sector</th><th>Weight</th><th>Holdings</th></tr></thead>
-                    <tbody>
+                    <thead><tr>
+                        <th data-valcol="0" onclick="sortValTable('sectorConcBody',0)" style="cursor:pointer;">Sector<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="1" onclick="sortValTable('sectorConcBody',1)" style="cursor:pointer;">Weight<span class="val-sort-arrow"> ↓</span></th>
+                        <th data-valcol="2" onclick="sortValTable('sectorConcBody',2)" style="cursor:pointer;">Holdings<span class="val-sort-arrow"> ↕</span></th>
+                    </tr></thead>
+                    <tbody id="sectorConcBody">
                         ${sortedSectors.map(([sec, w]) => {
                             const cnt = holdings.filter(h => h.gicsSector === sec).length;
                             const barW = Math.min(w * 100 / sortedSectors[0][1] * 100, 100);
@@ -1622,8 +1626,18 @@
                     <div class="metric-item"><div class="metric-label">Est. Loss</div><div class="metric-value" style="color:#dc3545;">${fmtBig(totalVal * pDrawdown)}</div></div>
                 </div>
                 <table class="val-table">
-                    <thead><tr><th>Symbol</th><th>Sector</th><th>Weight</th><th>Beta</th><th>Sector Draw</th><th>Adj. Draw</th><th>Current Value</th><th>Stressed Value</th><th>Est. Loss</th></tr></thead>
-                    <tbody>
+                    <thead><tr>
+                        <th data-valcol="0" onclick="sortValTable('stressBody',0)" style="cursor:pointer;">Symbol<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="1" onclick="sortValTable('stressBody',1)" style="cursor:pointer;">Sector<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="2" onclick="sortValTable('stressBody',2)" style="cursor:pointer;">Weight<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="3" onclick="sortValTable('stressBody',3)" style="cursor:pointer;">Beta<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="4" onclick="sortValTable('stressBody',4)" style="cursor:pointer;">Sector Draw<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="5" onclick="sortValTable('stressBody',5)" style="cursor:pointer;">Adj. Draw<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="6" onclick="sortValTable('stressBody',6)" style="cursor:pointer;">Current Value<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="7" onclick="sortValTable('stressBody',7)" style="cursor:pointer;">Stressed Value<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="8" onclick="sortValTable('stressBody',8)" style="cursor:pointer;">Est. Loss<span class="val-sort-arrow"> ↓</span></th>
+                    </tr></thead>
+                    <tbody id="stressBody">
                         ${stressResults.sort((a,b) => a.loss - b.loss).map(h => `<tr>
                             <td class="highlight">${h.symbol}</td><td>${h.gicsSector}</td>
                             <td>${(h.weight * 100).toFixed(1)}%</td><td>${fmt(h.beta)}</td>
@@ -1660,8 +1674,14 @@
             <div class="result-card">
                 <h3><i class="fas fa-balance-scale"></i> Risk Parity vs Current Weights</h3>
                 <table class="val-table">
-                    <thead><tr><th>Symbol</th><th>Current</th><th>Risk Parity</th><th>Delta</th><th>Risk Score</th></tr></thead>
-                    <tbody>
+                    <thead><tr>
+                        <th data-valcol="0" onclick="sortValTable('riskParityBody',0)" style="cursor:pointer;">Symbol<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="1" onclick="sortValTable('riskParityBody',1)" style="cursor:pointer;">Current<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="2" onclick="sortValTable('riskParityBody',2)" style="cursor:pointer;">Risk Parity<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="3" onclick="sortValTable('riskParityBody',3)" style="cursor:pointer;">Delta<span class="val-sort-arrow"> ↕</span></th>
+                        <th data-valcol="4" onclick="sortValTable('riskParityBody',4)" style="cursor:pointer;">Risk Score<span class="val-sort-arrow"> ↕</span></th>
+                    </tr></thead>
+                    <tbody id="riskParityBody">
                         ${holdings.map((h, i) => {
                             const delta = rpWeights[i] - h.weight;
                             const score = riskScores[i];
@@ -1804,6 +1824,33 @@
                 });
             }
         }, 100);
+    }
+    // Generic DOM table sorter for val-tables
+    const _valSortState = {};
+    function sortValTable(tbodyId, colIndex) {
+        const state = _valSortState[tbodyId] = _valSortState[tbodyId] || { col: -1, asc: true };
+        if (state.col === colIndex) { state.asc = !state.asc; } else { state.col = colIndex; state.asc = true; }
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            const aText = a.cells[colIndex]?.innerText?.trim() || '';
+            const bText = b.cells[colIndex]?.innerText?.trim() || '';
+            const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+            const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) return state.asc ? aNum - bNum : bNum - aNum;
+            return state.asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+        });
+        rows.forEach(r => tbody.appendChild(r));
+        // Update header arrows in parent thead
+        const thead = tbody.closest('table')?.querySelector('thead');
+        if (thead) {
+            thead.querySelectorAll('th[data-valcol]').forEach(th => {
+                const arrow = th.querySelector('.val-sort-arrow');
+                if (!arrow) return;
+                arrow.textContent = parseInt(th.dataset.valcol) === colIndex ? (state.asc ? ' ↑' : ' ↓') : ' ↕';
+            });
+        }
     }
     </script>
 

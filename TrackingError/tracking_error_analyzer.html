@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio Tracking Error Analyzer</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -748,125 +747,9 @@
             font-size: 14px;
             color: #666;
         }
-
-        /* Sortable Table Styles */
-        .sortable {
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        .sortable:hover {
-            background: #5a6fc0 !important;
-        }
-
-        .sortable i {
-            margin-left: 5px;
-            opacity: 0.6;
-        }
-
-        .sortable.sorted-asc i,
-        .sortable.sorted-desc i {
-            opacity: 1;
-        }
-
-        /* Rolling Analysis Styles */
-        .rolling-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 2px solid #dee2e6;
-        }
-
-        .rolling-controls {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-
-        .rolling-results {
-            margin-top: 20px;
-        }
-
-        .rolling-metric-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .rolling-metric {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .rolling-metric.positive {
-            border-left-color: #28a745;
-        }
-
-        .rolling-metric.negative {
-            border-left-color: #dc3545;
-        }
-
-        .rolling-metric-label {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .rolling-metric-value {
-            font-size: 22px;
-            font-weight: 700;
-            color: #333;
-            margin-top: 5px;
-        }
-
-        .rolling-chart-container {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .rolling-chart-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .beta-positive { color: #28a745; }
-        .beta-negative { color: #dc3545; }
-        
-        /* Spinner for loading states */
-        .btn-loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-        
-        .btn-loading::after {
-            content: '';
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border: 2px solid #ffffff;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-left: 8px;
-        }
     </style>
 </head>
 <body>
-======= REPLACE
-
-======= REPLACE
-
     <!-- Header -->
     <header>
         <nav>
@@ -1081,9 +964,6 @@
             <button class="btn btn-primary" onclick="calculateTrackingError()" style="margin-top: 20px;">
                 Calculate Tracking Error
             </button>
-            <button class="btn btn-secondary" onclick="calculateRollingBeta()" style="margin-top: 20px; margin-left: 10px;">
-                <i class="fas fa-chart-line"></i> Calculate Rolling Beta & TE
-            </button>
         </div>
 
         <div class="loading" id="loading">
@@ -1098,6 +978,18 @@
             <h2 class="section-title">Results</h2>
 
             <div class="metric-cards">
+                <div class="metric-card">
+                    <div class="metric-label">Portfolio Return</div>
+                    <div class="metric-value" id="portfolioReturn">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Benchmark Return</div>
+                    <div class="metric-value" id="benchmarkReturn">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Active Return</div>
+                    <div class="metric-value" id="activeReturn">-</div>
+                </div>
                 <div class="metric-card">
                     <div class="metric-label">Portfolio Tracking Error</div>
                     <div class="metric-value" id="portfolioTE">-</div>
@@ -1117,16 +1009,14 @@
                 <table class="results-table" id="equityResults">
                     <thead>
                         <tr>
-                            <th>Ticker</th>
-                            <th>Sector</th>
-                            <th>Sleeve</th>
-                            <th>Portfolio Weight (%)</th>
-                            <th>Benchmark Weight (%)</th>
-                            <th>Active Weight (%)</th>
-                            <th>Return (%)</th>
-                            <th>Active Return (%)</th>
-                            <th>MCTE (%)</th>
-                            <th>CTE (%)</th>
+                            <th onclick="sortEquityTable(0)" style="cursor: pointer; text-align: left;">Ticker ↕</th>
+                            <th onclick="sortEquityTable(1)" style="cursor: pointer; text-align: left;">Sector ↕</th>
+                            <th onclick="sortEquityTable(2)" style="cursor: pointer; text-align: center; line-height: 1.2; padding: 8px 4px;">Active<br>Weight<br>(%) ↕</th>
+                            <th onclick="sortEquityTable(3)" style="cursor: pointer; text-align: center; line-height: 1.2; padding: 8px 4px;">Return<br>(%) ↕</th>
+                            <th onclick="sortEquityTable(4)" style="cursor: pointer; text-align: center; line-height: 1.2; padding: 8px 4px;">Active<br>Return<br>(%) ↕</th>
+                            <th onclick="sortEquityTable(5)" style="cursor: pointer; text-align: center; line-height: 1.2; padding: 8px 4px;">CTE<br>(%) ↕</th>
+                            <th onclick="sortEquityTable(6)" style="cursor: pointer; text-align: center; line-height: 1.2; padding: 8px 4px;">% of<br>Return ↕</th>
+                            <th onclick="sortEquityTable(7)" style="cursor: pointer; text-align: center; line-height: 1.2; padding: 8px 4px;">% of<br>TE ↕</th>
                         </tr>
                     </thead>
                     <tbody id="equityResultsBody">
@@ -1139,11 +1029,11 @@
                 <table class="results-table" id="sectorResults">
                     <thead>
                         <tr>
-                            <th>Sector</th>
-                            <th>Return (%)</th>
-                            <th>Active Return (%)</th>
-                            <th>Total CTE (%)</th>
-                            <th>% of Total TE</th>
+                            <th onclick="sortSectorTable(0)" style="cursor:pointer;">Sector ↕</th>
+                            <th onclick="sortSectorTable(1)" style="cursor:pointer;">Active Return (%) ↕</th>
+                            <th onclick="sortSectorTable(2)" style="cursor:pointer;">CTE (%) ↕</th>
+                            <th onclick="sortSectorTable(3)" style="cursor:pointer;">% of Return ↕</th>
+                            <th onclick="sortSectorTable(4)" style="cursor:pointer;">% of TE ↕</th>
                         </tr>
                     </thead>
                     <tbody id="sectorResultsBody">
@@ -1158,12 +1048,12 @@
                     <table class="results-table" id="sleeveAttributionTable">
                         <thead>
                             <tr>
-                                <th>Sleeve</th>
-                                <th>Portfolio Weight (%)</th>
-                                <th>Return (%)</th>
-                                <th>Active Return (%)</th>
-                                <th>CTE (%)</th>
-                                <th>% of Total TE</th>
+                                <th onclick="sortSleeveTable(0)" style="cursor:pointer;">Sleeve ↕</th>
+                                <th onclick="sortSleeveTable(1)" style="cursor:pointer;">Portfolio Weight (%) ↕</th>
+                                <th onclick="sortSleeveTable(2)" style="cursor:pointer;">Active Return (%) ↕</th>
+                                <th onclick="sortSleeveTable(3)" style="cursor:pointer;">CTE (%) ↕</th>
+                                <th onclick="sortSleeveTable(4)" style="cursor:pointer;">% of Return ↕</th>
+                                <th onclick="sortSleeveTable(5)" style="cursor:pointer;">% of TE ↕</th>
                             </tr>
                         </thead>
                         <tbody id="sleeveAttributionBody">
@@ -1202,6 +1092,50 @@
                     </div>
                 </div>
                 <svg id="equityCurveSvg" viewBox="0 0 900 260" preserveAspectRatio="none" role="img" aria-label="Equity curve chart"></svg>
+            </div>
+
+            <h3 class="section-title">Portfolio vs Benchmark Returns (Scatter Plot)</h3>
+            <div class="chart-card" style="margin-bottom: 20px;">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title">Daily returns with regression line (slope = Beta)</div>
+                        <div class="chart-subtitle" id="scatterSubtitle">-</div>
+                    </div>
+                    <div class="legend" aria-label="Chart legend">
+                        <span class="legend-item"><span class="legend-swatch" style="background:#667eea"></span>Daily Returns</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>Regression Line (Beta)</span>
+                    </div>
+                </div>
+                <svg id="scatterChartSvg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter plot chart"></svg>
+            </div>
+
+            <h3 class="section-title">Rolling Tracking Error (60-Day Window)</h3>
+            <div class="chart-card" style="margin-bottom: 20px;">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title">Portfolio tracking error over time (annualized)</div>
+                        <div class="chart-subtitle" id="teChartSubtitle">-</div>
+                    </div>
+                    <div class="legend" aria-label="Chart legend">
+                        <span class="legend-item"><span class="legend-swatch" style="background:#8b5cf6"></span>Rolling TE</span>
+                    </div>
+                </div>
+                <svg id="teChartSvg" viewBox="0 0 900 260" preserveAspectRatio="none" role="img" aria-label="TE chart"></svg>
+            </div>
+
+            <h3 class="section-title">Rolling Portfolio Beta (60-Day Window)</h3>
+            <div class="chart-card" style="margin-bottom: 20px;">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title">Portfolio Beta vs Benchmark over time</div>
+                        <div class="chart-subtitle" id="betaChartSubtitle">-</div>
+                    </div>
+                    <div class="legend" aria-label="Chart legend">
+                        <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span>Portfolio Beta</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#94a3b8"></span>Beta = 1.0 (Neutral)</span>
+                    </div>
+                </div>
+                <svg id="betaChartSvg" viewBox="0 0 900 260" preserveAspectRatio="none" role="img" aria-label="Beta chart"></svg>
             </div>
 
             <div class="success" id="verification"></div>
@@ -1669,6 +1603,8 @@
                     sleeveWeight: portfolio.passiveIndex.weight,
                     isIndexFund: true  // Flag to handle differently in calculations
                 };
+                console.log('🚨🚨🚨 ADDING PASSIVE INDEX HOLDING 🚨🚨🚨', indexHolding);
+                alert('CODE IS UPDATED! Adding passive index: ' + holding);
                 aggregated.push(indexHolding);
             }
 
@@ -1731,6 +1667,76 @@
 
         // ========== END HOLDINGS AGGREGATION ==========
 
+        // ========== BLOOMBERG-STYLE LOOK-THROUGH ==========
+        // Decompose index funds into their constituents and calculate net active weights
+        async function performLookThrough(aggregatedHoldings, benchmark) {
+            await loadIndexFundHoldings();
+
+            // Step 1: Build total portfolio weights by looking through index funds
+            const portfolioWeights = {};
+
+            aggregatedHoldings.forEach(holding => {
+                if (holding.isIndexFund) {
+                    // Look through the index fund
+                    let indexHoldings;
+                    if (holding.ticker === 'VOO' || holding.ticker === 'SPY') {
+                        indexHoldings = vooHoldings;
+                    } else if (holding.ticker === 'SPXE') {
+                        indexHoldings = spxeHoldings;
+                    } else {
+                        console.warn(`Unknown index fund: ${holding.ticker}`);
+                        return;
+                    }
+
+                    // Add each constituent weighted by the index fund's weight
+                    const indexWeight = holding.weight / 100; // Convert to decimal
+                    Object.entries(indexHoldings).forEach(([ticker, constituentWeight]) => {
+                        const contributedWeight = indexWeight * (constituentWeight / 100);
+                        portfolioWeights[ticker] = (portfolioWeights[ticker] || 0) + contributedWeight;
+                    });
+                } else {
+                    // Regular stock - add directly
+                    const weight = holding.weight / 100; // Convert to decimal
+                    portfolioWeights[holding.ticker] = (portfolioWeights[holding.ticker] || 0) + weight;
+                }
+            });
+
+            // Step 2: Use the global benchmarkWeights (already loaded)
+            console.log('Using benchmark weights:', Object.keys(benchmarkWeights).length, 'constituents');
+
+            // Step 3: Calculate net active weights for ALL tickers (portfolio + benchmark)
+            const netActiveWeights = {};
+            const allTickers = new Set([...Object.keys(portfolioWeights), ...Object.keys(benchmarkWeights)]);
+
+            console.log(`Portfolio tickers: ${Object.keys(portfolioWeights).length}`);
+            console.log(`Benchmark tickers: ${Object.keys(benchmarkWeights).length}`);
+            console.log(`Total unique tickers: ${allTickers.size}`);
+
+            allTickers.forEach(ticker => {
+                const portWeight = (portfolioWeights[ticker] || 0) * 100; // Convert to percentage
+                const benchWeight = benchmarkWeights[ticker] || 0;
+                const activeWeight = portWeight - benchWeight;
+
+                // Include ALL tickers, even with zero active weight (for completeness)
+                // The covariance matrix needs all holdings
+                netActiveWeights[ticker] = {
+                    portfolioWeight: portWeight,
+                    benchmarkWeight: benchWeight,
+                    activeWeight: activeWeight
+                };
+            });
+
+            console.log(`Look-through complete: ${Object.keys(netActiveWeights).length} total equities`);
+
+            // Count how many have non-zero active weights
+            const nonZeroCount = Object.values(netActiveWeights).filter(w => Math.abs(w.activeWeight) > 0.0001).length;
+            console.log(`  -> ${nonZeroCount} with non-zero active weights`);
+
+            return netActiveWeights;
+        }
+
+        // ========== END LOOK-THROUGH ==========
+
         // Load sample portfolio
         async function loadSamplePortfolio() {
             // Use deterministic sample weights (as provided)
@@ -1780,51 +1786,77 @@
             }
         }
 
-        // Load shadow portfolio (user-provided weights; decimals that sum to ~1.0; UI uses percent)
+        // Load shadow portfolio from CSV file
         async function loadShadowPortfolio() {
-            const shadowWeights = [
-                { ticker: 'GOOGL', weight: 0.074003295 },
-                { ticker: 'META', weight: 0.032376442 },
-                { ticker: 'TSM', weight: 0.087878913 },
-                { ticker: 'MSFT', weight: 0.10175453 },
-                { ticker: 'CSCO', weight: 0.055502471 },
-                { ticker: 'DDOG', weight: 0.0555 },
-                { ticker: 'CAN', weight: 0.055502471 },
-                { ticker: 'AMZN', weight: 0.103943884 },
-                { ticker: 'COST', weight: 0.033916186 },
-                { ticker: 'KO', weight: 0.021221479 },
-                { ticker: 'JPM', weight: 0.052036707 },
-                { ticker: 'SCHW', weight: 0.033456 },
-                { ticker: 'BLK', weight: 0.030671334 },
-                { ticker: 'BRK.B', weight: 0.023247477 },
-                { ticker: 'UNH', weight: 0.01739184 },
-                { ticker: 'NVO', weight: 0.013908 },
-                { ticker: 'LLY', weight: 0.013908 },
-                { ticker: 'BSX', weight: 0.013908 },
-                { ticker: 'TMO', weight: 0.01043328 },
-                { ticker: 'DXCM', weight: 0.02164176 },
-                { ticker: 'GE', weight: 0.018644975 },
-                { ticker: 'STRL', weight: 0.012429984 },
-                { ticker: 'RS', weight: 0.02072 },
-                { ticker: 'ECL', weight: 0.02072 },
-                { ticker: 'VRT', weight: 0.01035832 },
-                { ticker: 'GLD', weight: 0.01035832 },
-                { ticker: 'UUP', weight: 0.01035832 },
-                { ticker: 'DLR', weight: 0.010247941 },
-                { ticker: 'VICI', weight: 0.020540054 },
-                { ticker: 'CCJ', weight: 0.00552152 },
-                { ticker: 'CEG', weight: 0.007862644 }
-            ];
-
             document.getElementById('loading').style.display = 'block';
 
             try {
+                // Fetch the CSV file
+                const response = await fetch('ShadowPortfolio.csv');
+                if (!response.ok) {
+                    throw new Error(`Failed to load ShadowPortfolio.csv: ${response.status}`);
+                }
+
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+
+                // Parse CSV header to find column indices
+                const header = lines[0].split(',');
+                const symbolIdx = header.findIndex(h => h.toLowerCase().includes('symbol'));
+                const totalWeightIdx = header.findIndex(h => h.toLowerCase().includes('total weight'));
+                const sectorIdx = header.findIndex(h => h.toLowerCase().includes('sector'));
+
+                if (symbolIdx === -1 || totalWeightIdx === -1) {
+                    throw new Error('CSV must have "Symbol" and "Total Weight" columns');
+                }
+
+                console.log(`Found Symbol at column ${symbolIdx}, Total Weight at column ${totalWeightIdx}`);
+
+                // Parse data rows
+                const shadowWeights = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue; // Skip empty lines
+
+                    const values = line.split(',');
+                    const symbol = values[symbolIdx]?.trim();
+                    const weightStr = values[totalWeightIdx]?.trim();
+                    const sector = sectorIdx >= 0 ? values[sectorIdx]?.trim() : null;
+
+                    if (!symbol || !weightStr) continue;
+
+                    // Parse weight (handle percentage format like "7.40%")
+                    let weight = parseFloat(weightStr.replace('%', ''));
+                    if (isNaN(weight)) continue;
+
+                    // If weight looks like a percentage (e.g., 7.40 for 7.40%), convert to decimal
+                    if (weight > 1) {
+                        weight = weight / 100;
+                    }
+
+                    console.log(`Parsed: ${symbol} = ${weight} (${(weight * 100).toFixed(2)}%)`);
+
+                    shadowWeights.push({
+                        ticker: symbol,
+                        weight: weight,
+                        sector: sector
+                    });
+                }
+
+                if (shadowWeights.length === 0) {
+                    throw new Error('No valid holdings found in ShadowPortfolio.csv');
+                }
+
+                console.log(`✅ Loaded ${shadowWeights.length} holdings from ShadowPortfolio.csv`);
+
+                // Load holdings with sector detection
                 holdings = [];
                 for (const h of shadowWeights) {
-                    const sector = await detectSector(h.ticker);
+                    // Use sector from CSV if available, otherwise detect
+                    const sector = h.sector || await detectSector(h.ticker);
                     holdings.push({
                         ticker: h.ticker,
-                        weight: h.weight * 100,
+                        weight: h.weight * 100, // Convert to percentage for UI
                         sector
                     });
                 }
@@ -1837,17 +1869,64 @@
             }
         }
 
+        // Load CSV file and parse into {ticker: weight} object
+        async function loadCSVWeights(filename) {
+            try {
+                const response = await fetch(filename);
+                const text = await response.text();
+                const lines = text.trim().split('\n');
+                const weights = {};
+
+                // Skip header row
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const [ticker, weightStr] = line.split(',');
+                    if (ticker && weightStr) {
+                        // Remove % sign and convert to decimal
+                        const weight = parseFloat(weightStr.replace('%', ''));
+                        weights[ticker.trim()] = weight;
+                    }
+                }
+
+                return weights;
+            } catch (error) {
+                console.error(`Error loading ${filename}:`, error);
+                return {};
+            }
+        }
+
+        // Cache for index fund holdings
+        let vooHoldings = null;
+        let spxHoldings = null;
+        let spxeHoldings = null;
+
+        // Load index fund holdings from CSV files
+        async function loadIndexFundHoldings() {
+            if (!vooHoldings) {
+                vooHoldings = await loadCSVWeights('vooholdings.csv');
+                console.log(`Loaded VOO holdings: ${Object.keys(vooHoldings).length} constituents`);
+            }
+            if (!spxHoldings) {
+                spxHoldings = await loadCSVWeights('spxholdings.csv');
+                console.log(`Loaded SPX holdings: ${Object.keys(spxHoldings).length} constituents`);
+            }
+            if (!spxeHoldings) {
+                spxeHoldings = await loadCSVWeights('SPXE Holdings-3.csv');
+                console.log(`Loaded SPXE holdings: ${Object.keys(spxeHoldings).length} constituents`);
+            }
+        }
+
         // Fetch benchmark constituent weights
         async function fetchBenchmarkWeights(benchmark) {
+            await loadIndexFundHoldings();
             benchmarkWeights = {};
 
             if (benchmark === 'SPXE') {
-                // For SPXE, we'll use SPY and exclude Energy sector
-                // This is an approximation
-                return await fetchSPYWeightsExcludingEnergy();
+                return { ...spxeHoldings };
             } else if (benchmark === 'SPY' || benchmark === '^GSPC') {
-                // Fetch SPY holdings as proxy for SPX weights
-                return await fetchSPYWeights();
+                return { ...spxHoldings };
             }
 
             return {};
@@ -1992,48 +2071,10 @@
                 benchmarkWeights = await fetchBenchmarkWeights(benchmark);
                 console.log('Benchmark weights loaded:', Object.keys(benchmarkWeights).length, 'constituents');
 
-                // Fetch data from Yahoo Finance - use aggregated holdings
-                const results = await fetchDataAndCalculate(aggregatedHoldings, benchmark, period, frequency);
-
-                // Fix active weight display for index funds using look-through
-                // The covariance math correctly uses full fund weight, but the displayed
-                // active weight should show how much the fund actually differs from the benchmark
-                const hasIndexFunds = aggregatedHoldings.some(h => h.isIndexFund);
-                if (hasIndexFunds) {
-                    await loadIndexFundHoldings();
-
-                    results.equityResults.forEach(eq => {
-                        const holding = aggregatedHoldings.find(h => h.ticker === eq.ticker);
-                        if (holding && holding.isIndexFund) {
-                            // Get this fund's constituent weights
-                            let fundHoldings;
-                            if (eq.ticker === 'VOO' || eq.ticker === 'SPY') {
-                                fundHoldings = vooHoldings;
-                            } else if (eq.ticker === 'SPXE') {
-                                fundHoldings = spxeHoldings;
-                            }
-
-                            if (fundHoldings) {
-                                // Compare fund constituents vs benchmark at the fund's portfolio weight
-                                const fundWeight = eq.portfolioWeight / 100; // decimal
-                                const allTickers = new Set([...Object.keys(fundHoldings), ...Object.keys(benchmarkWeights)]);
-                                let sumPositiveActive = 0;
-
-                                allTickers.forEach(ticker => {
-                                    const constituentWeight = (fundHoldings[ticker] || 0) * fundWeight;
-                                    const bmkWeight = benchmarkWeights[ticker] || 0;
-                                    const activeWt = constituentWeight - bmkWeight;
-                                    if (activeWt > 0) {
-                                        sumPositiveActive += activeWt;
-                                    }
-                                });
-
-                                eq.activeWeight = sumPositiveActive;
-                                console.log(`Look-through active weight for ${eq.ticker}: ${eq.activeWeight.toFixed(2)}% (was ${eq.portfolioWeight.toFixed(2)}%)`);
-                            }
-                        }
-                    });
-                }
+                // Use traditional approach with OTHER_SPXE (no look-through)
+                // Index funds like VOO and SPXE can be treated as single holdings just like individual stocks
+                console.log('Using traditional tracking error approach...');
+                const results = await fetchDataAndCalculate(aggregatedHoldings, benchmark, period, frequency, false); // false = create OTHER_SPXE
 
                 // store for export
                 lastResults = results;
@@ -2053,7 +2094,7 @@
         }
 
         // Fetch data and perform calculations
-        async function fetchDataAndCalculate(holdings, benchmark, period, frequency) {
+        async function fetchDataAndCalculate(holdings, benchmark, period, frequency, skipBenchmarkRemainder = false) {
             // Determine which tickers we need - all actual holdings
             let tickersToFetch = [...holdings.map(h => h.ticker)];
 
@@ -2072,22 +2113,32 @@
 
             // Fetch price data
             const priceData = await fetchPriceData(tickers, period, frequency);
+            console.log('Price data keys:', Object.keys(priceData).slice(0, 10));
 
             // Calculate returns (log returns)
             const returns = calculateReturns(priceData);
+            console.log('Returns keys:', Object.keys(returns).slice(0, 10));
 
-            // Get benchmark returns
+            // Get benchmark returns and timestamps
             let benchmarkReturns;
+            let benchmarkTimestamps;
             if (benchmark === '^GSPC') {
                 // For SPX, try ^GSPC first, fallback to SPY
                 benchmarkReturns = returns['^GSPC'];
+                const benchData = priceData['^GSPC'];
+                benchmarkTimestamps = benchData ? (Array.isArray(benchData) ? [] : benchData.timestamps) : [];
+
                 if (!benchmarkReturns || benchmarkReturns.length === 0) {
                     console.warn('^GSPC data not available, using SPY as fallback...');
                     benchmarkReturns = returns['SPY'];
+                    const spyData = priceData['SPY'];
+                    benchmarkTimestamps = spyData ? (Array.isArray(spyData) ? [] : spyData.timestamps) : [];
                     console.log('Using SPY as SPX proxy');
                 }
             } else {
                 benchmarkReturns = returns[benchmark];
+                const benchData = priceData[benchmark];
+                benchmarkTimestamps = benchData ? (Array.isArray(benchData) ? [] : benchData.timestamps) : [];
             }
 
             // Validate benchmark returns
@@ -2096,12 +2147,99 @@
             }
             console.log(`Benchmark returns calculated: ${benchmarkReturns.length} periods`);
 
+            // Filter out holdings we don't have price data for
+            const holdingsWithData = holdings.filter(h => {
+                const hasData = returns[h.ticker] && returns[h.ticker].length > 0;
+                if (!hasData) {
+                    console.warn(`Skipping ${h.ticker} - no price data available`);
+                }
+                return hasData;
+            });
+
+            if (holdingsWithData.length === 0) {
+                throw new Error('No valid price data for any holdings');
+            }
+
+            console.log(`Processing ${holdingsWithData.length}/${holdings.length} holdings with valid price data`);
+
             // Normalize portfolio weights
-            const totalWeight = holdings.reduce((sum, h) => sum + h.weight, 0);
-            const normalizedHoldings = holdings.map(h => ({
+            const totalWeight = holdingsWithData.reduce((sum, h) => sum + h.weight, 0);
+            const normalizedHoldings = holdingsWithData.map(h => ({
                 ...h,
                 weight: h.weight / totalWeight * 100
             }));
+
+            // ===== ADD BENCHMARK REMAINDER POSITION (unless skipped for look-through) =====
+            if (!skipBenchmarkRemainder) {
+                // Calculate covered benchmark weight (only for real constituents, not index funds)
+                let coveredBmkPct = 0;
+                normalizedHoldings.forEach(holding => {
+                    if (!holding.isIndexFund) {
+                        const bmkWeight = benchmarkWeights[holding.ticker] || 0;
+                        if (bmkWeight > 0) {
+                            coveredBmkPct += bmkWeight;
+                        }
+                    }
+                });
+
+                const otherBmkPct = Math.max(0, 100 - coveredBmkPct);
+                console.log(`Covered benchmark weight: ${coveredBmkPct.toFixed(2)}%, Other: ${otherBmkPct.toFixed(2)}%`);
+
+                // If there's a remainder, create synthetic OTHER position
+                if (otherBmkPct > 0.0001) {
+                    const otherTicker = benchmark === 'SPXE' ? 'OTHER_SPXE' : 'OTHER_SPX';
+
+                    // Calculate daily return series for OTHER so benchmark return identity holds
+                    // Formula: otherReturn = (benchmarkReturn - SUMPRODUCT(bmkWeights, returns)) / otherBmkWeight
+                    const otherReturns = [];
+                    for (let i = 0; i < benchmarkReturns.length; i++) {
+                        // Calculate known part: sum of (benchmark_weight × actual_return) for ALL holdings
+                        let knownPart = 0;
+                        normalizedHoldings.forEach(holding => {
+                            if (!holding.isIndexFund) {
+                                const bmkWeight = benchmarkWeights[holding.ticker] || 0;
+                                const tickerReturns = returns[holding.ticker];
+                                if (tickerReturns) {
+                                    knownPart += (bmkWeight / 100) * tickerReturns[i];
+                                }
+                            }
+                        });
+
+                        // Solve for OTHER return
+                        const otherRet = (benchmarkReturns[i] - knownPart) / (otherBmkPct / 100);
+                        otherReturns.push(otherRet);
+                    }
+
+                    // Add OTHER to returns dictionary
+                    returns[otherTicker] = otherReturns;
+
+                    // Create synthetic price series for OTHER
+                    const otherPrices = [100];
+                    for (let i = 0; i < otherReturns.length; i++) {
+                        otherPrices.push(otherPrices[otherPrices.length - 1] * Math.exp(otherReturns[i]));
+                    }
+                    // Store in same format as other tickers (with empty timestamps)
+                    priceData[otherTicker] = { prices: otherPrices, timestamps: [] };
+
+                    // Add OTHER holding to normalizedHoldings
+                    normalizedHoldings.push({
+                        ticker: otherTicker,
+                        weight: 0, // portfolio weight is 0%
+                        sector: 'Other',
+                        sleeve: 'Benchmark Remainder',
+                        isBenchmarkRemainder: true,
+                        isIndexFund: false
+                    });
+
+                    // Add OTHER to benchmarkWeights
+                    benchmarkWeights[otherTicker] = otherBmkPct;
+
+                    console.log(`Created ${otherTicker} with benchmark weight ${otherBmkPct.toFixed(2)}%`);
+                }
+            } else {
+                console.log(`Skipping benchmark remainder creation (using look-through approach)`);
+            }
+            // ===== END BENCHMARK REMAINDER =====
 
             // Calculate active returns and weighted active returns for each equity
             const activeReturns = {};
@@ -2150,6 +2288,8 @@
 
                     // Validate that we have returns data for this ticker
                     if (!tickerReturns || tickerReturns.length === 0) {
+                        console.error(`Missing returns for ${ticker}`);
+                        console.error(`Available tickers:`, Object.keys(returns).filter(t => t.includes('BRK')));
                         throw new Error(`Missing price data for ${ticker}. Please check that the ticker is valid.`);
                     }
 
@@ -2213,10 +2353,12 @@
                 let prices;
                 if (ticker === benchmark || (benchmark === 'SPXE' && ticker === 'SPXE')) {
                     tickerReturns = benchmarkReturns;
-                    prices = priceData[ticker] || [100, 100]; // Use benchmark data or placeholder
+                    const data = priceData[ticker] || { prices: [100, 100], timestamps: [] };
+                    prices = Array.isArray(data) ? data : data.prices;
                 } else {
                     tickerReturns = returns[ticker];
-                    prices = priceData[ticker];
+                    const data = priceData[ticker];
+                    prices = Array.isArray(data) ? data : data.prices;
                 }
 
                 // Calculate cumulative return over the period
@@ -2235,59 +2377,269 @@
                 };
             });
 
-            // Calculate CTE for each equity
-            const equityResults = normalizedHoldings.map(holding => {
+            // ===== PROPER MATRIX APPROACH FOR CTE CALCULATION =====
+            // Step 1: Build covariance matrix of RAW returns (not active returns!)
+            // The active weights will account for the benchmark positioning
+            // Include ALL holdings (including index funds) in the matrix
+            const holdingTickers = normalizedHoldings.map(h => h.ticker);
+            const n = holdingTickers.length;
+            const covMatrix = [];
+
+            for (let i = 0; i < n; i++) {
+                covMatrix[i] = [];
+                for (let j = 0; j < n; j++) {
+                    const tickerI = holdingTickers[i];
+                    const tickerJ = holdingTickers[j];
+
+                    // Get RAW returns for each ticker (not active returns)
+                    const returnsI = (tickerI === benchmark || (benchmark === 'SPXE' && tickerI === 'SPXE'))
+                        ? benchmarkReturns
+                        : returns[tickerI];
+                    const returnsJ = (tickerJ === benchmark || (benchmark === 'SPXE' && tickerJ === 'SPXE'))
+                        ? benchmarkReturns
+                        : returns[tickerJ];
+
+                    // Covariance of RAW returns (matches Excel approach)
+                    covMatrix[i][j] = calculateCovariance(returnsI, returnsJ);
+                }
+            }
+
+            // Step 2: Get active weights as decimal (not percentage) - for ALL holdings
+            const activeWeightsDecimal = normalizedHoldings.map(holding => {
+                const portfolioWeight = holding.weight; // Percentage
+
+                // For index funds, benchmark weight = 0 (they're not benchmark constituents)
+                let benchmarkWeight = benchmarkWeights[holding.ticker] || 0;
+
+                return (portfolioWeight - benchmarkWeight) / 100; // Convert to decimal
+            });
+
+            // Step 3: Calculate Sigma vector = Covariance Matrix × Active Weights Vector
+            const sigmaVector = [];
+            for (let i = 0; i < n; i++) {
+                let sigma_i = 0;
+                for (let j = 0; j < n; j++) {
+                    sigma_i += covMatrix[i][j] * activeWeightsDecimal[j];
+                }
+                sigmaVector[i] = sigma_i;
+            }
+
+            // Step 4: Calculate daily TE^2 = active_weights^T × Sigma
+            let dailyTEsquared = 0;
+            for (let i = 0; i < n; i++) {
+                dailyTEsquared += activeWeightsDecimal[i] * sigmaVector[i];
+            }
+
+            // Step 5: Annualize TE
+            const dailyTE = Math.sqrt(dailyTEsquared);
+            const annualizedTE = dailyTE * Math.sqrt(252);
+
+            console.log(`Matrix-based TE calculation: Daily TE = ${dailyTE.toFixed(6)}, Annualized TE = ${(annualizedTE * 100).toFixed(2)}%`);
+            console.log(`Original TE calculation: ${(portfolioTE * 100).toFixed(2)}%`);
+
+            // Use the matrix-based TE for MCTE/CTE calculations
+            const portfolioTEtoUse = annualizedTE;
+
+            // ===== CALCULATE PORTFOLIO BETA =====
+            // Beta = Cov(Portfolio, Benchmark) / Var(Benchmark)
+            // Using component weights: Beta_p = sum(w_i × Beta_i), where Beta_i = Cov(Stock_i, Benchmark) / Var(Benchmark)
+
+            // Calculate variance of benchmark returns
+            const benchmarkVariance = calculateCovariance(benchmarkReturns, benchmarkReturns);
+
+            // Calculate portfolio beta using component weights
+            let portfolioBeta = 0;
+            for (let i = 0; i < n; i++) {
+                const ticker = holdingTickers[i];
+                const portfolioWeight = normalizedHoldings[i].weight / 100; // Convert to decimal
+
+                // Get RAW returns for this ticker
+                const tickerReturns = (ticker === benchmark || (benchmark === 'SPXE' && ticker === 'SPXE'))
+                    ? benchmarkReturns
+                    : returns[ticker];
+
+                // Calculate Beta_i = Cov(Stock_i, Benchmark) / Var(Benchmark)
+                const covWithBenchmark = calculateCovariance(tickerReturns, benchmarkReturns);
+                const beta_i = benchmarkVariance !== 0 ? covWithBenchmark / benchmarkVariance : 1.0;
+
+                // Add weighted contribution to portfolio beta
+                portfolioBeta += portfolioWeight * beta_i;
+            }
+
+            console.log(`\n===== Portfolio Beta Calculation =====`);
+            console.log(`Benchmark Variance: ${benchmarkVariance.toFixed(8)}`);
+            console.log(`Portfolio Beta: ${portfolioBeta.toFixed(4)}`);
+
+            // ===== RETURN DECOMPOSITION (CAPM/Jensen's Alpha) =====
+            // This decomposition answers: "After accounting for Beta exposure, did I beat the market?"
+            //
+            // Total Portfolio Return = Beta Return + Alpha (Residual)
+            // Where:
+            //   Beta Return = Beta × Benchmark Return (return from market exposure)
+            //   Alpha = Total Return - Beta Return (true stock-picking skill)
+            //
+            // Example: If portfolio returned 23.59%, benchmark 14.29%, and Beta is 1.278:
+            //   Beta Return = 1.278 × 14.29% = 18.25%
+            //   Alpha = 23.59% - 18.25% = 5.34%
+            //
+            // This shows that while you "beat" the benchmark by 9.30%, about 4% of that
+            // was just from having higher Beta (riding the market wave). Your actual
+            // stock-picking skill (Alpha) was 5.34%.
+
+            const betaReturn = portfolioBeta * benchmarkAnnualizedReturn; // Return from market exposure
+            const portfolioTotalReturn = portfolioAnnualizedActiveReturnPct + benchmarkAnnualizedReturn;
+            const alpha = portfolioTotalReturn - betaReturn; // Jensen's Alpha (residual after Beta exposure)
+
+            console.log(`\n===== Return Decomposition (CAPM/Jensen's Alpha) =====`);
+            console.log(`Total Portfolio Return: ${portfolioTotalReturn.toFixed(2)}%`);
+            console.log(`Benchmark Return: ${benchmarkAnnualizedReturn.toFixed(2)}%`);
+            console.log(`Portfolio Beta: ${portfolioBeta.toFixed(3)}`);
+            console.log(`Beta Return (Market Exposure): ${betaReturn.toFixed(2)}%`);
+            console.log(`Alpha (True Skill/Residual): ${alpha.toFixed(2)}%`);
+            console.log(`Active Return (Portfolio - Benchmark): ${portfolioAnnualizedActiveReturnPct.toFixed(2)}%`);
+
+            // Step 6: Calculate MCTE and CTE for each equity
+            console.log('\n===== MCTE/CTE Calculation Details =====');
+            console.log(`Annualized TE: ${(portfolioTEtoUse * 100).toFixed(4)}%`);
+            console.log(`Number of holdings in matrix: ${holdingTickers.length}`);
+
+            const equityResults = normalizedHoldings.map((holding, i) => {
                 const ticker = holding.ticker;
                 const portfolioWeight = holding.weight; // Percentage
-                const benchmarkWeight = benchmarkWeights[ticker] || 0; // Percentage
+
+                // For index funds, benchmark weight = 0 (they're not benchmark constituents)
+                let benchmarkWeight = benchmarkWeights[ticker] || 0;
+
                 const activeWeightPct = portfolioWeight - benchmarkWeight; // Percentage
+                const activeWeight = activeWeightPct / 100; // Decimal
 
-                // CTE = Cov(weighted_active_returns, portfolio_active_returns) / StDev(portfolio_active_returns) * sqrt(252)
-                const covariance = calculateCovariance(weightedActiveReturns[ticker], portfolioActiveReturns);
-                const portfolioStdDev = standardDeviation(portfolioActiveReturns);
-                const cte = (covariance / portfolioStdDev) * Math.sqrt(252);
+                // Use matrix approach for ALL holdings (including index funds)
+                const dailySigma_i = sigmaVector[i];
+                // CRITICAL FIX: Sigma has units of variance (return²), so annualize by × 252, NOT × √252
+                const annualizedSigma_i = dailySigma_i * 252;
 
-                // MCTE = CTE / active_weight
-                const activeWeight = activeWeightPct / 100;
-                const mcte = activeWeight !== 0 ? cte / activeWeight : 0;
+                // MCTE_i = Sigma_i / TE (both annualized)
+                const mcte = portfolioTEtoUse !== 0 ? annualizedSigma_i / portfolioTEtoUse : 0;
+
+                // CTE_i = MCTE_i × active_weight_i
+                const cte = mcte * activeWeight;
+
+                // Log first 3 equities for debugging
+                if (i < 3 || holding.isIndexFund) {
+                    console.log(`\n${ticker}${holding.isIndexFund ? ' (INDEX FUND)' : ''}:`);
+                    console.log(`  Active Weight: ${activeWeightPct.toFixed(4)}% (${activeWeight.toFixed(6)} decimal)`);
+                    console.log(`  Daily Sigma_i: ${dailySigma_i.toFixed(8)}`);
+                    console.log(`  Annualized Sigma_i: ${annualizedSigma_i.toFixed(8)}`);
+                    console.log(`  MCTE: ${(mcte * 100).toFixed(4)}%`);
+                    console.log(`  CTE: ${(cte * 100).toFixed(4)}%`);
+                }
 
                 // Calculate active return (equity return - benchmark return)
                 const activeReturn = equityTotalReturns[ticker] - benchmarkAnnualizedReturn;
 
+                // Calculate contribution to portfolio active return (weight * active return)
+                const contributionToReturn = (portfolioWeight / 100) * activeReturn;
+
+                const ctePercent = cte * 100;
+
                 return {
                     ticker,
                     sector: holding.sector,
-                    sleeve: holding.sleeve || 'Managed Core', // Add sleeve information
+                    sleeve: holding.sleeve || 'Managed Core',
                     portfolioWeight: portfolioWeight,
                     benchmarkWeight: benchmarkWeight,
                     activeWeight: activeWeightPct,
                     return: equityTotalReturns[ticker], // Annualized return
                     activeReturn: activeReturn, // Active return vs benchmark
+                    contributionToReturn: contributionToReturn, // Contribution to portfolio active return
                     mcte: mcte * 100, // Convert to percentage
-                    cte: cte * 100 // Convert to percentage
+                    cte: ctePercent // Convert to percentage
                 };
             });
 
             // Aggregate by sector
             const sectorResults = aggregateBySector(equityResults);
 
-            // Verification
+            // Calculate totals for percentage contributions
             const totalCTE = equityResults.reduce((sum, eq) => sum + eq.cte, 0);
-            const difference = Math.abs(totalCTE - portfolioTE * 100);
-            const percentError = (difference / (portfolioTE * 100)) * 100;
+            const totalContributionToReturn = equityResults.reduce((sum, eq) => sum + eq.contributionToReturn, 0);
+
+            // Add percentage fields to each equity
+            equityResults.forEach(eq => {
+                eq.pctOfReturn = totalContributionToReturn !== 0 ? (eq.contributionToReturn / totalContributionToReturn) * 100 : 0;
+                eq.pctOfTE = totalCTE !== 0 ? (eq.cte / totalCTE) * 100 : 0;
+            });
+
+            // Verification
+            const difference = Math.abs(totalCTE - portfolioTEtoUse * 100);
+            const percentError = (difference / (portfolioTEtoUse * 100)) * 100;
 
             const verification = {
                 sumOfCTE: totalCTE,
-                portfolioTE: portfolioTE * 100,
+                portfolioTE: portfolioTEtoUse * 100,
                 difference: difference,
                 percentError: percentError,
                 verified: difference < 0.1, // More lenient threshold (0.1% instead of 0.01%)
                 benchmark: benchmark
             };
 
+            // Note: portfolioTotalReturn and alpha are already calculated above in the decomposition section
+
+            // Calculate Information Ratio (Alpha / TE)
+            // This is the ultimate performance score: risk-adjusted alpha per unit of tracking error
+            const informationRatio = portfolioTEtoUse !== 0 ? alpha / (portfolioTEtoUse * 100) : 0;
+
+            // ===== CALCULATE ROLLING METRICS (60-DAY WINDOW) =====
+            const rollingBetaSeries = [];
+            const rollingTESeries = [];
+            const rollingWindow = 60; // 60 trading days (~3 months)
+
+            for (let i = rollingWindow - 1; i < portfolioReturnSeries.length; i++) {
+                const windowPortfolioReturns = portfolioReturnSeries.slice(i - rollingWindow + 1, i + 1);
+                const windowBenchmarkReturns = benchmarkReturns.slice(i - rollingWindow + 1, i + 1);
+
+                // Calculate covariance and variance for this window
+                const windowCov = calculateCovariance(windowPortfolioReturns, windowBenchmarkReturns);
+                const windowBenchmarkVar = calculateCovariance(windowBenchmarkReturns, windowBenchmarkReturns);
+
+                // Beta = Cov(Portfolio, Benchmark) / Var(Benchmark)
+                const windowBeta = windowBenchmarkVar !== 0 ? windowCov / windowBenchmarkVar : 1.0;
+                rollingBetaSeries.push(windowBeta);
+
+                // Calculate rolling TE: standard deviation of active returns in this window
+                const windowActiveReturns = windowPortfolioReturns.map((pr, j) => pr - windowBenchmarkReturns[j]);
+                const windowTE = standardDeviation(windowActiveReturns);
+                const annualizedWindowTE = windowTE * Math.sqrt(252); // Annualize
+                rollingTESeries.push(annualizedWindowTE * 100); // Convert to percentage
+            }
+
+            console.log(`\n===== Rolling Metrics Statistics =====`);
+            console.log(`Number of rolling observations: ${rollingBetaSeries.length}`);
+            if (rollingBetaSeries.length > 0) {
+                const avgBeta = rollingBetaSeries.reduce((sum, b) => sum + b, 0) / rollingBetaSeries.length;
+                const minBeta = Math.min(...rollingBetaSeries);
+                const maxBeta = Math.max(...rollingBetaSeries);
+                console.log(`Average Rolling Beta: ${avgBeta.toFixed(3)}`);
+                console.log(`Min Rolling Beta: ${minBeta.toFixed(3)}`);
+                console.log(`Max Rolling Beta: ${maxBeta.toFixed(3)}`);
+
+                const avgTE = rollingTESeries.reduce((sum, te) => sum + te, 0) / rollingTESeries.length;
+                const minTE = Math.min(...rollingTESeries);
+                const maxTE = Math.max(...rollingTESeries);
+                console.log(`Average Rolling TE: ${avgTE.toFixed(2)}%`);
+                console.log(`Min Rolling TE: ${minTE.toFixed(2)}%`);
+                console.log(`Max Rolling TE: ${maxTE.toFixed(2)}%`);
+            }
+
             return {
-                portfolioTE: portfolioTE * 100,
-                portfolioActiveReturn: portfolioAnnualizedActiveReturnPct,
+                portfolioTE: portfolioTEtoUse * 100,
+                portfolioActiveReturn: portfolioAnnualizedActiveReturnPct, // Portfolio Return - Benchmark Return
+                portfolioTotalReturn: portfolioTotalReturn,
+                benchmarkReturn: benchmarkAnnualizedReturn,
+                portfolioBeta: portfolioBeta,
+                betaReturn: betaReturn,
+                alpha: alpha, // Jensen's Alpha (Total Return - Beta Return)
+                informationRatio: informationRatio,
                 // (kept for backward compatibility if anything else relies on it)
                 portfolioReturn: portfolioAnnualizedActiveReturnPct,
                 equityResults,
@@ -2301,7 +2653,10 @@
                     portfolioActiveReturnSeries,
                     benchmarkReturns,
                     weightedActiveReturns,
-                    priceData
+                    priceData,
+                    rollingBetaSeries,
+                    rollingTESeries,
+                    timestamps: benchmarkTimestamps
                 }
             };
         }
@@ -2317,6 +2672,17 @@
         }
 
         // Fetch price data using proxy server
+        // Normalize ticker symbols for Yahoo Finance API
+        function normalizeTickerForYahoo(ticker) {
+            // Convert slash to hyphen (e.g., BRK/B -> BRK-B)
+            let normalized = ticker.replace(/\//g, '-');
+
+            // Convert dot to hyphen (e.g., BRK.B -> BRK-B)
+            normalized = normalized.replace(/\./g, '-');
+
+            return normalized;
+        }
+
         async function fetchPriceData(tickers, period, frequency) {
             // PROXY SERVER URL - Vercel deployment
             // For local testing: 'http://localhost:3000'
@@ -2324,6 +2690,14 @@
             const PROXY_URL = 'https://tracking-error-proxy.vercel.app';
 
             const priceData = {};
+
+            // Create mapping of normalized tickers to original tickers
+            const tickerMapping = {};
+            const normalizedTickers = tickers.map(ticker => {
+                const normalized = normalizeTickerForYahoo(ticker);
+                tickerMapping[normalized] = ticker;
+                return normalized;
+            });
 
             // Calculate date range
             let endDate = new Date();
@@ -2362,16 +2736,17 @@
 
             const failedTickers = [];
 
-            console.log(`Fetching ${tickers.length} tickers via proxy server...`);
+            console.log(`Fetching ${normalizedTickers.length} tickers via proxy server...`);
 
             // Paid tier: No client-side delays needed (proxy handles rate limiting)
             // Use Promise.all for parallel requests to maximize speed
-            const fetchPromises = tickers.map(async (ticker, i) => {
+            const fetchPromises = normalizedTickers.map(async (normalizedTicker, i) => {
+                const originalTicker = tickerMapping[normalizedTicker];
                 try {
-                    console.log(`[${i + 1}/${tickers.length}] Fetching ${ticker}...`);
+                    console.log(`[${i + 1}/${normalizedTickers.length}] Fetching ${originalTicker} (as ${normalizedTicker})...`);
 
-                    // Call proxy server endpoint
-                    const proxyUrl = `${PROXY_URL}/api/polygon?ticker=${ticker}&timespan=${timespan}&from=${fromDate}&to=${toDate}`;
+                    // Call proxy server endpoint with normalized ticker
+                    const proxyUrl = `${PROXY_URL}/api/polygon?ticker=${normalizedTicker}&timespan=${timespan}&from=${fromDate}&to=${toDate}`;
 
                     const response = await fetch(proxyUrl);
 
@@ -2383,18 +2758,19 @@
                     const data = await response.json();
 
                     if (data.results && data.results.length > 0) {
-                        // Extract closing prices
+                        // Extract closing prices and timestamps, store under ORIGINAL ticker
                         const prices = data.results.map(bar => bar.c);
-                        priceData[ticker] = prices;
-                        console.log(`✓ ${ticker}: ${prices.length} data points`);
+                        const timestamps = data.results.map(bar => bar.t);
+                        priceData[originalTicker] = { prices, timestamps };
+                        console.log(`✓ ${originalTicker}: ${prices.length} data points`);
                     } else {
-                        console.warn(`No data for ${ticker}`);
-                        failedTickers.push(ticker);
+                        console.warn(`No data for ${originalTicker}`);
+                        failedTickers.push(originalTicker);
                     }
 
                 } catch (error) {
-                    console.error(`Failed to fetch ${ticker}: ${error.message}`);
-                    failedTickers.push(ticker);
+                    console.error(`Failed to fetch ${originalTicker}: ${error.message}`);
+                    failedTickers.push(originalTicker);
                 }
             });
 
@@ -2418,7 +2794,9 @@
         function calculateReturns(priceData) {
             const returns = {};
 
-            for (const [ticker, prices] of Object.entries(priceData)) {
+            for (const [ticker, data] of Object.entries(priceData)) {
+                // Handle both old format (array) and new format ({prices, timestamps})
+                const prices = Array.isArray(data) ? data : data.prices;
                 returns[ticker] = [];
                 for (let i = 1; i < prices.length; i++) {
                     returns[ticker].push(Math.log(prices[i] / prices[i - 1]));
@@ -2460,17 +2838,20 @@
             return spxeReturns;
         }
 
-        // Calculate standard deviation
+        // Calculate standard deviation (sample standard deviation, divide by n-1)
         function standardDeviation(values) {
-            const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+            const n = values.length;
+            if (n <= 1) return 0;
+            const mean = values.reduce((sum, val) => sum + val, 0) / n;
             const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
-            const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+            const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / (n - 1);
             return Math.sqrt(variance);
         }
 
-        // Calculate covariance
+        // Calculate covariance (sample covariance, divide by n-1)
         function calculateCovariance(x, y) {
             const n = x.length;
+            if (n <= 1) return 0;
             const meanX = x.reduce((sum, val) => sum + val, 0) / n;
             const meanY = y.reduce((sum, val) => sum + val, 0) / n;
 
@@ -2479,7 +2860,29 @@
                 covariance += (x[i] - meanX) * (y[i] - meanY);
             }
 
-            return covariance / n;
+            return covariance / (n - 1);
+        }
+
+        // Calculate R-squared for regression
+        function calculateRSquared(portfolioReturns, benchmarkReturns, beta) {
+            const n = portfolioReturns.length;
+            if (n <= 1) return 0;
+
+            // Calculate mean of portfolio returns
+            const meanY = portfolioReturns.reduce((sum, val) => sum + val, 0) / n;
+
+            // Calculate total sum of squares (TSS) and residual sum of squares (RSS)
+            let tss = 0;
+            let rss = 0;
+            for (let i = 0; i < n; i++) {
+                const predicted = beta * benchmarkReturns[i]; // y = beta * x (no intercept)
+                const actual = portfolioReturns[i];
+                tss += Math.pow(actual - meanY, 2);
+                rss += Math.pow(actual - predicted, 2);
+            }
+
+            // R² = 1 - (RSS / TSS)
+            return tss !== 0 ? 1 - (rss / tss) : 0;
         }
 
         // Aggregate CTE by sector
@@ -2498,22 +2901,30 @@
                 if (!sectors[sectorKey]) {
                     sectors[sectorKey] = {
                         cte: 0,
+                        contributionToReturn: 0,
                         totalWeightedReturn: 0,
                         totalWeightedActiveReturn: 0,
                         totalWeight: 0
                     };
                 }
                 sectors[sectorKey].cte += eq.cte;
+                sectors[sectorKey].contributionToReturn += eq.contributionToReturn;
                 sectors[sectorKey].totalWeightedReturn += eq.return * eq.portfolioWeight;
                 sectors[sectorKey].totalWeightedActiveReturn += eq.activeReturn * eq.portfolioWeight;
                 sectors[sectorKey].totalWeight += eq.portfolioWeight;
             });
 
+            // Calculate totals for percentages
+            const totalCTE = Object.values(sectors).reduce((sum, s) => sum + s.cte, 0);
+            const totalContributionToReturn = Object.values(sectors).reduce((sum, s) => sum + s.contributionToReturn, 0);
+
             return Object.entries(sectors).map(([sector, data]) => ({
                 sector,
                 return: data.totalWeight > 0 ? data.totalWeightedReturn / data.totalWeight : 0,
                 activeReturn: data.totalWeight > 0 ? data.totalWeightedActiveReturn / data.totalWeight : 0,
-                cte: data.cte
+                cte: data.cte,
+                pctOfReturn: totalContributionToReturn !== 0 ? (data.contributionToReturn / totalContributionToReturn) * 100 : 0,
+                pctOfTE: totalCTE !== 0 ? (data.cte / totalCTE) * 100 : 0
             })).sort((a, b) => Math.abs(b.cte) - Math.abs(a.cte));
         }
 
@@ -2536,24 +2947,35 @@
             // Calculate sleeve-level metrics by grouping equity data
             const sleeveContributions = {};
 
+            console.log('\n===== Sleeve Attribution Debug =====');
             results.equityResults.forEach(eq => {
                 const sleeve = eq.sleeve || 'Managed Core';
+                console.log(`${eq.ticker}: sleeve="${sleeve}", CTE=${eq.cte.toFixed(4)}%`);
+
                 if (!sleeveContributions[sleeve]) {
                     sleeveContributions[sleeve] = {
                         cte: 0,
+                        contributionToReturn: 0,
                         totalWeightedReturn: 0,
                         totalWeightedActiveReturn: 0,
                         totalWeight: 0
                     };
                 }
                 sleeveContributions[sleeve].cte += eq.cte;
+                sleeveContributions[sleeve].contributionToReturn += eq.contributionToReturn;
                 sleeveContributions[sleeve].totalWeightedReturn += eq.return * eq.portfolioWeight;
                 sleeveContributions[sleeve].totalWeightedActiveReturn += eq.activeReturn * eq.portfolioWeight;
                 sleeveContributions[sleeve].totalWeight += eq.portfolioWeight;
             });
 
-            // Calculate percentage of total TE for each sleeve
-            const totalTE = results.portfolioTE;
+            console.log('\nSleeve Totals:');
+            Object.entries(sleeveContributions).forEach(([sleeve, data]) => {
+                console.log(`  ${sleeve}: CTE = ${data.cte.toFixed(4)}%`);
+            });
+
+            // Calculate totals for percentages
+            const totalCTE = Object.values(sleeveContributions).reduce((sum, s) => sum + s.cte, 0);
+            const totalContributionToReturn = Object.values(sleeveContributions).reduce((sum, s) => sum + s.contributionToReturn, 0);
 
             // Display each sleeve's contribution
             const sleeves = [
@@ -2562,6 +2984,12 @@
                 { name: 'Alpha Sleeve', enabled: portfolio.alpha.enabled, weight: portfolio.alpha.weight }
             ];
 
+            let passiveIndexCTE = 0;
+            let passiveIndexReturn = 0;
+            let passiveIndexActiveReturn = 0;
+            let benchmarkRemainderCTE = 0;
+            let netIndexWeight = 0;
+
             sleeves.forEach(sleeve => {
                 if (!sleeve.enabled) return;
 
@@ -2569,25 +2997,138 @@
                 const cte = sleeveData.cte;
                 const sleeveReturn = sleeveData.totalWeight > 0 ? sleeveData.totalWeightedReturn / sleeveData.totalWeight : 0;
                 const sleeveActiveReturn = sleeveData.totalWeight > 0 ? sleeveData.totalWeightedActiveReturn / sleeveData.totalWeight : 0;
-                const percentOfTotal = totalTE > 0 ? (Math.abs(cte) / totalTE) * 100 : 0;
+
+                // Track Passive Index data for net calculation
+                if (sleeve.name === 'Passive Index') {
+                    passiveIndexCTE = cte;
+                    passiveIndexReturn = sleeveReturn;
+                    passiveIndexActiveReturn = sleeveActiveReturn;
+                    netIndexWeight = sleeve.weight;
+                    // Don't add row - we'll show Net Index Exposure instead
+                    return;
+                }
+
+                const pctOfReturn = totalContributionToReturn !== 0 ? (sleeveData.contributionToReturn / totalContributionToReturn) * 100 : 0;
+                const pctOfTE = totalCTE !== 0 ? (cte / totalCTE) * 100 : 0;
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td><span class="sleeve-badge sleeve-${sleeve.name.toLowerCase().replace(' ', '-')}">${sleeve.name}</span></td>
                     <td>${sleeve.weight.toFixed(1)}</td>
-                    <td class="${sleeveReturn >= 0 ? 'positive' : 'negative'}">${sleeveReturn.toFixed(2)}</td>
                     <td class="${sleeveActiveReturn >= 0 ? 'positive' : 'negative'}">${sleeveActiveReturn.toFixed(2)}</td>
                     <td class="${cte >= 0 ? 'positive' : 'negative'}">${cte.toFixed(2)}</td>
-                    <td>${percentOfTotal.toFixed(1)}</td>
+                    <td class="${pctOfReturn >= 0 ? 'positive' : 'negative'}">${pctOfReturn.toFixed(1)}</td>
+                    <td>${pctOfTE.toFixed(1)}</td>
                 `;
             });
+
+            // Track Benchmark Remainder (don't show it separately)
+            let benchmarkRemainderContributionToReturn = 0;
+            if (sleeveContributions['Benchmark Remainder']) {
+                benchmarkRemainderCTE = sleeveContributions['Benchmark Remainder'].cte;
+                benchmarkRemainderContributionToReturn = sleeveContributions['Benchmark Remainder'].contributionToReturn;
+            }
+
+            // Add Net Index Exposure row (only if passive index is enabled)
+            if (portfolio.passiveIndex.enabled) {
+                const netCTE = passiveIndexCTE + benchmarkRemainderCTE;
+                const passiveIndexContributionToReturn = sleeveContributions['Passive Index']?.contributionToReturn || 0;
+                const netContributionToReturn = passiveIndexContributionToReturn + benchmarkRemainderContributionToReturn;
+                const netPctOfReturn = totalContributionToReturn !== 0 ? (netContributionToReturn / totalContributionToReturn) * 100 : 0;
+                const netPctOfTE = totalCTE !== 0 ? (netCTE / totalCTE) * 100 : 0;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><span class="sleeve-badge" style="background: #6c757d;">Net Index Exposure</span></td>
+                    <td>${netIndexWeight.toFixed(1)}</td>
+                    <td class="${passiveIndexActiveReturn >= 0 ? 'positive' : 'negative'}">${passiveIndexActiveReturn.toFixed(2)}</td>
+                    <td class="${netCTE >= 0 ? 'positive' : 'negative'}">${netCTE.toFixed(2)}</td>
+                    <td class="${netPctOfReturn >= 0 ? 'positive' : 'negative'}">${netPctOfReturn.toFixed(1)}</td>
+                    <td>${netPctOfTE.toFixed(1)}</td>
+                `;
+            }
+        }
+
+        // Display sleeve summary
+        function displaySleeveSummary(results) {
+            const tbody = document.getElementById('sleeveSummaryBody');
+            tbody.innerHTML = '';
+
+            // Calculate sleeve-level weights by grouping equity data
+            const sleeveSummary = {};
+
+            results.equityResults.forEach(eq => {
+                const sleeve = eq.sleeve || 'Managed Core';
+                if (!sleeveSummary[sleeve]) {
+                    sleeveSummary[sleeve] = {
+                        portfolioWeight: 0,
+                        benchmarkWeight: 0
+                    };
+                }
+                sleeveSummary[sleeve].portfolioWeight += eq.portfolioWeight;
+                sleeveSummary[sleeve].benchmarkWeight += eq.benchmarkWeight;
+            });
+
+            // Display each sleeve's summary
+            const sleeves = [
+                { name: 'Managed Core', enabled: portfolio.managedCore.enabled },
+                { name: 'Passive Index', enabled: portfolio.passiveIndex.enabled },
+                { name: 'Alpha Sleeve', enabled: portfolio.alpha.enabled },
+                { name: 'Benchmark Remainder', enabled: true } // Always check for remainder
+            ];
+
+            sleeves.forEach(sleeve => {
+                const sleeveData = sleeveSummary[sleeve.name];
+                if (!sleeveData) return; // Skip if sleeve has no holdings
+
+                const portfolioWeight = sleeveData.portfolioWeight;
+                const benchmarkWeight = sleeveData.benchmarkWeight;
+                const activeWeight = portfolioWeight - benchmarkWeight;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><span class="sleeve-badge sleeve-${sleeve.name.toLowerCase().replace(' ', '-')}">${sleeve.name}</span></td>
+                    <td>${portfolioWeight.toFixed(2)}</td>
+                    <td>${benchmarkWeight.toFixed(2)}</td>
+                    <td class="${activeWeight >= 0 ? 'positive' : 'negative'}">${activeWeight.toFixed(2)}</td>
+                `;
+            });
+
+            // Add totals row
+            const totalPortfolioWeight = Object.values(sleeveSummary).reduce((sum, s) => sum + s.portfolioWeight, 0);
+            const totalBenchmarkWeight = Object.values(sleeveSummary).reduce((sum, s) => sum + s.benchmarkWeight, 0);
+            const totalActiveWeight = totalPortfolioWeight - totalBenchmarkWeight;
+
+            const totalRow = tbody.insertRow();
+            totalRow.innerHTML = `
+                <td><strong>Total</strong></td>
+                <td><strong>${totalPortfolioWeight.toFixed(2)}</strong></td>
+                <td><strong>${totalBenchmarkWeight.toFixed(2)}</strong></td>
+                <td class="${totalActiveWeight >= 0 ? 'positive' : 'negative'}"><strong>${totalActiveWeight.toFixed(2)}</strong></td>
+            `;
         }
 
         // Display results
         function displayResults(results) {
             // Update metric cards
+            const portfolioReturn = results.portfolioTotalReturn || 0;
+            const benchmarkReturn = results.benchmarkReturn || 0;
+            const activeReturn = results.portfolioActiveReturn || 0;
+
+            document.getElementById('portfolioReturn').textContent = portfolioReturn.toFixed(2) + '%';
+            document.getElementById('benchmarkReturn').textContent = benchmarkReturn.toFixed(2) + '%';
+            document.getElementById('activeReturn').textContent = activeReturn.toFixed(2) + '%';
             document.getElementById('portfolioTE').textContent = results.portfolioTE.toFixed(2) + '%';
             document.getElementById('numHoldings').textContent = results.numHoldings;
+
+            // Apply color classes to return cards
+            const portfolioReturnEl = document.getElementById('portfolioReturn');
+            const benchmarkReturnEl = document.getElementById('benchmarkReturn');
+            const activeReturnEl = document.getElementById('activeReturn');
+
+            portfolioReturnEl.className = 'metric-value ' + (portfolioReturn >= 0 ? 'positive' : 'negative');
+            benchmarkReturnEl.className = 'metric-value ' + (benchmarkReturn >= 0 ? 'positive' : 'negative');
+            activeReturnEl.className = 'metric-value ' + (activeReturn >= 0 ? 'positive' : 'negative');
 
             // Display period or custom date range
             if (results.period === 'custom') {
@@ -2605,19 +3146,52 @@
             const equityTbody = document.getElementById('equityResultsBody');
             equityTbody.innerHTML = '';
 
+            // Separate regular equities from passive index funds
+            const regularEquities = [];
+            const passiveIndexFunds = [];
+
             results.equityResults.forEach(eq => {
+                // Skip OTHER_SPXE, OTHER_SPX, and benchmark tickers
+                if (eq.ticker === 'OTHER_SPXE' || eq.ticker === 'OTHER_SPX') {
+                    return;
+                }
+
+                // Separate passive index funds (VOO, SPXE, SPY)
+                if (eq.ticker === 'VOO' || eq.ticker === 'SPXE' || eq.ticker === 'SPY') {
+                    passiveIndexFunds.push(eq);
+                } else {
+                    regularEquities.push(eq);
+                }
+            });
+
+            // Display regular equities first
+            regularEquities.forEach(eq => {
                 const row = equityTbody.insertRow();
                 row.innerHTML = `
                     <td>${eq.ticker}</td>
                     <td>${eq.sector}</td>
-                    <td><span class="sleeve-badge sleeve-${(eq.sleeve || 'Managed Core').toLowerCase().replace(' ', '-')}">${eq.sleeve || 'Managed Core'}</span></td>
-                    <td>${eq.portfolioWeight.toFixed(2)}</td>
-                    <td>${eq.benchmarkWeight.toFixed(2)}</td>
-                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}">${eq.activeWeight.toFixed(2)}</td>
-                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}">${eq.return.toFixed(2)}</td>
-                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}">${eq.activeReturn.toFixed(2)}</td>
-                    <td>${eq.mcte.toFixed(2)}</td>
-                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
+                    <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
+                `;
+            });
+
+            // Display passive index funds at the bottom
+            passiveIndexFunds.forEach(eq => {
+                const row = equityTbody.insertRow();
+                row.style.borderTop = '2px solid #ccc';
+                row.innerHTML = `
+                    <td><strong>${eq.ticker}</strong></td>
+                    <td>${eq.sector}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
+                    <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
                 `;
             });
 
@@ -2625,17 +3199,84 @@
             const sectorTbody = document.getElementById('sectorResultsBody');
             sectorTbody.innerHTML = '';
 
+            // Separate sectors into categories
+            let indexFundSector = null;
+            let otherSector = null;
+            let alphaSectors = [];
+            let regularSectors = [];
+
             results.sectorResults.forEach(sector => {
-                const pctOfTotal = (sector.cte / results.portfolioTE) * 100;
+                if (sector.sector === 'Index Fund') {
+                    indexFundSector = sector;
+                } else if (sector.sector === 'Other') {
+                    otherSector = sector;
+                } else if (sector.sector === 'Alpha') {
+                    alphaSectors.push(sector);
+                } else {
+                    regularSectors.push(sector);
+                }
+            });
+
+            // Display Alpha sectors first
+            alphaSectors.forEach(sector => {
                 const row = sectorTbody.insertRow();
                 row.innerHTML = `
                     <td>${sector.sector}</td>
-                    <td class="${sector.return >= 0 ? 'positive' : 'negative'}">${sector.return.toFixed(2)}</td>
                     <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
                     <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
-                    <td>${pctOfTotal.toFixed(1)}%</td>
+                    <td class="${sector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${sector.pctOfReturn.toFixed(1)}</td>
+                    <td>${sector.pctOfTE.toFixed(1)}</td>
                 `;
             });
+
+            // Display regular sectors
+            regularSectors.forEach(sector => {
+                const row = sectorTbody.insertRow();
+                row.innerHTML = `
+                    <td>${sector.sector}</td>
+                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
+                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
+                    <td class="${sector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${sector.pctOfReturn.toFixed(1)}</td>
+                    <td>${sector.pctOfTE.toFixed(1)}</td>
+                `;
+            });
+
+            // Combine Index Fund and Other into Net Index Exposure at the bottom
+            if (indexFundSector && otherSector) {
+                const netCTE = indexFundSector.cte + otherSector.cte;
+                const netActiveReturn = indexFundSector.activeReturn;
+                const netPctOfReturn = indexFundSector.pctOfReturn + otherSector.pctOfReturn;
+                const netPctOfTE = indexFundSector.pctOfTE + otherSector.pctOfTE;
+
+                const row = sectorTbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>Net Index Exposure</strong></td>
+                    <td class="${netActiveReturn >= 0 ? 'positive' : 'negative'}">${netActiveReturn.toFixed(2)}</td>
+                    <td class="${netCTE >= 0 ? 'positive' : 'negative'}">${netCTE.toFixed(2)}</td>
+                    <td class="${netPctOfReturn >= 0 ? 'positive' : 'negative'}">${netPctOfReturn.toFixed(1)}</td>
+                    <td>${netPctOfTE.toFixed(1)}</td>
+                `;
+            } else if (indexFundSector) {
+                // Only index fund, no "Other" to net against
+                const row = sectorTbody.insertRow();
+                row.innerHTML = `
+                    <td>${indexFundSector.sector}</td>
+                    <td class="${indexFundSector.activeReturn >= 0 ? 'positive' : 'negative'}">${indexFundSector.activeReturn.toFixed(2)}</td>
+                    <td class="${indexFundSector.cte >= 0 ? 'positive' : 'negative'}">${indexFundSector.cte.toFixed(2)}</td>
+                    <td class="${indexFundSector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${indexFundSector.pctOfReturn.toFixed(1)}</td>
+                    <td>${indexFundSector.pctOfTE.toFixed(1)}</td>
+                `;
+            } else if (otherSector) {
+                // Only "Other", no index fund
+                const row = sectorTbody.insertRow();
+                row.innerHTML = `
+                    <td>${otherSector.sector}</td>
+                    <td class="${otherSector.activeReturn >= 0 ? 'positive' : 'negative'}">${otherSector.activeReturn.toFixed(2)}</td>
+                    <td class="${otherSector.cte >= 0 ? 'positive' : 'negative'}">${otherSector.cte.toFixed(2)}</td>
+                    <td class="${otherSector.pctOfReturn >= 0 ? 'positive' : 'negative'}">${otherSector.pctOfReturn.toFixed(1)}</td>
+                    <td>${otherSector.pctOfTE.toFixed(1)}</td>
+                `;
+            }
 
             // Populate portfolio summary table
             const summaryBody = document.getElementById('portfolioSummaryBody');
@@ -2650,8 +3291,34 @@
             };
 
             const activeRet = (results.portfolioActiveReturn ?? results.portfolioReturn);
-            addSummaryRow('Portfolio Active Return (Annualized, %)', `${activeRet.toFixed(2)}%`, activeRet >= 0 ? 'positive' : 'negative');
+            const portfolioTotalRet = results.portfolioTotalReturn || activeRet;
+            const benchmarkRet = results.benchmarkReturn || 0;
+            const portfolioBeta = results.portfolioBeta || 1.0;
+            const betaReturn = results.betaReturn || 0;
+            const alpha = results.alpha || activeRet;
+            const informationRatio = results.informationRatio || 0;
+
+            // Portfolio Summary - Key Metrics at Top
+            addSummaryRow('Portfolio Return (Annualized, %)', `${portfolioTotalRet.toFixed(2)}%`, portfolioTotalRet >= 0 ? 'positive' : 'negative');
+            addSummaryRow('Benchmark Return (Annualized, %)', `${benchmarkRet.toFixed(2)}%`, benchmarkRet >= 0 ? 'positive' : 'negative');
+            addSummaryRow('Active Return (Portfolio - Benchmark, %)', `${activeRet.toFixed(2)}%`, activeRet >= 0 ? 'positive' : 'negative');
+
+            // Add empty row for spacing
+            const spacerRow1 = summaryBody.insertRow();
+            spacerRow1.innerHTML = '<td colspan="2" style="height: 10px; border: none;"></td>';
+
+            // Return Decomposition Section (CAPM/Jensen's Alpha)
+            addSummaryRow('Portfolio Beta', portfolioBeta.toFixed(3), '');
+            addSummaryRow('Beta Return (Market Exposure, %)', `${betaReturn.toFixed(2)}%`, betaReturn >= 0 ? 'positive' : 'negative');
+            addSummaryRow('Alpha (True Skill, %)', `${alpha.toFixed(2)}%`, alpha >= 0 ? 'positive' : 'negative');
+
+            // Add empty row for spacing
+            const spacerRow2 = summaryBody.insertRow();
+            spacerRow2.innerHTML = '<td colspan="2" style="height: 10px; border: none;"></td>';
+
+            // Risk Metrics Section
             addSummaryRow('Portfolio Tracking Error (Annualized, %)', `${results.portfolioTE.toFixed(2)}%`);
+            addSummaryRow('Information Ratio (Alpha / TE)', informationRatio.toFixed(3), informationRatio >= 0 ? 'positive' : 'negative');
 
             // Display verification
             const verification = document.getElementById('verification');
@@ -2779,6 +3446,298 @@
             `;
         }
 
+        function renderScatterPlot(portfolioReturns, benchmarkReturns, beta) {
+            const svg = document.getElementById('scatterChartSvg');
+            if (!svg) return;
+
+            const n = Math.min(portfolioReturns.length, benchmarkReturns.length);
+            if (n < 2) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const width = 900;
+            const height = 400;
+            const padding = { left: 70, right: 30, top: 30, bottom: 50 };
+
+            // Convert log returns to percentage returns for display
+            const pReturns = portfolioReturns.map(r => r * 100);
+            const bReturns = benchmarkReturns.map(r => r * 100);
+
+            // Find min/max for both axes
+            const minX = Math.min(...bReturns);
+            const maxX = Math.max(...bReturns);
+            const minY = Math.min(...pReturns);
+            const maxY = Math.max(...pReturns);
+
+            // Make axes symmetric around zero
+            const maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX));
+            const maxAbsY = Math.max(Math.abs(minY), Math.abs(maxY));
+            const xRange = maxAbsX * 2;
+            const yRange = maxAbsY * 2;
+
+            const xToSvg = (v) => {
+                const x0 = padding.left;
+                const x1 = width - padding.right;
+                return x0 + ((v + maxAbsX) / xRange) * (x1 - x0);
+            };
+
+            const yToSvg = (v) => {
+                const y0 = padding.top;
+                const y1 = height - padding.bottom;
+                return y1 - ((v + maxAbsY) / yRange) * (y1 - y0);
+            };
+
+            // Draw points
+            const points = [];
+            for (let i = 0; i < n; i++) {
+                const x = xToSvg(bReturns[i]);
+                const y = yToSvg(pReturns[i]);
+                points.push(`<circle cx="${x}" cy="${y}" r="2.5" fill="#667eea" opacity="0.5" />`);
+            }
+
+            // Draw regression line: y = beta * x (both in percentage terms)
+            const regressionX1 = xToSvg(-maxAbsX);
+            const regressionY1 = yToSvg(-maxAbsX * beta);
+            const regressionX2 = xToSvg(maxAbsX);
+            const regressionY2 = yToSvg(maxAbsX * beta);
+
+            // Build axis ticks
+            const ticks = 5;
+            const xTickVals = [];
+            const yTickVals = [];
+            for (let i = 0; i <= ticks; i++) {
+                xTickVals.push(-maxAbsX + (i / ticks) * xRange);
+                yTickVals.push(-maxAbsY + (i / ticks) * yRange);
+            }
+
+            const xGrid = xTickVals.map(v => {
+                const x = xToSvg(v);
+                return `<line class="gridline" x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" />
+                        <text class="axis-label" x="${x}" y="${height - padding.bottom + 20}" text-anchor="middle">${v.toFixed(1)}%</text>`;
+            }).join('');
+
+            const yGrid = yTickVals.map(v => {
+                const y = yToSvg(v);
+                return `<line class="gridline" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" />
+                        <text class="axis-label" x="${padding.left - 10}" y="${y + 4}" text-anchor="end">${v.toFixed(1)}%</text>`;
+            }).join('');
+
+            // Draw zero lines
+            const zeroX = xToSvg(0);
+            const zeroY = yToSvg(0);
+            const zeroLines = `
+                <line x1="${zeroX}" y1="${padding.top}" x2="${zeroX}" y2="${height - padding.bottom}" stroke="#000" stroke-width="1.5" />
+                <line x1="${padding.left}" y1="${zeroY}" x2="${width - padding.right}" y2="${zeroY}" stroke="#000" stroke-width="1.5" />
+            `;
+
+            // Axis labels
+            const axisLabels = `
+                <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="14" font-weight="bold">Benchmark Return (%)</text>
+                <text x="${20}" y="${height / 2}" text-anchor="middle" font-size="14" font-weight="bold" transform="rotate(-90, 20, ${height / 2})">Portfolio Return (%)</text>
+            `;
+
+            const axis = `
+                <line class="axis-line" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" />
+                <line class="axis-line" x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" />
+            `;
+
+            svg.innerHTML = `
+                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
+                ${xGrid}
+                ${yGrid}
+                ${axis}
+                ${zeroLines}
+                ${points.join('')}
+                <line x1="${regressionX1}" y1="${regressionY1}" x2="${regressionX2}" y2="${regressionY2}" stroke="#ef4444" stroke-width="2.5" />
+                ${axisLabels}
+            `;
+        }
+
+        function renderTEChart(rollingTESeries, timestamps, rollingWindow) {
+            const svg = document.getElementById('teChartSvg');
+            if (!svg) return;
+
+            const n = rollingTESeries.length;
+            if (n < 2) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const width = 900;
+            const height = 260;
+            const padding = { left: 60, right: 20, top: 14, bottom: 50 };
+
+            // Get timestamps for rolling window (offset by window size)
+            const rollingTimestamps = timestamps.slice(rollingWindow);
+
+            const minTE = Math.min(...rollingTESeries);
+            const maxTE = Math.max(...rollingTESeries);
+
+            const yMin = Math.max(0, minTE - 1);
+            const yMax = maxTE + 1;
+            const yRange = (yMax - yMin) || 1;
+
+            const xToSvg = (i) => {
+                const x0 = padding.left;
+                const x1 = width - padding.right;
+                return x0 + (i / (n - 1)) * (x1 - x0);
+            };
+
+            const yToSvg = (v) => {
+                const y0 = padding.top;
+                const y1 = height - padding.bottom;
+                return y1 - ((v - yMin) / yRange) * (y1 - y0);
+            };
+
+            const makePath = (arr) => {
+                let d = '';
+                for (let i = 0; i < n; i++) {
+                    const x = xToSvg(i);
+                    const y = yToSvg(arr[i]);
+                    d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+                }
+                return d;
+            };
+
+            // Build ticks
+            const ticks = 5;
+            const tickVals = [];
+            for (let i = 0; i <= ticks; i++) {
+                tickVals.push(yMin + (i / ticks) * yRange);
+            }
+
+            const grid = tickVals.map(v => {
+                const y = yToSvg(v);
+                return `<line class="gridline" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" />
+                        <text class="axis-label" x="${padding.left - 8}" y="${y + 4}" text-anchor="end">${v.toFixed(1)}%</text>`;
+            }).join('');
+
+            // Add date labels on X-axis
+            const dateLabels = [];
+            const numDateLabels = 5;
+            for (let i = 0; i <= numDateLabels; i++) {
+                const idx = Math.floor((i / numDateLabels) * (n - 1));
+                const timestamp = rollingTimestamps[idx];
+                if (timestamp) {
+                    const date = new Date(timestamp);
+                    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+                    const x = xToSvg(idx);
+                    dateLabels.push(`<text class="axis-label" x="${x}" y="${height - padding.bottom + 20}" text-anchor="middle">${dateStr}</text>`);
+                }
+            }
+
+            const axis = `
+                <line class="axis-line" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" />
+                <line class="axis-line" x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" />
+            `;
+
+            const tePath = makePath(rollingTESeries);
+
+            svg.innerHTML = `
+                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
+                ${grid}
+                ${axis}
+                ${dateLabels.join('')}
+                <path d="${tePath}" fill="none" stroke="#8b5cf6" stroke-width="2.5" />
+            `;
+        }
+
+        function renderBetaChart(rollingBetaSeries, timestamps, rollingWindow) {
+            const svg = document.getElementById('betaChartSvg');
+            if (!svg) return;
+
+            const n = rollingBetaSeries.length;
+            if (n < 2) {
+                svg.innerHTML = '';
+                return;
+            }
+
+            const width = 900;
+            const height = 260;
+            const padding = { left: 60, right: 20, top: 14, bottom: 50 };
+
+            // Get timestamps for rolling window (offset by window size)
+            const rollingTimestamps = timestamps.slice(rollingWindow);
+
+            const minBeta = Math.min(...rollingBetaSeries);
+            const maxBeta = Math.max(...rollingBetaSeries);
+
+            // Ensure Beta = 1.0 is always visible
+            const yMin = Math.min(minBeta, 0.8);
+            const yMax = Math.max(maxBeta, 1.2);
+            const yRange = (yMax - yMin) || 1;
+
+            const xToSvg = (i) => {
+                const x0 = padding.left;
+                const x1 = width - padding.right;
+                return x0 + (i / (n - 1)) * (x1 - x0);
+            };
+
+            const yToSvg = (v) => {
+                const y0 = padding.top;
+                const y1 = height - padding.bottom;
+                return y1 - ((v - yMin) / yRange) * (y1 - y0);
+            };
+
+            const makePath = (arr) => {
+                let d = '';
+                for (let i = 0; i < n; i++) {
+                    const x = xToSvg(i);
+                    const y = yToSvg(arr[i]);
+                    d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+                }
+                return d;
+            };
+
+            // Build ticks
+            const ticks = 5;
+            const tickVals = [];
+            for (let i = 0; i <= ticks; i++) {
+                tickVals.push(yMin + (i / ticks) * yRange);
+            }
+
+            const grid = tickVals.map(v => {
+                const y = yToSvg(v);
+                return `<line class="gridline" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" />
+                        <text class="axis-label" x="${padding.left - 8}" y="${y + 4}" text-anchor="end">${v.toFixed(2)}</text>`;
+            }).join('');
+
+            // Add horizontal line at Beta = 1.0
+            const beta1Y = yToSvg(1.0);
+            const beta1Line = `<line x1="${padding.left}" y1="${beta1Y}" x2="${width - padding.right}" y2="${beta1Y}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,4" />`;
+
+            // Add date labels on X-axis
+            const dateLabels = [];
+            const numDateLabels = 5;
+            for (let i = 0; i <= numDateLabels; i++) {
+                const idx = Math.floor((i / numDateLabels) * (n - 1));
+                const timestamp = rollingTimestamps[idx];
+                if (timestamp) {
+                    const date = new Date(timestamp);
+                    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+                    const x = xToSvg(idx);
+                    dateLabels.push(`<text class="axis-label" x="${x}" y="${height - padding.bottom + 20}" text-anchor="middle">${dateStr}</text>`);
+                }
+            }
+
+            const axis = `
+                <line class="axis-line" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" />
+                <line class="axis-line" x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" />
+            `;
+
+            const betaPath = makePath(rollingBetaSeries);
+
+            svg.innerHTML = `
+                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
+                ${grid}
+                ${axis}
+                ${dateLabels.join('')}
+                ${beta1Line}
+                <path d="${betaPath}" fill="none" stroke="#f59e0b" stroke-width="2.5" />
+            `;
+        }
+
         // Patch displayResults with equity curve computation (kept here to avoid large refactors)
         const _displayResultsOriginal = displayResults;
         displayResults = function(results) {
@@ -2810,10 +3769,205 @@
             if (subtitle && results.equityCurve) {
                 subtitle.textContent = `Start: $10,000 • End: Portfolio $${results.equityCurve.portfolioEnd.toFixed(0)} vs Benchmark $${results.equityCurve.benchmarkEnd.toFixed(0)}`;
             }
+
+            // Render scatter plot
+            const portfolioSeries = results.series?.portfolioReturnSeries;
+            const benchmarkSeries = results.series?.benchmarkReturns;
+            const portfolioBeta = results.portfolioBeta || 1.0;
+            if (portfolioSeries && benchmarkSeries && portfolioSeries.length > 0) {
+                renderScatterPlot(portfolioSeries, benchmarkSeries, portfolioBeta);
+                const scatterSubtitle = document.getElementById('scatterSubtitle');
+                if (scatterSubtitle) {
+                    const rSquared = calculateRSquared(portfolioSeries, benchmarkSeries, portfolioBeta);
+                    scatterSubtitle.textContent = `Beta: ${portfolioBeta.toFixed(3)} • R²: ${rSquared.toFixed(3)} • n = ${portfolioSeries.length} observations`;
+                }
+            }
+
+            // Render rolling TE chart
+            const teSeries = results.series?.rollingTESeries;
+            const timestamps = results.series?.timestamps || [];
+            const rollingWindow = 60; // Must match the window size used in calculation
+
+            if (teSeries && teSeries.length > 0 && timestamps.length > 0) {
+                renderTEChart(teSeries, timestamps, rollingWindow);
+                const teSubtitle = document.getElementById('teChartSubtitle');
+                if (teSubtitle) {
+                    const avgTE = teSeries.reduce((sum, te) => sum + te, 0) / teSeries.length;
+                    const minTE = Math.min(...teSeries);
+                    const maxTE = Math.max(...teSeries);
+                    teSubtitle.textContent = `Average: ${avgTE.toFixed(2)}% • Range: ${minTE.toFixed(2)}% to ${maxTE.toFixed(2)}%`;
+                }
+            }
+
+            // Render beta chart
+            const betaSeries = results.series?.rollingBetaSeries;
+            if (betaSeries && betaSeries.length > 0 && timestamps.length > 0) {
+                renderBetaChart(betaSeries, timestamps, rollingWindow);
+                const betaSubtitle = document.getElementById('betaChartSubtitle');
+                if (betaSubtitle) {
+                    const avgBeta = betaSeries.reduce((sum, b) => sum + b, 0) / betaSeries.length;
+                    const minBeta = Math.min(...betaSeries);
+                    const maxBeta = Math.max(...betaSeries);
+                    betaSubtitle.textContent = `Average: ${avgBeta.toFixed(3)} • Range: ${minBeta.toFixed(3)} to ${maxBeta.toFixed(3)}`;
+                }
+            }
         };
 
         // Keep a reference to the last full calculation output for debugging/export
         let lastResults = null;
+        let equitySortColumn = -1;
+        let equitySortAscending = true;
+
+        // Sort equity table by column
+        function sortEquityTable(columnIndex) {
+            if (!lastResults || !lastResults.equityResults) return;
+
+            // Toggle sort direction if clicking same column
+            if (equitySortColumn === columnIndex) {
+                equitySortAscending = !equitySortAscending;
+            } else {
+                equitySortColumn = columnIndex;
+                equitySortAscending = true;
+            }
+
+            // Separate regular equities from passive index funds
+            const regularEquities = [];
+            const passiveIndexFunds = [];
+
+            lastResults.equityResults.forEach(eq => {
+                // Skip OTHER_SPXE, OTHER_SPX, and benchmark tickers
+                if (eq.ticker === 'OTHER_SPXE' || eq.ticker === 'OTHER_SPX' ||
+                    eq.ticker === '^GSPC' || eq.ticker === lastResults.benchmark) {
+                    return;
+                }
+
+                // Separate passive index funds (VOO, SPXE, SPY)
+                if (eq.ticker === 'VOO' || eq.ticker === 'SPXE' || eq.ticker === 'SPY') {
+                    passiveIndexFunds.push(eq);
+                } else {
+                    regularEquities.push(eq);
+                }
+            });
+
+            // Sort the regular equities
+            regularEquities.sort((a, b) => {
+                let aVal, bVal;
+
+                switch(columnIndex) {
+                    case 0: // Ticker
+                        aVal = a.ticker;
+                        bVal = b.ticker;
+                        return equitySortAscending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    case 1: // Sector
+                        aVal = a.sector;
+                        bVal = b.sector;
+                        return equitySortAscending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    case 2: // Active Weight
+                        aVal = a.activeWeight;
+                        bVal = b.activeWeight;
+                        break;
+                    case 3: // Return
+                        aVal = a.return;
+                        bVal = b.return;
+                        break;
+                    case 4: // Active Return
+                        aVal = a.activeReturn;
+                        bVal = b.activeReturn;
+                        break;
+                    case 5: // CTE
+                        aVal = a.cte;
+                        bVal = b.cte;
+                        break;
+                    case 6: // % of Return
+                        aVal = a.pctOfReturn;
+                        bVal = b.pctOfReturn;
+                        break;
+                    case 7: // % of TE
+                        aVal = a.pctOfTE;
+                        bVal = b.pctOfTE;
+                        break;
+                }
+
+                return equitySortAscending ? aVal - bVal : bVal - aVal;
+            });
+
+            // Redraw the table
+            const tbody = document.getElementById('equityResultsBody');
+            tbody.innerHTML = '';
+
+            // Display regular equities first
+            regularEquities.forEach(eq => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${eq.ticker}</td>
+                    <td>${eq.sector}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
+                    <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
+                `;
+            });
+
+            // Display passive index funds at the bottom
+            passiveIndexFunds.forEach(eq => {
+                const row = tbody.insertRow();
+                row.style.borderTop = '2px solid #ccc';
+                row.innerHTML = `
+                    <td><strong>${eq.ticker}</strong></td>
+                    <td>${eq.sector}</td>
+                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeWeight.toFixed(2)}</td>
+                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.return.toFixed(2)}</td>
+                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.activeReturn.toFixed(2)}</td>
+                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.cte.toFixed(2)}</td>
+                    <td class="${eq.pctOfReturn >= 0 ? 'positive' : 'negative'}" style="text-align: center;">${eq.pctOfReturn.toFixed(1)}</td>
+                    <td style="text-align: center;">${eq.pctOfTE.toFixed(1)}</td>
+                `;
+            });
+        }
+
+        // Generic DOM-based table sorter for tables populated after calculation
+        let sectorSortCol = -1, sectorSortAsc = true;
+        let sleeveSortCol = -1, sleeveSortAsc = true;
+
+        function sortTableByDOM(tbodyId, colIndex, sortStateObj) {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (rows.length === 0) return;
+
+            if (sortStateObj.col === colIndex) {
+                sortStateObj.asc = !sortStateObj.asc;
+            } else {
+                sortStateObj.col = colIndex;
+                sortStateObj.asc = true;
+            }
+
+            rows.sort((a, b) => {
+                const aText = a.cells[colIndex]?.innerText?.trim() || '';
+                const bText = b.cells[colIndex]?.innerText?.trim() || '';
+                const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return sortStateObj.asc ? aNum - bNum : bNum - aNum;
+                }
+                return sortStateObj.asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        const _sectorSort = { col: -1, asc: true };
+        const _sleeveSort = { col: -1, asc: true };
+
+        function sortSectorTable(colIndex) {
+            sortTableByDOM('sectorResultsBody', colIndex, _sectorSort);
+        }
+
+        function sortSleeveTable(colIndex) {
+            sortTableByDOM('sleeveAttributionBody', colIndex, _sleeveSort);
+        }
 
         function toISODateForCSV(periodIndex) {
             const period = document.getElementById('period')?.value;
@@ -2855,8 +4009,14 @@
             const tickers = (lastResults.equityResults || []).map(e => e.ticker);
 
             // Price columns (note: prices have n+1 points; returns have n points)
+            // Handle both old format (array) and new format ({prices, timestamps})
             const priceCols = tickers
-                .filter(t => Array.isArray(priceData[t]) && priceData[t].length >= (n + 1))
+                .filter(t => {
+                    const data = priceData[t];
+                    if (!data) return false;
+                    const prices = Array.isArray(data) ? data : data.prices;
+                    return Array.isArray(prices) && prices.length >= (n + 1);
+                })
                 .map(t => `price_${t}`);
 
             const header = [
@@ -2883,8 +4043,10 @@
                     ...tickers.map(t => numberOrBlank((weightedActive[t] || [])[i])),
                     ...priceCols.map(col => {
                         const t = col.replace(/^price_/, '');
+                        const data = priceData[t];
+                        const prices = data ? (Array.isArray(data) ? data : data.prices) : [];
                         // align: return i uses prices[i] -> prices[i+1]; exporting price at t(i) = prices[i+1]
-                        return numberOrBlank((priceData[t] || [])[i + 1]);
+                        return numberOrBlank(prices[i + 1]);
                     })
                 ]
                     .map(v => (typeof v === 'string' ? v : String(v)))
@@ -2943,495 +4105,10 @@
             });
         }
 
-        // ========== SORTABLE COLUMNS FUNCTIONALITY ==========
-        let equitySortField = 'cte';
-        let equitySortAsc = false;
-        let sectorSortField = 'cte';
-        let sectorSortAsc = false;
-
-        function initSortableTables() {
-            // Add sort icons to equity results table headers
-            const equityThs = document.querySelectorAll('#equityResults th');
-            const equityFields = ['ticker', 'sector', 'sleeve', 'portfolioWeight', 'benchmarkWeight', 'activeWeight', 'return', 'activeReturn', 'mcte', 'cte'];
-            
-            equityThs.forEach((th, index) => {
-                if (index < equityFields.length) {
-                    th.classList.add('sortable');
-                    th.setAttribute('data-sort', equityFields[index]);
-                    th.innerHTML = th.innerHTML + ' <i class="fas fa-sort"></i>';
-                    th.onclick = () => sortEquityTable(equityFields[index]);
-                }
-            });
-
-            // Add sort icons to sector results table headers
-            const sectorThs = document.querySelectorAll('#sectorResults th');
-            const sectorFields = ['sector', 'return', 'activeReturn', 'cte'];
-            
-            sectorThs.forEach((th, index) => {
-                if (index < sectorFields.length) {
-                    th.classList.add('sortable');
-                    th.setAttribute('data-sort', sectorFields[index]);
-                    th.innerHTML = th.innerHTML + ' <i class="fas fa-sort"></i>';
-                    th.onclick = () => sortSectorTable(sectorFields[index]);
-                }
-            });
-        }
-
-        function sortEquityTable(field) {
-            if (equitySortField === field) {
-                equitySortAsc = !equitySortAsc;
-            } else {
-                equitySortField = field;
-                equitySortAsc = false;
-            }
-
-            // Update header icons
-            document.querySelectorAll('#equityResults th').forEach(th => {
-                th.classList.remove('sorted-asc', 'sorted-desc');
-                const icon = th.querySelector('i');
-                if (icon) {
-                    icon.className = 'fas fa-sort';
-                }
-            });
-
-            const header = document.querySelector(`#equityResults th[data-sort="${field}"]`);
-            if (header) {
-                header.classList.add(equitySortAsc ? 'sorted-asc' : 'sorted-desc');
-                const icon = header.querySelector('i');
-                if (icon) {
-                    icon.className = equitySortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
-                }
-            }
-
-            // Sort the data
-            if (lastResults && lastResults.equityResults) {
-                lastResults.equityResults.sort((a, b) => {
-                    let va = a[field];
-                    let vb = b[field];
-
-                    // Handle string fields
-                    if (typeof va === 'string') {
-                        va = va.toLowerCase();
-                        vb = vb.toLowerCase();
-                    }
-
-                    if (va < vb) return equitySortAsc ? -1 : 1;
-                    if (va > vb) return equitySortAsc ? 1 : -1;
-                    return 0;
-                });
-
-                // Re-render the table
-                renderEquityResultsTable(lastResults.equityResults);
-            }
-        }
-
-        function sortSectorTable(field) {
-            if (sectorSortField === field) {
-                sectorSortAsc = !sectorSortAsc;
-            } else {
-                sectorSortField = field;
-                sectorSortAsc = false;
-            }
-
-            // Update header icons
-            document.querySelectorAll('#sectorResults th').forEach(th => {
-                th.classList.remove('sorted-asc', 'sorted-desc');
-                const icon = th.querySelector('i');
-                if (icon) {
-                    icon.className = 'fas fa-sort';
-                }
-            });
-
-            const header = document.querySelector(`#sectorResults th[data-sort="${field}"]`);
-            if (header) {
-                header.classList.add(sectorSortAsc ? 'sorted-asc' : 'sorted-desc');
-                const icon = header.querySelector('i');
-                if (icon) {
-                    icon.className = sectorSortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
-                }
-            }
-
-            // Sort the data
-            if (lastResults && lastResults.sectorResults) {
-                lastResults.sectorResults.sort((a, b) => {
-                    let va = a[field];
-                    let vb = b[field];
-
-                    if (typeof va === 'string') {
-                        va = va.toLowerCase();
-                        vb = vb.toLowerCase();
-                    }
-
-                    if (va < vb) return sectorSortAsc ? -1 : 1;
-                    if (va > vb) return sectorSortAsc ? 1 : -1;
-                    return 0;
-                });
-
-                // Re-render the table
-                renderSectorResultsTable(lastResults.sectorResults, lastResults.portfolioTE);
-            }
-        }
-
-        function renderEquityResultsTable(equityResults) {
-            const equityTbody = document.getElementById('equityResultsBody');
-            equityTbody.innerHTML = '';
-
-            equityResults.forEach(eq => {
-                const row = equityTbody.insertRow();
-                row.innerHTML = `
-                    <td>${eq.ticker}</td>
-                    <td>${eq.sector}</td>
-                    <td><span class="sleeve-badge sleeve-${(eq.sleeve || 'Managed Core').toLowerCase().replace(' ', '-')}">${eq.sleeve || 'Managed Core'}</span></td>
-                    <td>${eq.portfolioWeight.toFixed(2)}</td>
-                    <td>${eq.benchmarkWeight.toFixed(2)}</td>
-                    <td class="${eq.activeWeight >= 0 ? 'positive' : 'negative'}">${eq.activeWeight.toFixed(2)}</td>
-                    <td class="${eq.return >= 0 ? 'positive' : 'negative'}">${eq.return.toFixed(2)}</td>
-                    <td class="${eq.activeReturn >= 0 ? 'positive' : 'negative'}">${eq.activeReturn.toFixed(2)}</td>
-                    <td>${eq.mcte.toFixed(2)}</td>
-                    <td class="${eq.cte >= 0 ? 'positive' : 'negative'}">${eq.cte.toFixed(2)}</td>
-                `;
-            });
-        }
-
-        function renderSectorResultsTable(sectorResults, portfolioTE) {
-            const sectorTbody = document.getElementById('sectorResultsBody');
-            sectorTbody.innerHTML = '';
-
-            sectorResults.forEach(sector => {
-                const pctOfTotal = (sector.cte / portfolioTE) * 100;
-                const row = sectorTbody.insertRow();
-                row.innerHTML = `
-                    <td>${sector.sector}</td>
-                    <td class="${sector.return >= 0 ? 'positive' : 'negative'}">${sector.return.toFixed(2)}</td>
-                    <td class="${sector.activeReturn >= 0 ? 'positive' : 'negative'}">${sector.activeReturn.toFixed(2)}</td>
-                    <td class="${sector.cte >= 0 ? 'positive' : 'negative'}">${sector.cte.toFixed(2)}</td>
-                    <td>${pctOfTotal.toFixed(1)}%</td>
-                `;
-            });
-        }
-
-        // ========== ROLLING BETA & TRACKING ERROR FUNCTIONALITY ==========
-        let rollingData = null;
-
-        async function calculateRollingBeta() {
-            // Aggregate holdings from all sleeves
-            const aggregatedHoldings = aggregatePortfolioHoldings();
-
-            if (!aggregatedHoldings) {
-                return;
-            }
-
-            if (aggregatedHoldings.length === 0) {
-                alert('Please add at least one holding to any sleeve');
-                return;
-            }
-
-            // Get parameters
-            const benchmark = document.getElementById('benchmark').value;
-            const period = document.getElementById('period').value;
-            const frequency = document.getElementById('frequency').value;
-            
-            // Get rolling window size
-            const windowSize = parseInt(document.getElementById('rollingWindow')?.value || 60);
-
-            // Show loading
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-
-            try {
-                // Fetch benchmark weights
-                benchmarkWeights = await fetchBenchmarkWeights(benchmark);
-
-                // Fetch price data
-                const tickers = [...new Set([...aggregatedHoldings.map(h => h.ticker), benchmark])];
-                const priceData = await fetchPriceData(tickers, period, frequency);
-                
-                // Calculate returns
-                const returns = calculateReturns(priceData);
-                
-                // Get benchmark returns
-                let benchmarkReturns = returns[benchmark];
-                if (!benchmarkReturns || benchmarkReturns.length === 0) {
-                    throw new Error(`Failed to get benchmark returns for ${benchmark}`);
-                }
-
-                // Calculate rolling beta
-                const rollingBeta = calculateRollingMetric(returns, benchmarkReturns, windowSize, 'beta');
-                const rollingTE = calculateRollingMetric(returns, benchmarkReturns, windowSize, 'te');
-
-                // Store for display
-                rollingData = {
-                    dates: getDateLabels(period, benchmarkReturns.length),
-                    rollingBeta,
-                    rollingTE,
-                    benchmarkReturns,
-                    windowSize
-                };
-
-                // Display rolling analysis results
-                displayRollingResults(rollingBeta, rollingTE);
-
-                document.getElementById('loading').style.display = 'none';
-
-            } catch (error) {
-                console.error('Rolling analysis error:', error);
-                document.getElementById('error').textContent = 'Error: ' + error.message;
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('loading').style.display = 'none';
-            }
-        }
-
-        function calculateRollingMetric(returns, benchmarkReturns, windowSize, metricType) {
-            const result = [];
-            const numPeriods = Math.min(returns[Object.keys(returns)[0]]?.length || 0, benchmarkReturns.length);
-
-            for (let i = windowSize; i < numPeriods; i++) {
-                // Get rolling window data
-                const windowReturns = {};
-                Object.keys(returns).forEach(ticker => {
-                    windowReturns[ticker] = returns[ticker].slice(i - windowSize, i);
-                });
-                const windowBenchmark = benchmarkReturns.slice(i - windowSize, i);
-
-                if (metricType === 'beta') {
-                    // Calculate rolling beta
-                    const portfolioReturns = calculatePortfolioReturns(windowReturns, windowBenchmark);
-                    const beta = calculateBeta(portfolioReturns, windowBenchmark);
-                    result.push(beta);
-                } else if (metricType === 'te') {
-                    // Calculate rolling tracking error
-                    const portfolioReturns = calculatePortfolioReturns(windowReturns, windowBenchmark);
-                    const activeReturns = portfolioReturns.map((pr, idx) => pr - windowBenchmark[idx]);
-                    const te = standardDeviation(activeReturns) * Math.sqrt(252);
-                    result.push(te);
-                }
-            }
-
-            return result;
-        }
-
-        function calculatePortfolioReturns(returns, benchmarkReturns) {
-            // Assume equal weights for simplicity, or use actual weights
-            const tickers = Object.keys(returns);
-            const numPeriods = tickers.length > 0 ? returns[tickers[0]].length : 0;
-            const portfolioReturns = [];
-
-            for (let i = 0; i < numPeriods; i++) {
-                let sum = 0;
-                tickers.forEach(ticker => {
-                    if (returns[ticker][i] !== undefined) {
-                        sum += returns[ticker][i] / tickers.length; // Equal weight
-                    }
-                });
-                portfolioReturns.push(sum);
-            }
-
-            return portfolioReturns;
-        }
-
-        function calculateBeta(portfolioReturns, benchmarkReturns) {
-            if (portfolioReturns.length !== benchmarkReturns.length || portfolioReturns.length === 0) {
-                return 0;
-            }
-
-            const n = portfolioReturns.length;
-            const meanPortfolio = portfolioReturns.reduce((a, b) => a + b, 0) / n;
-            const meanBenchmark = benchmarkReturns.reduce((a, b) => a + b, 0) / n;
-
-            let covariance = 0;
-            let variance = 0;
-
-            for (let i = 0; i < n; i++) {
-                const diffP = portfolioReturns[i] - meanPortfolio;
-                const diffB = benchmarkReturns[i] - meanBenchmark;
-                covariance += diffP * diffB;
-                variance += diffB * diffB;
-            }
-
-            return variance !== 0 ? covariance / variance : 0;
-        }
-
-        function getDateLabels(period, numPoints) {
-            const labels = [];
-            const now = new Date();
-            
-            for (let i = numPoints - 1; i >= 0; i--) {
-                const date = new Date(now);
-                if (period === '3mo') {
-                    date.setMonth(date.getMonth() - Math.ceil(i / 21));
-                } else if (period === '1y') {
-                    date.setDate(date.getDate() - i);
-                } else if (period === '3y') {
-                    date.setFullYear(date.getFullYear() - Math.floor(i / 252));
-                }
-                labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-            }
-
-            return labels;
-        }
-
-        function displayRollingResults(rollingBeta, rollingTE) {
-            // Calculate summary statistics
-            const avgBeta = rollingBeta.length > 0 ? rollingBeta.reduce((a, b) => a + b, 0) / rollingBeta.length : 0;
-            const minBeta = rollingBeta.length > 0 ? Math.min(...rollingBeta) : 0;
-            const maxBeta = rollingBeta.length > 0 ? Math.max(...rollingBeta) : 0;
-            const currentBeta = rollingBeta.length > 0 ? rollingBeta[rollingBeta.length - 1] : 0;
-
-            const avgTE = rollingTE.length > 0 ? rollingTE.reduce((a, b) => a + b, 0) / rollingTE.length : 0;
-            const minTE = rollingTE.length > 0 ? Math.min(...rollingTE) : 0;
-            const maxTE = rollingTE.length > 0 ? Math.max(...rollingTE) : 0;
-            const currentTE = rollingTE.length > 0 ? rollingTE[rollingTE.length - 1] : 0;
-
-            // Create or update rolling results section
-            let rollingSection = document.getElementById('rollingResultsSection');
-            if (!rollingSection) {
-                // Insert after the main results section
-                const resultsSection = document.getElementById('results');
-                rollingSection = document.createElement('div');
-                rollingSection.id = 'rollingResultsSection';
-                rollingSection.className = 'rolling-section';
-                rollingSection.innerHTML = `
-                    <h2 class="section-title">Rolling Beta & Tracking Error Analysis</h2>
-                    <div class="rolling-controls">
-                        <div class="input-group">
-                            <label for="rollingWindow">Rolling Window (days):</label>
-                            <select id="rollingWindow" onchange="calculateRollingBeta()">
-                                <option value="21">21 days (1 month)</option>
-                                <option value="60" selected>60 days (3 months)</option>
-                                <option value="126">126 days (6 months)</option>
-                                <option value="252">252 days (1 year)</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" onclick="calculateRollingBeta()">
-                            <i class="fas fa-sync-alt"></i> Recalculate
-                        </button>
-                    </div>
-                    <div class="rolling-results" id="rollingResults">
-                        <!-- Results will be inserted here -->
-                    </div>
-                `;
-                resultsSection.parentNode.insertBefore(rollingSection, resultsSection.nextSibling);
-            }
-
-            const rollingResults = document.getElementById('rollingResults');
-            
-            // Determine beta class
-            const betaClass = currentBeta > 1 ? 'negative' : (currentBeta >= 0.8 ? '' : 'positive');
-            const betaLabel = currentBeta > 1 ? 'Aggressive (>1.0)' : (currentBeta >= 0.8 ? 'Moderate (0.8-1.0)' : 'Defensive (<0.8)');
-
-            rollingResults.innerHTML = `
-                <div class="rolling-metric-cards">
-                    <div class="rolling-metric">
-                        <div class="rolling-metric-label">Current Beta</div>
-                        <div class="rolling-metric-value ${betaClass}">${currentBeta.toFixed(2)}</div>
-                        <div style="font-size: 11px; color: #666;">${betaLabel}</div>
-                    </div>
-                    <div class="rolling-metric">
-                        <div class="rolling-metric-label">Average Beta</div>
-                        <div class="rolling-metric-value">${avgBeta.toFixed(2)}</div>
-                        <div style="font-size: 11px; color: #666;">Range: ${minBeta.toFixed(2)} - ${maxBeta.toFixed(2)}</div>
-                    </div>
-                    <div class="rolling-metric">
-                        <div class="rolling-metric-label">Current TE</div>
-                        <div class="rolling-metric-value">${(currentTE * 100).toFixed(2)}%</div>
-                        <div style="font-size: 11px; color: #666;">Annualized</div>
-                    </div>
-                    <div class="rolling-metric">
-                        <div class="rolling-metric-label">Average TE</div>
-                        <div class="rolling-metric-value">${(avgTE * 100).toFixed(2)}%</div>
-                        <div style="font-size: 11px; color: #666;">Range: ${(minTE * 100).toFixed(2)}% - ${(maxTE * 100).toFixed(2)}%</div>
-                    </div>
-                </div>
-                <div class="rolling-chart-container">
-                    <div class="rolling-chart-title">Rolling Beta (${document.getElementById('rollingWindow').value}-day window)</div>
-                    <canvas id="rollingBetaChart" style="height: 200px;"></canvas>
-                </div>
-                <div class="rolling-chart-container">
-                    <div class="rolling-chart-title">Rolling Tracking Error (${document.getElementById('rollingWindow').value}-day window)</div>
-                    <canvas id="rollingTEChart" style="height: 200px;"></canvas>
-                </div>
-            `;
-
-            // Render charts if Chart.js is available
-            if (typeof Chart !== 'undefined') {
-                renderRollingChart('rollingBetaChart', rollingBeta, 'Beta', '#667eea', 0);
-                renderRollingChart('rollingTEChart', rollingTE.map(v => v * 100), 'Tracking Error (%)', '#fd7e14', 2);
-            }
-        }
-
-        function renderRollingChart(canvasId, data, label, color, decimals) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-
-            // Sample data if too many points
-            let labels = [];
-            let sampledData = data;
-            
-            if (data.length > 100) {
-                const step = Math.ceil(data.length / 100);
-                labels = [];
-                sampledData = [];
-                for (let i = 0; i < data.length; i += step) {
-                    labels.push(`t${i}`);
-                    sampledData.push(data[i]);
-                }
-            } else {
-                labels = data.map((_, i) => `t${i}`);
-            }
-
-            new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: sampledData,
-                        borderColor: color,
-                        backgroundColor: color + '20',
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 0,
-                        pointHoverRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return label + ': ' + context.parsed.y.toFixed(decimals);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            beginAtZero: false,
-                            grid: { color: 'rgba(0,0,0,0.05)' }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Initialize sortable tables when results are displayed
-        const originalDisplayResults = displayResults;
-        displayResults = function(results) {
-            originalDisplayResults(results);
-            setTimeout(initSortableTables, 100);
-        };
-
         // Initialize mobile menu when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMobileMenu();
-            initSortableTables();
         });
     </script>
 </body>
 </html>
-======= REPLACE
-

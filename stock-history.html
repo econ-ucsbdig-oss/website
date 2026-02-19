@@ -507,17 +507,17 @@
                         <thead>
                             <tr>
                                 <th></th>
-                                <th>Symbol</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>First Buy</th>
-                                <th>Holding Period</th>
-                                <th>Cost Basis</th>
-                                <th>Current Price</th>
-                                <th>Total Return</th>
-                                <th>CAGR</th>
-                                <th>SPY Return</th>
-                                <th>Alpha</th>
+                                <th data-sortkey="symbol" onclick="sortByColKey('symbol')" style="cursor:pointer;">Symbol<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="desc" onclick="sortByColKey('desc')" style="cursor:pointer;">Description<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="status" onclick="sortByColKey('status')" style="cursor:pointer;">Status<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="date" onclick="sortByColKey('date')" style="cursor:pointer;">First Buy<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="hold" onclick="sortByColKey('hold')" style="cursor:pointer;">Holding Period<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="cost" onclick="sortByColKey('cost')" style="cursor:pointer;">Cost Basis<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="price" onclick="sortByColKey('price')" style="cursor:pointer;">Current Price<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="return" onclick="sortByColKey('return')" style="cursor:pointer;">Total Return<span class="sort-arrow"> ↓</span></th>
+                                <th data-sortkey="cagr" onclick="sortByColKey('cagr')" style="cursor:pointer;">CAGR<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="spy" onclick="sortByColKey('spy')" style="cursor:pointer;">SPY Return<span class="sort-arrow"> ↕</span></th>
+                                <th data-sortkey="alpha" onclick="sortByColKey('alpha')" style="cursor:pointer;">Alpha<span class="sort-arrow"> ↕</span></th>
                                 <th>Sparkline</th>
                             </tr>
                         </thead>
@@ -588,6 +588,7 @@ var historyData = null;
 var allStocks = [];
 var currentFilter = 'all';
 var currentSort = 'return-desc';
+var colSortLastKey = null;
 var expandedRow = null;
 var detailCharts = {};
 
@@ -669,8 +670,45 @@ function getFilteredSorted() {
         case 'date-desc': stocks.sort(function(a,b) { return b.firstBuyDate.localeCompare(a.firstBuyDate); }); break;
         case 'weight-desc': stocks.sort(function(a,b) { return b.weight - a.weight; }); break;
         case 'invested-desc': stocks.sort(function(a,b) { return b.totalInvested - a.totalInvested; }); break;
+        case 'symbol-asc': stocks.sort(function(a,b) { return a.symbol.localeCompare(b.symbol); }); break;
+        case 'symbol-desc': stocks.sort(function(a,b) { return b.symbol.localeCompare(a.symbol); }); break;
+        case 'desc-asc': stocks.sort(function(a,b) { return a.description.localeCompare(b.description); }); break;
+        case 'desc-desc': stocks.sort(function(a,b) { return b.description.localeCompare(a.description); }); break;
+        case 'status-asc': stocks.sort(function(a,b) { return a.status.localeCompare(b.status); }); break;
+        case 'status-desc': stocks.sort(function(a,b) { return b.status.localeCompare(a.status); }); break;
+        case 'hold-asc': stocks.sort(function(a,b) { return a.holdingPeriodDays - b.holdingPeriodDays; }); break;
+        case 'hold-desc': stocks.sort(function(a,b) { return b.holdingPeriodDays - a.holdingPeriodDays; }); break;
+        case 'cost-asc': stocks.sort(function(a,b) { return a.avgCostBasis - b.avgCostBasis; }); break;
+        case 'cost-desc': stocks.sort(function(a,b) { return b.avgCostBasis - a.avgCostBasis; }); break;
+        case 'price-asc': stocks.sort(function(a,b) { return a.currentPrice - b.currentPrice; }); break;
+        case 'price-desc': stocks.sort(function(a,b) { return b.currentPrice - a.currentPrice; }); break;
+        case 'cagr-asc': stocks.sort(function(a,b) { return a.cagr - b.cagr; }); break;
+        case 'cagr-desc': stocks.sort(function(a,b) { return b.cagr - a.cagr; }); break;
+        case 'spy-asc': stocks.sort(function(a,b) { return a.spyReturnSamePeriod - b.spyReturnSamePeriod; }); break;
+        case 'spy-desc': stocks.sort(function(a,b) { return b.spyReturnSamePeriod - a.spyReturnSamePeriod; }); break;
     }
     return stocks;
+}
+
+function sortByColKey(baseKey) {
+    var ascKey = baseKey + '-asc', descKey = baseKey + '-desc';
+    if (currentSort === descKey) {
+        currentSort = ascKey;
+    } else {
+        currentSort = descKey;
+    }
+    colSortLastKey = baseKey;
+    // Update header arrows
+    document.querySelectorAll('.stock-table thead th[data-sortkey]').forEach(function(th) {
+        var arrow = th.querySelector('.sort-arrow');
+        if (!arrow) return;
+        if (th.dataset.sortkey === baseKey) {
+            arrow.textContent = currentSort === descKey ? ' ↓' : ' ↑';
+        } else {
+            arrow.textContent = ' ↕';
+        }
+    });
+    renderTable();
 }
 
 function renderTable() {
