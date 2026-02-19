@@ -2334,6 +2334,222 @@ function findNearestPrice(lookup, sortedDates, targetDate) {
     return best || (sortedDates.length > 0 ? lookup[sortedDates[0]] : 0);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS RESULT CACHE + BACKGROUND PRE-WARMER
+// Pre-computes the 1Y historical analytics for all standard periods at startup
+// so the first browser request is instant (served from memory, no Polygon calls).
+// Cache refreshes every 60 minutes automatically.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _analyticsCache = new Map(); // key: `historical|{period}` → { data, cachedAt }
+const ANALYTICS_CACHE_TTL_MS = 60 * 60 * 1000; // 60 minutes
+
+// The canonical current holdings list (mirrors live-portfolio.html)
+const CANONICAL_HOLDINGS = [
+    { symbol: 'VOO',  quantity: 590.669 },
+    { symbol: 'VTV',  quantity: 131.11  },
+    { symbol: 'SPY',  quantity: 34.281  },
+    { symbol: 'TSM',  quantity: 137.398 },
+    { symbol: 'GOOGL',quantity: 137.343 },
+    { symbol: 'MSFT', quantity: 55.274  },
+    { symbol: 'AMZN', quantity: 112.118 },
+    { symbol: 'ASML', quantity: 19.917  },
+    { symbol: 'SNOW', quantity: 62.096  },
+    { symbol: 'NUKZ', quantity: 226.815 },
+    { symbol: 'VRT',  quantity: 77      },
+    { symbol: 'COST', quantity: 15      },
+    { symbol: 'XLV',  quantity: 94.93   },
+    { symbol: 'CEG',  quantity: 33.189  },
+    { symbol: 'JPM',  quantity: 40      },
+    { symbol: 'PANW', quantity: 54      },
+    { symbol: 'FLUT', quantity: 35.91   },
+    { symbol: 'SCHW', quantity: 92.199  },
+    { symbol: 'REMX', quantity: 61.438  },
+    { symbol: 'FCX',  quantity: 195.831 },
+    { symbol: 'DXCM', quantity: 112.945 },
+    { symbol: 'PSA',  quantity: 20.725  }
+];
+
+// Wraps the historical-analytics route logic so it can be called directly
+async function computeHistoricalAnalytics(currentHoldings, period) {
+    const periodDaysMap = { '3m': 70, '6m': 135, 'ytd': null, '1y': 260, '2y': 510, 'all': 1300 };
+    let lookbackDays;
+    if (period === 'ytd') {
+        const jan1 = new Date(new Date().getFullYear(), 0, 1);
+        lookbackDays = Math.ceil((Date.now() - jan1) / 86400000) + 10;
+    } else {
+        lookbackDays = periodDaysMap[period] || 260;
+    }
+
+    const toDate = new Date().toISOString().split('T')[0];
+    const fromDate = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const fromDateObj = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
+
+    const transactions = parseActivityCSVs();
+    const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
+
+    const allSymbols = new Set();
+    snapshots.forEach(s => {
+        if (s.date >= fromDateObj || s === snapshots[0]) {
+            Object.keys(s.holdings).forEach(sym => allSymbols.add(sym));
+        }
+    });
+    currentHoldings.forEach(h => allSymbols.add(h.symbol));
+    const equitySymbols = [...allSymbols].filter(s => /^[A-Z]{1,5}$/.test(s));
+
+    const BATCH_SIZE = 10;
+    const priceMap = {};
+    for (let i = 0; i < equitySymbols.length; i += BATCH_SIZE) {
+        const batch = equitySymbols.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+            batch.map(sym => fetchHistoricalPrices(sym, 'day', fromDate, toDate, lookbackDays + 10).catch(() => []))
+        );
+        batch.forEach((sym, idx) => { priceMap[sym] = results[idx] || []; });
+        if (i + BATCH_SIZE < equitySymbols.length) {
+            await new Promise(r => setTimeout(r, 200));
+        }
+    }
+
+    if (!priceMap['SPY']) {
+        priceMap['SPY'] = await fetchHistoricalPrices('SPY', 'day', fromDate, toDate, lookbackDays + 10).catch(() => []);
+    }
+
+    const spyPrices = priceMap['SPY'] || [];
+    if (spyPrices.length < 20) throw new Error('Insufficient SPY data');
+
+    const priceLookup = {};
+    for (const [sym, prices] of Object.entries(priceMap)) {
+        priceLookup[sym] = {};
+        prices.forEach(p => {
+            const ds = p.date ? p.date.split('T')[0] : '';
+            if (ds) priceLookup[sym][ds] = p.close;
+        });
+    }
+
+    // TWR daily returns using snapshot-based approach
+    const portfolioReturns = [];
+    for (let i = 1; i < spyPrices.length; i++) {
+        const prevDateStr = spyPrices[i - 1].date ? spyPrices[i - 1].date.split('T')[0] : '';
+        const currDateStr = spyPrices[i].date ? spyPrices[i].date.split('T')[0] : '';
+        const prevD = new Date(prevDateStr);
+
+        let prevSnap = snapshots[0].holdings;
+        for (const s of snapshots) {
+            if (s.date <= prevD) prevSnap = s.holdings;
+            else break;
+        }
+
+        let prevVal = 0, todayVal = 0;
+        for (const [sym, shares] of Object.entries(prevSnap)) {
+            const pp = priceLookup[sym] && priceLookup[sym][prevDateStr];
+            const cp = priceLookup[sym] && priceLookup[sym][currDateStr];
+            if (pp) prevVal += shares * pp;
+            if (cp) todayVal += shares * cp;
+        }
+        portfolioReturns.push(prevVal > 100 ? (todayVal - prevVal) / prevVal : 0);
+    }
+
+    const spyReturns = [];
+    for (let i = 1; i < spyPrices.length; i++) {
+        spyReturns.push((spyPrices[i].close - spyPrices[i - 1].close) / spyPrices[i - 1].close);
+    }
+
+    const numDays = Math.min(portfolioReturns.length, spyReturns.length);
+    const metrics = computeRiskMetrics(portfolioReturns.slice(-numDays), spyReturns.slice(-numDays), numDays);
+    const { cumPort, cumSpy } = metrics;
+
+    const dates = spyPrices.slice(-numDays - 1).map(p => p.date ? p.date.split('T')[0] : '');
+    const step = numDays <= 70 ? 1 : numDays <= 260 ? Math.max(1, Math.floor(numDays / 65)) : Math.max(1, Math.floor(numDays / 100));
+    const sparkPort = [], sparkSpy = [], sparkDates = [];
+    for (let i = 0; i <= numDays; i += step) {
+        sparkPort.push(((cumPort[i] || cumPort[cumPort.length - 1]) - 1) * 100);
+        sparkSpy.push(((cumSpy[i] || cumSpy[cumSpy.length - 1]) - 1) * 100);
+        sparkDates.push(dates[i] || dates[dates.length - 1]);
+    }
+    if (sparkPort[sparkPort.length - 1] !== ((cumPort[cumPort.length - 1] - 1) * 100)) {
+        sparkPort.push((cumPort[cumPort.length - 1] - 1) * 100);
+        sparkSpy.push((cumSpy[cumSpy.length - 1] - 1) * 100);
+        sparkDates.push(dates[dates.length - 1]);
+    }
+
+    const totalPortVal = currentHoldings.reduce((s, hh) => {
+        const p = priceMap[hh.symbol];
+        return s + (p && p.length ? hh.quantity * p[p.length - 1].close : 0);
+    }, 0) || 1;
+    const stockPerf = [];
+    for (const h of currentHoldings) {
+        const prices = priceMap[h.symbol];
+        if (!prices || prices.length < 2) continue;
+        const ytdDays = Math.min(prices.length - 1, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 86400000));
+        stockPerf.push({
+            symbol: h.symbol,
+            weight: (h.quantity * prices[prices.length - 1].close) / totalPortVal * 100,
+            ret1d: prices.length >= 2 ? ((prices[prices.length - 1].close / prices[prices.length - 2].close) - 1) * 100 : 0,
+            ret1w: prices.length >= 6 ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 6)].close) - 1) * 100 : null,
+            ret1m: prices.length >= 22 ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 22)].close) - 1) * 100 : null,
+            ret3m: prices.length >= 63 ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 63)].close) - 1) * 100 : null,
+            retYtd: ytdDays > 0 && prices.length > ytdDays ? ((prices[prices.length - 1].close / prices[Math.max(0, prices.length - 1 - ytdDays)].close) - 1) * 100 : null,
+            price: prices[prices.length - 1].close
+        });
+    }
+
+    return {
+        portfolio: {
+            return1m: metrics.return1m, return3m: metrics.return3m, return6m: metrics.return6m,
+            returnYtd: metrics.returnYtd, return1y: metrics.return1y,
+            annualizedVol: metrics.annualizedVol, beta: metrics.beta, sharpe: metrics.sharpe,
+            sortino: metrics.sortino, maxDrawdown: metrics.maxDrawdown, alpha: metrics.alpha,
+            effectivePositions: currentHoldings.length
+        },
+        benchmark: {
+            return1m: metrics.benchReturn1m, return3m: metrics.benchReturn3m,
+            return6m: metrics.benchReturn6m, returnYtd: metrics.benchReturnYtd, return1y: metrics.benchReturn1y
+        },
+        sparkline: { dates: sparkDates, portfolio: sparkPort, spy: sparkSpy },
+        stockPerformance: stockPerf,
+        dataPoints: numDays,
+        mode: 'historical',
+        uniqueSymbols: equitySymbols.length,
+        snapshotCount: snapshots.length
+    };
+}
+
+// GET endpoint — serves pre-warmed result instantly if available
+app.get('/api/portfolio/analytics-warm', (req, res) => {
+    const period = req.query.period || '1y';
+    const key = `historical|${period}`;
+    const cached = _analyticsCache.get(key);
+    if (cached) {
+        res.json({ ...cached.data, _cached: true, _cachedAt: cached.cachedAt });
+    } else {
+        res.status(202).json({ warming: true, message: 'Cache warming in progress, try POST endpoint' });
+    }
+});
+
+// Background warm-up: pre-compute all periods sequentially at server start
+async function warmAnalyticsCache() {
+    if (!POLYGON_API_KEY) return;
+    const periods = ['1y', '6m', '3m', 'ytd', '2y', 'all'];
+    console.log('🔥 Pre-warming analytics cache for all periods...');
+    for (const period of periods) {
+        try {
+            const data = await computeHistoricalAnalytics(CANONICAL_HOLDINGS, period);
+            _analyticsCache.set(`historical|${period}`, { data, cachedAt: new Date().toISOString() });
+            console.log(`  ✅ Cached: historical|${period}`);
+        } catch (e) {
+            console.warn(`  ⚠️  Cache warm failed for ${period}:`, e.message);
+        }
+    }
+    console.log('🔥 Analytics cache warm-up complete.');
+}
+
+// Also refresh the cache every 60 minutes
+function scheduleAnalyticsCacheRefresh() {
+    setInterval(() => {
+        warmAnalyticsCache().catch(e => console.warn('Analytics cache refresh failed:', e.message));
+    }, ANALYTICS_CACHE_TTL_MS);
+}
+
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error('Unhandled error:', error);
@@ -2357,6 +2573,9 @@ if (!isServerless) {
         if (!POLYGON_API_KEY) {
             console.log('⚠️  Warning: POLYGON_API_KEY not set. Live data will not work.');
             console.log('   Create a .env file with: POLYGON_API_KEY=your_key_here');
+        } else {
+            // Pre-warm analytics cache in background — don't block server start
+            setTimeout(() => warmAnalyticsCache().then(scheduleAnalyticsCacheRefresh), 500);
         }
     });
 }

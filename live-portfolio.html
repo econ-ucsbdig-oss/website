@@ -1844,7 +1844,7 @@
             <div class="perf-loading" id="perfLoading">
                 <div class="spinner"></div>
                 <div>Loading Performance Intelligence...</div>
-                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Fetching price history for 22 holdings — ~15s first load, instant on period/mode changes after that</div>
+                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Usually instant — server pre-computes analytics on startup</div>
             </div>
 
             <!-- Methodology / Replication Instructions -->
@@ -4036,31 +4036,53 @@
 
         try {
             const totalValue = portfolioData.reduce(function(s, h) { return s + h.quantity * h.lastPrice; }, 0) || 1;
-            var endpoint, body;
+            var data;
 
             if (mode === 'historical') {
-                endpoint = '/api/portfolio/historical-analytics';
-                body = {
-                    currentHoldings: portfolioData.map(function(h) { return { symbol: h.symbol, quantity: h.quantity }; }),
-                    period: period
-                };
+                // Try the pre-warmed cache first — instant if server already computed it
+                var warmRes = await fetch(apiBase + '/api/portfolio/analytics-warm?period=' + period, {
+                    signal: perfAbortController.signal
+                });
+                if (warmRes.ok) {
+                    var warmData = await warmRes.json();
+                    if (!warmData.warming) {
+                        // Cache hit — instant response
+                        data = warmData;
+                    }
+                }
+
+                // Cache miss (still warming) — fall back to the full POST
+                if (!data) {
+                    if (inlineLoading && !isFirstLoad) {
+                        inlineMsg.textContent = 'Computing ' + period.toUpperCase() + ' analytics…';
+                    }
+                    var postRes = await fetch(apiBase + '/api/portfolio/historical-analytics', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            currentHoldings: portfolioData.map(function(h) { return { symbol: h.symbol, quantity: h.quantity }; }),
+                            period: period
+                        }),
+                        signal: perfAbortController.signal
+                    });
+                    if (!postRes.ok) throw new Error('API returned ' + postRes.status);
+                    data = await postRes.json();
+                }
             } else {
-                endpoint = '/api/portfolio/analytics';
-                body = {
-                    holdings: portfolioData.map(function(h) { return { symbol: h.symbol, weight: (h.quantity * h.lastPrice) / totalValue }; }),
-                    period: period
-                };
+                var postRes = await fetch(apiBase + '/api/portfolio/analytics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        holdings: portfolioData.map(function(h) { return { symbol: h.symbol, weight: (h.quantity * h.lastPrice) / totalValue }; }),
+                        period: period
+                    }),
+                    signal: perfAbortController.signal
+                });
+                if (!postRes.ok) throw new Error('API returned ' + postRes.status);
+                data = await postRes.json();
             }
 
-            var res = await fetch(apiBase + endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-                signal: perfAbortController.signal
-            });
-
-            if (!res.ok) throw new Error('API returned ' + res.status);
-            perfIntelData = await res.json();
+            perfIntelData = data;
             if (perfIntelData.error && perfIntelData.partial) throw new Error('Insufficient data');
 
             if (loadingEl) loadingEl.style.display = 'none';
