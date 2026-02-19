@@ -12,12 +12,21 @@
             box-sizing: border-box;
         }
 
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #0f1419 0%, #1e3c72 35%, #2a3c5f 65%, #0f1419 100%);
+            background-size: 300% 300%;
+            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
             padding: 0;
             padding-top: 80px;
+            color: #e5e5e5;
         }
 
         /* Header & Navigation */
@@ -187,37 +196,41 @@
             margin: 20px auto;
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            background: rgba(15, 20, 25, 0.85);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
             padding: 30px;
+            border: 1px solid rgba(254, 188, 17, 0.15);
+            backdrop-filter: blur(20px);
+            color: #e5e5e5;
         }
 
         h1 {
-            color: #333;
+            color: #ffffff;
             margin-bottom: 10px;
             font-size: 28px;
         }
 
         .subtitle {
-            color: #666;
+            color: rgba(255,255,255,0.5);
             margin-bottom: 30px;
             font-size: 14px;
         }
 
         .input-section {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.04);
             padding: 25px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .section-title {
             font-size: 18px;
-            color: #333;
+            color: rgba(255,255,255,0.9);
             margin-bottom: 15px;
             font-weight: 600;
-            border-bottom: 2px solid #1e3c72;
+            border-bottom: 2px solid rgba(254,188,17,0.5);
             padding-bottom: 5px;
         }
 
@@ -236,20 +249,32 @@
         label {
             font-weight: 500;
             margin-bottom: 5px;
-            color: #555;
+            color: rgba(255,255,255,0.55);
             font-size: 14px;
         }
 
         input, select {
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 5px;
             font-size: 14px;
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.3);
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #1e3c72;
+            border-color: rgba(254,188,17,0.6);
+            background: rgba(255,255,255,0.1);
+        }
+
+        select option {
+            background: #1a2535;
+            color: #e5e5e5;
         }
 
         .holdings-table {
@@ -262,25 +287,32 @@
         .holdings-table td {
             padding: 10px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            color: #e5e5e5;
         }
 
         .holdings-table th {
-            background: #667eea;
-            color: white;
+            background: rgba(254,188,17,0.12);
+            color: rgba(255,255,255,0.85);
             font-weight: 500;
+        }
+
+        .holdings-table tr:hover {
+            background: rgba(255,255,255,0.04);
         }
 
         .holdings-table input {
             width: 90%;
             padding: 6px;
-            border: 1px solid #ddd;
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 3px;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
         }
 
         .holdings-table input:focus {
             outline: none;
-            border-color: #1e3c72;
+            border-color: rgba(254,188,17,0.6);
         }
 
         .btn {
@@ -294,24 +326,27 @@
         }
 
         .btn-primary {
-            background: #1e3c72;
-            color: white;
+            background: linear-gradient(135deg, #febc11, #e5a810);
+            color: #0f1419;
+            font-weight: 700;
         }
 
         .btn-primary:hover {
-            background: #2a5298;
+            background: linear-gradient(135deg, #ffd04d, #febc11);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(30, 60, 114, 0.3);
+            box-shadow: 0 4px 16px rgba(254,188,17,0.35);
         }
 
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.15);
             margin-left: 10px;
         }
 
         .btn-secondary:hover {
-            background: #5a6268;
+            background: rgba(255,255,255,0.12);
+            color: #fff;
         }
 
         .btn-small {
@@ -332,11 +367,13 @@
         }
 
         .metric-card {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, rgba(254,188,17,0.15) 0%, rgba(30,60,114,0.4) 100%);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            border: 1px solid rgba(254,188,17,0.2);
+            backdrop-filter: blur(10px);
         }
 
         .metric-label {
@@ -354,35 +391,38 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.03);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .results-table th,
         .results-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            color: #e5e5e5;
         }
 
         .results-table th {
-            background: #1e3c72;
-            color: white;
+            background: rgba(254,188,17,0.12);
+            color: rgba(255,255,255,0.85);
             font-weight: 500;
             position: sticky;
             top: 0;
         }
 
         .results-table tr:hover {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.05);
         }
 
         .positive {
-            color: #28a745;
+            color: #4ade80;
         }
 
         .negative {
-            color: #dc3545;
+            color: #f87171;
         }
 
         .loading {
@@ -392,8 +432,8 @@
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid #febc11;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -407,19 +447,21 @@
         }
 
         .error {
-            background: #f8d7da;
-            color: #721c24;
+            background: rgba(248,113,113,0.12);
+            color: #f87171;
+            border: 1px solid rgba(248,113,113,0.3);
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-top: 15px;
             display: none;
         }
 
         .success {
-            background: #d4edda;
-            color: #155724;
+            background: rgba(74,222,128,0.12);
+            color: #4ade80;
+            border: 1px solid rgba(74,222,128,0.3);
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-top: 15px;
         }
 
@@ -438,32 +480,36 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.03);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .summary-table th,
         .summary-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            color: #e5e5e5;
         }
 
         .summary-table th {
-            background: #667eea;
-            color: white;
+            background: rgba(254,188,17,0.12);
+            color: rgba(255,255,255,0.85);
             font-weight: 500;
         }
 
         .summary-table tr:hover {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.05);
         }
 
         .chart-card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
             padding: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .chart-header {
@@ -477,12 +523,12 @@
         .chart-title {
             font-size: 14px;
             font-weight: 600;
-            color: #333;
+            color: rgba(255,255,255,0.9);
         }
 
         .chart-subtitle {
             font-size: 12px;
-            color: #666;
+            color: rgba(255,255,255,0.45);
             margin-top: 2px;
         }
 
@@ -491,7 +537,7 @@
             gap: 14px;
             flex-wrap: wrap;
             font-size: 12px;
-            color: #444;
+            color: rgba(255,255,255,0.6);
         }
 
         .legend-item {
@@ -514,27 +560,27 @@
         }
 
         .axis-label {
-            fill: #666;
+            fill: rgba(255,255,255,0.45);
             font-size: 11px;
         }
 
         .gridline {
-            stroke: rgba(0,0,0,0.08);
+            stroke: rgba(255,255,255,0.06);
             stroke-width: 1;
         }
 
         .axis-line {
-            stroke: rgba(0,0,0,0.25);
+            stroke: rgba(255,255,255,0.18);
             stroke-width: 1;
         }
 
         /* Multi-Sleeve Portfolio Styles */
         .sleeve-allocation {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.04);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 25px;
-            border: 2px solid #dee2e6;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .sleeve-row {
@@ -543,35 +589,37 @@
             gap: 15px;
             align-items: center;
             padding: 12px;
-            background: white;
-            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
             margin-bottom: 10px;
             border-left: 4px solid transparent;
         }
 
         .sleeve-row.managed-core {
-            border-left-color: #1e3c72;
+            border-left-color: #febc11;
         }
 
         .sleeve-row.passive-index {
-            border-left-color: #28a745;
+            border-left-color: #4ade80;
         }
 
         .sleeve-row.alpha-sleeve {
-            border-left-color: #fd7e14;
+            border-left-color: #60a5fa;
         }
 
         .sleeve-label {
             font-weight: 600;
-            color: #333;
+            color: rgba(255,255,255,0.85);
         }
 
         .sleeve-weight-input {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 4px;
             font-size: 14px;
+            background: rgba(255,255,255,0.07);
+            color: #fff;
         }
 
         .sleeve-toggle {
@@ -590,9 +638,9 @@
             display: none;
             margin-top: 10px;
             padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            border-left: 4px solid rgba(254,188,17,0.5);
         }
 
         .sleeve-details.visible {
@@ -601,32 +649,35 @@
 
         .weight-summary {
             padding: 12px;
-            background: white;
-            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
             margin-top: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .weight-total {
             font-size: 18px;
+            color: rgba(255,255,255,0.85);
         }
 
         .weight-total.valid {
-            color: #28a745;
+            color: #4ade80;
         }
 
         .weight-total.invalid {
-            color: #dc3545;
+            color: #f87171;
         }
 
         .sleeve-attribution {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.04);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .attribution-grid {
@@ -637,30 +688,30 @@
         }
 
         .attribution-card {
-            background: white;
+            background: rgba(255,255,255,0.04);
             padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
+            border-radius: 10px;
+            border-left: 4px solid rgba(254,188,17,0.5);
         }
 
         .attribution-card.passive {
-            border-left-color: #28a745;
+            border-left-color: rgba(74,222,128,0.6);
         }
 
         .attribution-card.alpha {
-            border-left-color: #fd7e14;
+            border-left-color: rgba(96,165,250,0.6);
         }
 
         .attribution-value {
             font-size: 24px;
             font-weight: 700;
-            color: #333;
+            color: #fff;
             margin: 10px 0;
         }
 
         .attribution-label {
             font-size: 12px;
-            color: #666;
+            color: rgba(255,255,255,0.45);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -677,27 +728,30 @@
         }
 
         .sleeve-badge.sleeve-managed-core {
-            background-color: #e8eef7;
-            color: #1e3c72;
+            background-color: rgba(254,188,17,0.15);
+            color: #febc11;
+            border: 1px solid rgba(254,188,17,0.3);
         }
 
         .sleeve-badge.sleeve-passive-index {
-            background-color: #d4edda;
-            color: #28a745;
+            background-color: rgba(74,222,128,0.12);
+            color: #4ade80;
+            border: 1px solid rgba(74,222,128,0.25);
         }
 
         .sleeve-badge.sleeve-alpha-sleeve {
-            background-color: #ffe5d0;
-            color: #fd7e14;
+            background-color: rgba(96,165,250,0.12);
+            color: #60a5fa;
+            border: 1px solid rgba(96,165,250,0.25);
         }
 
         /* Sleeve Attribution Section */
         .sleeve-attribution {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.04);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 25px;
-            border: 2px solid #dee2e6;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .sleeve-attribution-grid {
@@ -708,44 +762,44 @@
         }
 
         .sleeve-attribution-item {
-            background: white;
+            background: rgba(255,255,255,0.04);
             padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #1e3c72;
+            border-radius: 10px;
+            border-left: 4px solid rgba(254,188,17,0.5);
         }
 
         .sleeve-attribution-item.passive {
-            border-left-color: #28a745;
+            border-left-color: rgba(74,222,128,0.6);
         }
 
         .sleeve-attribution-item.alpha {
-            border-left-color: #fd7e14;
+            border-left-color: rgba(96,165,250,0.6);
         }
 
         .sleeve-attribution-name {
             font-weight: 600;
-            color: #333;
+            color: rgba(255,255,255,0.85);
             margin-bottom: 8px;
         }
 
         .sleeve-attribution-value {
             font-size: 24px;
             font-weight: 700;
-            color: #1e3c72;
+            color: #febc11;
             margin-bottom: 4px;
         }
 
         .sleeve-attribution-item.passive .sleeve-attribution-value {
-            color: #28a745;
+            color: #4ade80;
         }
 
         .sleeve-attribution-item.alpha .sleeve-attribution-value {
-            color: #fd7e14;
+            color: #60a5fa;
         }
 
         .sleeve-attribution-percent {
             font-size: 14px;
-            color: #666;
+            color: rgba(255,255,255,0.45);
         }
     </style>
 </head>
@@ -780,7 +834,7 @@
         <!-- Sleeve Allocation Section -->
         <div class="sleeve-allocation">
             <h2 class="section-title">Portfolio Structure</h2>
-            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Configure your portfolio sleeves. Weights must sum to 100%.</p>
+            <p style="margin-bottom: 15px; color: rgba(255,255,255,0.5); font-size: 14px;">Configure your portfolio sleeves. Weights must sum to 100%.</p>
 
             <!-- Managed Core Sleeve -->
             <div class="sleeve-row managed-core">
@@ -792,7 +846,7 @@
                     <input type="checkbox" id="managedCoreEnabled" checked disabled>
                     <label style="margin: 0; font-size: 13px;">Active</label>
                 </div>
-                <div style="color: #666; font-size: 13px;">Core portfolio holdings (always enabled)</div>
+                <div style="color: rgba(255,255,255,0.45); font-size: 13px;">Core portfolio holdings (always enabled)</div>
             </div>
 
             <!-- Passive Index Sleeve -->
@@ -806,7 +860,7 @@
                     <label style="margin: 0; font-size: 13px;">Enable</label>
                 </div>
                 <div>
-                    <select id="passiveIndexHolding" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd; width: 100%;" disabled>
+                    <select id="passiveIndexHolding" style="padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); width: 100%; background: rgba(255,255,255,0.07); color: #e5e5e5;" disabled>
                         <option value="">Select Index</option>
                         <option value="VOO">VOO (S&P 500 ETF)</option>
                         <option value="SPXE">SPXE (S&P 500 ex-Energy)</option>
@@ -824,7 +878,7 @@
                     <input type="checkbox" id="alphaEnabled" onchange="toggleSleeve('alpha')">
                     <label style="margin: 0; font-size: 13px;">Enable</label>
                 </div>
-                <div style="color: #666; font-size: 13px;">Custom high-conviction holdings</div>
+                <div style="color: rgba(255,255,255,0.45); font-size: 13px;">Custom high-conviction holdings</div>
             </div>
 
             <!-- Weight Summary -->
@@ -837,7 +891,7 @@
         <!-- Alpha Sleeve Holdings Section (Initially Hidden) -->
         <div id="alphaSleeveSection" class="input-section" style="display: none;">
             <h2 class="section-title">Alpha Sleeve Holdings</h2>
-            <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Add holdings for your alpha sleeve. Weights should sum to 100% within this sleeve.</p>
+            <p style="margin-bottom: 15px; color: rgba(255,255,255,0.5); font-size: 14px;">Add holdings for your alpha sleeve. Weights should sum to 100% within this sleeve.</p>
 
             <div style="margin-bottom: 15px;">
                 <button class="btn btn-secondary" onclick="loadAlphaSamplePortfolio()">Load Sample Alpha Holdings</button>
@@ -858,8 +912,8 @@
             </table>
 
             <div style="margin-top: 15px;">
-                <input type="text" id="newAlphaTicker" placeholder="Ticker (e.g., AAPL)" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-right: 10px; width: 150px;">
-                <input type="number" id="newAlphaWeight" placeholder="Weight %" min="0" max="100" step="0.1" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-right: 10px; width: 120px;">
+                <input type="text" id="newAlphaTicker" placeholder="Ticker (e.g., AAPL)" style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; margin-right: 10px; width: 150px; background: rgba(255,255,255,0.07); color: #fff;">
+                <input type="number" id="newAlphaWeight" placeholder="Weight %" min="0" max="100" step="0.1" style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; margin-right: 10px; width: 120px; background: rgba(255,255,255,0.07); color: #fff;">
                 <button class="btn btn-primary" onclick="addAlphaHolding()">Add Holding</button>
             </div>
 
@@ -968,8 +1022,8 @@
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p style="margin-top: 10px; color: #666;">Fetching data via proxy server...</p>
-            <p style="margin-top: 5px; color: #999; font-size: 0.9em;">This may take a few minutes depending on number of holdings</p>
+            <p style="margin-top: 10px; color: rgba(255,255,255,0.55);">Fetching data via proxy server...</p>
+            <p style="margin-top: 5px; color: rgba(255,255,255,0.35); font-size: 0.9em;">This may take a few minutes depending on number of holdings</p>
         </div>
 
         <div class="error" id="error"></div>
@@ -1087,8 +1141,8 @@
                         <div class="chart-subtitle" id="equityCurveSubtitle">-</div>
                     </div>
                     <div class="legend" aria-label="Chart legend">
-                        <span class="legend-item"><span class="legend-swatch" style="background:#667eea"></span>Portfolio</span>
-                        <span class="legend-item"><span class="legend-swatch" style="background:#2ea44f"></span>Benchmark</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#febc11"></span>Portfolio</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#4ade80"></span>Benchmark</span>
                     </div>
                 </div>
                 <svg id="equityCurveSvg" viewBox="0 0 900 260" preserveAspectRatio="none" role="img" aria-label="Equity curve chart"></svg>
@@ -1102,8 +1156,8 @@
                         <div class="chart-subtitle" id="scatterSubtitle">-</div>
                     </div>
                     <div class="legend" aria-label="Chart legend">
-                        <span class="legend-item"><span class="legend-swatch" style="background:#667eea"></span>Daily Returns</span>
-                        <span class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>Regression Line (Beta)</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#febc11"></span>Daily Returns</span>
+                        <span class="legend-item"><span class="legend-swatch" style="background:#f87171"></span>Regression Line (Beta)</span>
                     </div>
                 </div>
                 <svg id="scatterChartSvg" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Scatter plot chart"></svg>
@@ -3039,7 +3093,7 @@
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><span class="sleeve-badge" style="background: #6c757d;">Net Index Exposure</span></td>
+                    <td><span class="sleeve-badge" style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2);">Net Index Exposure</span></td>
                     <td>${netIndexWeight.toFixed(1)}</td>
                     <td class="${passiveIndexActiveReturn >= 0 ? 'positive' : 'negative'}">${passiveIndexActiveReturn.toFixed(2)}</td>
                     <td class="${netCTE >= 0 ? 'positive' : 'negative'}">${netCTE.toFixed(2)}</td>
@@ -3441,8 +3495,8 @@
                 <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
                 ${grid}
                 ${axis}
-                <path d="${benchmarkPath}" fill="none" stroke="#2ea44f" stroke-width="2" />
-                <path d="${portfolioPath}" fill="none" stroke="#667eea" stroke-width="2.5" />
+                <path d="${benchmarkPath}" fill="none" stroke="#4ade80" stroke-width="2" />
+                <path d="${portfolioPath}" fill="none" stroke="#febc11" stroke-width="2.5" />
             `;
         }
 
@@ -3493,7 +3547,7 @@
             for (let i = 0; i < n; i++) {
                 const x = xToSvg(bReturns[i]);
                 const y = yToSvg(pReturns[i]);
-                points.push(`<circle cx="${x}" cy="${y}" r="2.5" fill="#667eea" opacity="0.5" />`);
+                points.push(`<circle cx="${x}" cy="${y}" r="2.5" fill="#febc11" opacity="0.6" />`);
             }
 
             // Draw regression line: y = beta * x (both in percentage terms)
@@ -3527,14 +3581,14 @@
             const zeroX = xToSvg(0);
             const zeroY = yToSvg(0);
             const zeroLines = `
-                <line x1="${zeroX}" y1="${padding.top}" x2="${zeroX}" y2="${height - padding.bottom}" stroke="#000" stroke-width="1.5" />
-                <line x1="${padding.left}" y1="${zeroY}" x2="${width - padding.right}" y2="${zeroY}" stroke="#000" stroke-width="1.5" />
+                <line x1="${zeroX}" y1="${padding.top}" x2="${zeroX}" y2="${height - padding.bottom}" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+                <line x1="${padding.left}" y1="${zeroY}" x2="${width - padding.right}" y2="${zeroY}" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
             `;
 
             // Axis labels
             const axisLabels = `
-                <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="14" font-weight="bold">Benchmark Return (%)</text>
-                <text x="${20}" y="${height / 2}" text-anchor="middle" font-size="14" font-weight="bold" transform="rotate(-90, 20, ${height / 2})">Portfolio Return (%)</text>
+                <text x="${width / 2}" y="${height - 10}" text-anchor="middle" font-size="14" font-weight="bold" fill="rgba(255,255,255,0.6)">Benchmark Return (%)</text>
+                <text x="${20}" y="${height / 2}" text-anchor="middle" font-size="14" font-weight="bold" fill="rgba(255,255,255,0.6)" transform="rotate(-90, 20, ${height / 2})">Portfolio Return (%)</text>
             `;
 
             const axis = `
@@ -3549,7 +3603,7 @@
                 ${axis}
                 ${zeroLines}
                 ${points.join('')}
-                <line x1="${regressionX1}" y1="${regressionY1}" x2="${regressionX2}" y2="${regressionY2}" stroke="#ef4444" stroke-width="2.5" />
+                <line x1="${regressionX1}" y1="${regressionY1}" x2="${regressionX2}" y2="${regressionY2}" stroke="#f87171" stroke-width="2.5" />
                 ${axisLabels}
             `;
         }

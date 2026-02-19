@@ -990,6 +990,60 @@
         .ticker-item .ticker-value.neutral { color: #febc11; }
         .ticker-sep { color: rgba(254,188,17,0.3); font-size: 0.6rem; }
 
+        /* ── KPI Hero Strip ── */
+        .perf-kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            animation: fadeInUp 0.5s ease both;
+        }
+        @media (max-width: 900px) { .perf-kpi-strip { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 560px) { .perf-kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .perf-kpi-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .perf-kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .perf-kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--kpi-accent, rgba(254,188,17,0.5));
+        }
+        .perf-kpi-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 0.4rem;
+        }
+        .perf-kpi-value {
+            font-size: 1.55rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+        .perf-kpi-value.kpi-positive { color: #20c997; --kpi-accent: rgba(32,201,151,0.6); }
+        .perf-kpi-value.kpi-negative { color: #ff6b6b; --kpi-accent: rgba(255,107,107,0.6); }
+        .perf-kpi-value.kpi-neutral  { color: #e5e5e5; }
+        .perf-kpi-sub {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.35);
+            margin-top: 0.25rem;
+        }
+
         /* Performance scoreboard grid */
         .perf-scoreboard {
             display: grid;
@@ -1019,9 +1073,35 @@
         .perf-returns-card h3 i { color: #febc11; margin-right: 0.5rem; }
         .perf-sparkline-container {
             position: relative;
-            height: 200px;
+            height: 270px;
             margin-bottom: 1rem;
         }
+
+        /* ── Below-chart 3-column stats layout ── */
+        .perf-stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 768px) { .perf-stats-row { grid-template-columns: 1fr; } }
+        .perf-stat-panel {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+        }
+        .perf-stat-panel-title {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* Period-returns mini-table */
         .perf-returns-table {
             width: 100%;
             border-collapse: collapse;
@@ -1037,7 +1117,7 @@
         }
         .perf-returns-table td {
             padding: 0.5rem 0.6rem;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #e5e5e5;
             border-bottom: 1px solid rgba(255,255,255,0.04);
         }
@@ -1050,6 +1130,50 @@
             font-weight: 700;
             border-top: 1px solid rgba(254,188,17,0.2);
         }
+
+        /* Calendar year bars */
+        .cal-year-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.78rem;
+        }
+        .cal-year-label { color: rgba(255,255,255,0.4); width: 34px; flex-shrink: 0; font-size: 0.7rem; }
+        .cal-bar-track {
+            flex: 1;
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .cal-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+        .cal-bar-fill.cal-pos { background: linear-gradient(90deg, #20c997, #4ade80); }
+        .cal-bar-fill.cal-neg { background: linear-gradient(90deg, #ff6b6b, #f87171); }
+        .cal-year-val { font-weight: 700; width: 52px; text-align: right; font-size: 0.78rem; }
+        .cal-year-val.cal-pos { color: #20c997; }
+        .cal-year-val.cal-neg { color: #ff6b6b; }
+        .cal-spy-val { color: rgba(255,255,255,0.3); font-size: 0.68rem; width: 48px; text-align: right; }
+
+        /* Inline risk pills (in the 3rd stat panel) */
+        .risk-pill-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.8rem;
+        }
+        .risk-pill-row:last-child { border-bottom: none; }
+        .risk-pill-label { color: rgba(255,255,255,0.45); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.3px; }
+        .risk-pill-val { font-weight: 700; }
+        .risk-pill-val.good { color: #20c997; }
+        .risk-pill-val.warn { color: #fcc419; }
+        .risk-pill-val.bad  { color: #ff6b6b; }
 
         /* Risk metrics panel */
         .perf-risk-card {
@@ -1452,12 +1576,41 @@
                 <div class="perf-ticker-inner" id="perfTickerInner"></div>
             </div>
 
+            <!-- KPI Hero Strip -->
+            <div class="perf-kpi-strip" id="perfKpiStrip" style="display:none;">
+                <div class="perf-kpi-card" id="kpi-return">
+                    <div class="perf-kpi-label">Portfolio Return</div>
+                    <div class="perf-kpi-value kpi-neutral" id="kpiReturnVal">—</div>
+                    <div class="perf-kpi-sub" id="kpiReturnSub">Selected period</div>
+                </div>
+                <div class="perf-kpi-card" id="kpi-alpha">
+                    <div class="perf-kpi-label">vs S&P 500 (Alpha)</div>
+                    <div class="perf-kpi-value kpi-neutral" id="kpiAlphaVal">—</div>
+                    <div class="perf-kpi-sub" id="kpiAlphaSub">Outperformance</div>
+                </div>
+                <div class="perf-kpi-card" id="kpi-sharpe">
+                    <div class="perf-kpi-label">Sharpe Ratio</div>
+                    <div class="perf-kpi-value kpi-neutral" id="kpiSharpeVal">—</div>
+                    <div class="perf-kpi-sub">Risk-adj. return</div>
+                </div>
+                <div class="perf-kpi-card" id="kpi-drawdown">
+                    <div class="perf-kpi-label">Max Drawdown</div>
+                    <div class="perf-kpi-value kpi-neutral" id="kpiDrawdownVal">—</div>
+                    <div class="perf-kpi-sub">Peak-to-trough</div>
+                </div>
+                <div class="perf-kpi-card" id="kpi-vol">
+                    <div class="perf-kpi-label">Ann. Volatility</div>
+                    <div class="perf-kpi-value kpi-neutral" id="kpiVolVal">—</div>
+                    <div class="perf-kpi-sub">Annualized σ</div>
+                </div>
+            </div>
+
             <!-- Scoreboard: Returns + Risk -->
             <div class="perf-scoreboard" id="perfScoreboard" style="display:none;">
                 <!-- Returns vs Benchmark -->
                 <div class="perf-returns-card" style="position:relative;">
                     <div class="perf-card-header">
-                        <h3><i class="fas fa-trophy"></i> Portfolio vs S&P 500</h3>
+                        <h3><i class="fas fa-chart-area"></i> Performance vs S&P 500</h3>
                         <button class="chart-expand-btn" onclick="openChartModal('sparkline')" title="Expand chart"><i class="fas fa-expand-alt"></i></button>
                     </div>
                     <div class="perf-controls-row">
@@ -1481,12 +1634,30 @@
                             <span id="perfInlineLoadingMsg">Loading...</span>
                         </div>
                     </div>
-                    <table class="perf-returns-table" id="perfReturnsTable">
-                        <thead>
-                            <tr><th></th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th></tr>
-                        </thead>
-                        <tbody id="perfReturnsBody"></tbody>
-                    </table>
+
+                    <!-- 3-column stats below chart -->
+                    <div class="perf-stats-row">
+                        <!-- Col 1: Period Returns -->
+                        <div class="perf-stat-panel">
+                            <div class="perf-stat-panel-title">Period Returns</div>
+                            <table class="perf-returns-table" id="perfReturnsTable">
+                                <thead>
+                                    <tr><th></th><th>1M</th><th>3M</th><th>6M</th><th>YTD</th><th>1Y</th></tr>
+                                </thead>
+                                <tbody id="perfReturnsBody"></tbody>
+                            </table>
+                        </div>
+                        <!-- Col 2: Calendar Year -->
+                        <div class="perf-stat-panel">
+                            <div class="perf-stat-panel-title">Calendar Year Returns</div>
+                            <div id="perfCalendarYears"></div>
+                        </div>
+                        <!-- Col 3: Risk Metrics -->
+                        <div class="perf-stat-panel">
+                            <div class="perf-stat-panel-title">Risk Metrics</div>
+                            <div id="perfRiskPills"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Risk Radar -->
@@ -3549,14 +3720,74 @@
         var d = perfIntelData;
         if (!d || !d.portfolio) return;
         renderTickerTape(d);
+        renderKpiStrip(d);
         renderReturnsCard(d);
         renderRiskCard(d);
         renderHeatmap(d);
         document.getElementById('perfTicker').style.display = '';
+        document.getElementById('perfKpiStrip').style.display = '';
         document.getElementById('perfScoreboard').style.display = '';
         document.getElementById('perfHeatmap').style.display = '';
-        // Refresh summary cards with perf intel data (e.g. last trading day return)
         updateSummaryCards();
+    }
+
+    function renderKpiStrip(d) {
+        var p = d.portfolio, b = d.benchmark;
+        // Period-aware return: use the selected period if available, fallback to 1y
+        var periodMap = { '3m': 'return3m', '6m': 'return6m', 'ytd': 'returnYtd', '1y': 'return1y', '2y': 'return1y', 'all': 'return1y' };
+        var retKey = periodMap[currentPerfPeriod] || 'return1y';
+        var portRet = p[retKey];
+        var benchRet = b[retKey];
+        var alpha = (portRet != null && benchRet != null) ? portRet - benchRet : null;
+
+        function setKpi(id, valId, subId, val, fmt, subTxt, goodThresh, badThresh, invert) {
+            var el = document.getElementById(valId);
+            var sub = subId ? document.getElementById(subId) : null;
+            if (!el) return;
+            if (val == null) { el.textContent = '—'; el.className = 'perf-kpi-value kpi-neutral'; return; }
+            var str = fmt(val);
+            el.textContent = str;
+            var isGood = invert ? val <= goodThresh : val >= goodThresh;
+            var isBad  = invert ? val >= badThresh  : val <= badThresh;
+            var cls = isGood ? 'kpi-positive' : isBad ? 'kpi-negative' : 'kpi-neutral';
+            el.className = 'perf-kpi-value ' + cls;
+            // Also tint the card's top border via CSS var
+            var card = document.getElementById(id);
+            if (card) {
+                card.style.setProperty('--kpi-accent',
+                    isGood ? 'rgba(32,201,151,0.7)' : isBad ? 'rgba(255,107,107,0.7)' : 'rgba(254,188,17,0.4)');
+            }
+            if (sub && subTxt) sub.textContent = subTxt;
+        }
+
+        var periodLabel = { '3m':'3-Month', '6m':'6-Month', 'ytd':'YTD', '1y':'1-Year', '2y':'2-Year', 'all':'All-Time' }[currentPerfPeriod] || '1-Year';
+
+        setKpi('kpi-return', 'kpiReturnVal', 'kpiReturnSub',
+            portRet,
+            function(v){ return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; },
+            periodLabel,
+            5, 0, false);
+
+        setKpi('kpi-alpha', 'kpiAlphaVal', 'kpiAlphaSub',
+            alpha,
+            function(v){ return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; },
+            'vs S&P 500 (' + (benchRet != null ? (benchRet >= 0 ? '+' : '') + benchRet.toFixed(1) + '%)' : '—)'),
+            0.5, -0.5, false);
+
+        setKpi('kpi-sharpe', 'kpiSharpeVal', null,
+            p.sharpe,
+            function(v){ return v.toFixed(2); },
+            null, 1.0, 0.5, false);
+
+        setKpi('kpi-drawdown', 'kpiDrawdownVal', null,
+            p.maxDrawdown,
+            function(v){ return '-' + v.toFixed(1) + '%'; },
+            null, 10, 20, true);
+
+        setKpi('kpi-vol', 'kpiVolVal', null,
+            p.annualizedVol,
+            function(v){ return v.toFixed(1) + '%'; },
+            null, 15, 25, true);
     }
 
     function renderTickerTape(d) {
@@ -3580,27 +3811,112 @@
     }
 
     function getSparklineConfig(d, canvasId) {
+        var portData = d.sparkline.portfolio;
+        var spyData  = d.sparkline.spy;
+
+        // Build drawdown data: difference below high-watermark (negative values only)
+        var hwm = portData[0] || 0;
+        var drawdownData = portData.map(function(v) {
+            if (v > hwm) hwm = v;
+            var dd = v - hwm;
+            return dd < 0 ? dd : null;
+        });
+
+        // Build outperformance band: portfolio minus spy (show as positive fill when ahead)
+        var outperf = portData.map(function(v, i) {
+            var s = spyData[i];
+            if (v == null || s == null) return null;
+            return v > s ? v : s; // upper bound of the band
+        });
+
         return {
             type: 'line',
             data: {
                 labels: d.sparkline.dates,
                 datasets: [
-                    { label: 'DIG Portfolio', data: d.sparkline.portfolio, borderColor: '#febc11', backgroundColor: 'rgba(254,188,17,0.08)', fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 0, pointHitRadius: 8 },
-                    { label: 'S&P 500', data: d.sparkline.spy, borderColor: 'rgba(77,171,247,0.7)', backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, pointHitRadius: 8 }
+                    // Drawdown shading (below zero, semi-transparent red)
+                    {
+                        label: '_drawdown',
+                        data: drawdownData,
+                        borderColor: 'transparent',
+                        backgroundColor: 'rgba(255,100,100,0.10)',
+                        fill: 'origin',
+                        tension: 0.3,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        pointHitRadius: 0,
+                        order: 3
+                    },
+                    // S&P 500 line
+                    {
+                        label: 'S&P 500',
+                        data: spyData,
+                        borderColor: 'rgba(77,171,247,0.65)',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0.3,
+                        borderWidth: 1.5,
+                        borderDash: [5, 4],
+                        pointRadius: 0,
+                        pointHitRadius: 8,
+                        order: 2
+                    },
+                    // DIG Portfolio line (on top)
+                    {
+                        label: 'DIG Portfolio',
+                        data: portData,
+                        borderColor: '#febc11',
+                        backgroundColor: 'rgba(254,188,17,0.06)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2.5,
+                        pointRadius: 0,
+                        pointHitRadius: 8,
+                        order: 1
+                    }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { labels: { color: '#c9d1d9', usePointStyle: true, pointStyleWidth: 12, font: { size: 11 } } },
-                    tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', titleColor: '#febc11', bodyColor: '#e5e5e5',
-                        callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(2) + '%'; } }
+                    legend: {
+                        labels: {
+                            color: '#c9d1d9', usePointStyle: true, pointStyleWidth: 12, font: { size: 11 },
+                            filter: function(item) { return item.text !== '_drawdown'; }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10,15,22,0.92)',
+                        titleColor: 'rgba(255,255,255,0.6)',
+                        bodyColor: '#e5e5e5',
+                        borderColor: 'rgba(254,188,17,0.3)',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function(ctx) {
+                                if (ctx.dataset.label === '_drawdown') return null;
+                                var v = ctx.parsed.y;
+                                return ctx.dataset.label + ': ' + (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+                            },
+                            afterBody: function(items) {
+                                var port = null, spy = null;
+                                items.forEach(function(i) {
+                                    if (i.dataset.label === 'DIG Portfolio') port = i.parsed.y;
+                                    if (i.dataset.label === 'S&P 500') spy = i.parsed.y;
+                                });
+                                if (port != null && spy != null) {
+                                    var alpha = port - spy;
+                                    return ['──────────────', 'Alpha: ' + (alpha >= 0 ? '+' : '') + alpha.toFixed(2) + '%'];
+                                }
+                                return [];
+                            }
+                        }
                     }
                 },
                 scales: {
-                    x: { display: true, ticks: { color: 'rgba(255,255,255,0.3)', maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
-                    y: { display: true, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 }, callback: function(v) { return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                    x: { display: true, ticks: { color: 'rgba(255,255,255,0.25)', maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
+                    y: { display: true, ticks: { color: 'rgba(255,255,255,0.25)', font: { size: 10 }, callback: function(v) { return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
                 }
             }
         };
@@ -3635,26 +3951,73 @@
         var ctx = document.getElementById('perfSparklineChart');
         if (ctx) { perfSparklineChart = new Chart(ctx.getContext('2d'), getSparklineConfig(d)); }
 
+        // ── Period Returns table ──
         var periods = ['return1m', 'return3m', 'return6m', 'returnYtd', 'return1y'];
         function retCell(val) {
-            if (val == null) return '<td>\u2014</td>';
+            if (val == null) return '<td>—</td>';
             var cls = val >= 0 ? 'ret-positive' : 'ret-negative';
             return '<td class="' + cls + '">' + (val >= 0 ? '+' : '') + val.toFixed(2) + '%</td>';
         }
-        var tbody = '<tr><td class="ret-label" style="color:#febc11;">\u26A1 DIG Portfolio</td>';
+        var tbody = '<tr><td class="ret-label" style="color:#febc11;">⚡ DIG</td>';
         periods.forEach(function(k) { tbody += retCell(p[k]); });
-        tbody += '</tr><tr><td class="ret-label" style="color:#4dabf7;">\uD83D\uDCCA S&P 500</td>';
+        tbody += '</tr><tr><td class="ret-label" style="color:#4dabf7;">📊 SPY</td>';
         periods.forEach(function(k) { tbody += retCell(b[k]); });
-        tbody += '</tr><tr class="alpha-row"><td class="ret-label">\uD83C\uDFC6 Alpha</td>';
+        tbody += '</tr><tr class="alpha-row"><td class="ret-label">🏆 α</td>';
         periods.forEach(function(k) {
             var pv = p[k], bv = b[k];
-            if (pv == null || bv == null) { tbody += '<td>\u2014</td>'; return; }
+            if (pv == null || bv == null) { tbody += '<td>—</td>'; return; }
             var alpha = pv - bv;
             var cls = alpha >= 0 ? 'ret-positive' : 'ret-negative';
             tbody += '<td class="' + cls + '">' + (alpha >= 0 ? '+' : '') + alpha.toFixed(2) + '%</td>';
         });
         tbody += '</tr>';
         document.getElementById('perfReturnsBody').innerHTML = tbody;
+
+        // ── Calendar Year Returns ──
+        var calEl = document.getElementById('perfCalendarYears');
+        if (calEl) {
+            var calYears = p.calendarYears || null;
+            var calSpyYears = b.calendarYears || null;
+            if (calYears && Object.keys(calYears).length > 0) {
+                var vals = Object.values(calYears);
+                var maxAbs = Math.max.apply(null, vals.map(Math.abs)) || 1;
+                calEl.innerHTML = Object.keys(calYears).sort().reverse().map(function(yr) {
+                    var v = calYears[yr];
+                    var spyV = calSpyYears ? calSpyYears[yr] : null;
+                    var pct = Math.min(Math.abs(v) / maxAbs * 100, 100);
+                    var posClass = v >= 0 ? 'cal-pos' : 'cal-neg';
+                    var spyStr = spyV != null ? (spyV >= 0 ? '+' : '') + spyV.toFixed(1) + '%' : '';
+                    return '<div class="cal-year-row">' +
+                        '<span class="cal-year-label">' + yr + '</span>' +
+                        '<div class="cal-bar-track"><div class="cal-bar-fill ' + posClass + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+                        '<span class="cal-year-val ' + posClass + '">' + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>' +
+                        (spyStr ? '<span class="cal-spy-val">' + spyStr + '</span>' : '') +
+                        '</div>';
+                }).join('');
+            } else {
+                // Derive from sparkline data if calendarYears not available
+                calEl.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:0.75rem;">Calendar data available after full year of trading</div>';
+            }
+        }
+
+        // ── Risk Pills ──
+        var riskEl = document.getElementById('perfRiskPills');
+        if (riskEl) {
+            var metrics = [
+                { label: 'Beta',       val: p.beta.toFixed(2),               cls: Math.abs(p.beta - 1) < 0.2 ? 'good' : Math.abs(p.beta - 1) < 0.5 ? 'warn' : 'bad' },
+                { label: 'Sharpe',     val: p.sharpe.toFixed(2),             cls: p.sharpe >= 1.0 ? 'good' : p.sharpe >= 0.5 ? 'warn' : 'bad' },
+                { label: 'Sortino',    val: p.sortino.toFixed(2),            cls: p.sortino >= 1.5 ? 'good' : p.sortino >= 0.8 ? 'warn' : 'bad' },
+                { label: 'Vol (Ann.)', val: p.annualizedVol.toFixed(1) + '%', cls: p.annualizedVol < 15 ? 'good' : p.annualizedVol < 25 ? 'warn' : 'bad' },
+                { label: 'Max DD',     val: '-' + p.maxDrawdown.toFixed(1) + '%', cls: p.maxDrawdown < 10 ? 'good' : p.maxDrawdown < 20 ? 'warn' : 'bad' },
+                { label: 'Eff. Pos.', val: p.effectivePositions.toFixed(1),  cls: p.effectivePositions >= 10 ? 'good' : p.effectivePositions >= 6 ? 'warn' : 'bad' }
+            ];
+            riskEl.innerHTML = metrics.map(function(m) {
+                return '<div class="risk-pill-row"><span class="risk-pill-label">' + m.label + '</span><span class="risk-pill-val ' + m.cls + '">' + m.val + '</span></div>';
+            }).join('');
+        }
+
+        // Also refresh KPI strip with latest data in case period changed
+        renderKpiStrip(d);
     }
 
     function renderRiskCard(d) {

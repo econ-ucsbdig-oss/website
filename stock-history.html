@@ -256,42 +256,78 @@
         .section-header i { color: #febc11; }
 
         /* ===== WHAT-IF TRADE ANALYZER ===== */
-        .what-if-section {
+        /* ── Scenario Lab ── */
+        .scenario-lab {
             margin-top: 2.5rem; margin-bottom: 2.5rem;
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(254,188,17,0.15);
-            border-radius: 16px; padding: 2rem; backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(254,188,17,0.2);
+            border-radius: 20px; padding: 2rem 2rem 1.5rem; backdrop-filter: blur(12px);
+            box-shadow: 0 4px 40px rgba(0,0,0,0.25);
         }
-        .what-if-header {
-            display: flex; align-items: center; justify-content: space-between;
-            cursor: pointer; user-select: none;
+        .scenario-lab-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 1.75rem;
         }
-        .what-if-header h2 {
-            font-size: 1.4rem; font-weight: 700;
+        .scenario-lab-title {
+            font-size: 1.5rem; font-weight: 800;
             background: linear-gradient(135deg, #febc11, #ffd700);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            display: flex; align-items: center; gap: 0.7rem;
+            display: flex; align-items: center; gap: 0.6rem;
+            letter-spacing: -0.3px;
         }
-        .what-if-header .toggle-icon { color: #febc11; transition: transform 0.3s; font-size: 1rem; }
-        .what-if-header .toggle-icon.open { transform: rotate(180deg); }
-        .what-if-subtitle { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin: 0.3rem 0 0 0; }
-        .what-if-body { display: none; margin-top: 1.5rem; }
-        .what-if-body.open { display: block; }
+        .scenario-lab-subtitle { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 0.3rem; }
 
-        .what-if-tabs {
-            display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+        /* 4-card scenario picker */
+        .scenario-card-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem;
+            margin-bottom: 2rem;
         }
-        .what-if-tab {
-            padding: 0.6rem 1.2rem; border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 8px; background: rgba(255,255,255,0.04);
-            color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.85rem;
-            font-weight: 600; transition: all 0.3s;
+        @media (max-width: 800px) { .scenario-card-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .scenario-card-grid { grid-template-columns: 1fr; } }
+
+        .scenario-card {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 1.2rem; cursor: pointer;
+            transition: all 0.25s ease; text-align: center; position: relative; overflow: hidden;
         }
-        .what-if-tab:hover { border-color: rgba(254,188,17,0.4); color: #febc11; }
-        .what-if-tab.active {
-            background: rgba(254,188,17,0.12); border-color: #febc11; color: #febc11;
+        .scenario-card:hover {
+            border-color: rgba(254,188,17,0.4);
+            background: rgba(254,188,17,0.06);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        .scenario-card.sc-active {
+            border-color: #febc11;
+            background: rgba(254,188,17,0.1);
+            box-shadow: 0 0 0 2px rgba(254,188,17,0.25), 0 6px 24px rgba(0,0,0,0.25);
+        }
+        .scenario-card.sc-active::after {
+            content: '✓'; position: absolute; top: 0.5rem; right: 0.7rem;
+            color: #febc11; font-size: 0.75rem; font-weight: 700;
+        }
+        .sc-icon {
+            font-size: 1.8rem; margin-bottom: 0.5rem; display: block;
+            filter: grayscale(0.3);
+        }
+        .scenario-card.sc-active .sc-icon { filter: none; }
+        .sc-title {
+            font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.85);
+            margin-bottom: 0.3rem;
+        }
+        .scenario-card.sc-active .sc-title { color: #febc11; }
+        .sc-desc { font-size: 0.72rem; color: rgba(255,255,255,0.35); line-height: 1.4; }
+
+        /* Scenario form area */
+        .scenario-form-area {
+            display: none; animation: slideDown 0.25s ease both;
+        }
+        .scenario-form-area.sf-open { display: block; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .what-if-panel { min-height: 120px; }
+        /* Keep original what-if inner form styles */
+        .what-if-panel { min-height: 80px; }
 
         .wi-form-group { margin-bottom: 1rem; }
         .wi-form-group label {
@@ -357,18 +393,59 @@
 
         /* Results */
         .what-if-results { margin-top: 2rem; display: none; }
-        .what-if-results.visible { display: block; }
-
-        .wi-impact-card {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(254,188,17,0.2);
-            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;
+        .what-if-results.visible { display: block; animation: fadeInUp 0.4s ease both; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-        .wi-impact-card .impact-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-        .wi-impact-card .impact-value { font-size: 2rem; font-weight: 700; }
-        .wi-impact-card .impact-value.positive { color: #4ade80; }
-        .wi-impact-card .impact-value.negative { color: #f87171; }
-        .wi-impact-card .impact-detail { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem; }
 
+        /* Impact Hero */
+        .wi-impact-hero {
+            display: flex; align-items: center; gap: 2rem;
+            background: rgba(255,255,255,0.04); border-radius: 16px;
+            padding: 1.75rem 2rem; margin-bottom: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap;
+        }
+        .wi-hero-number {
+            font-size: 3rem; font-weight: 900; letter-spacing: -1.5px; line-height: 1;
+        }
+        .wi-hero-number.positive { color: #20c997; }
+        .wi-hero-number.negative { color: #ff6b6b; }
+        .wi-hero-detail { flex: 1; min-width: 160px; }
+        .wi-hero-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); margin-bottom: 0.3rem; }
+        .wi-hero-desc { font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.4; }
+        .wi-hero-badge {
+            padding: 0.4rem 1rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700;
+            white-space: nowrap;
+        }
+        .wi-hero-badge.better { background: rgba(32,201,151,0.15); border: 1px solid rgba(32,201,151,0.4); color: #20c997; }
+        .wi-hero-badge.worse  { background: rgba(255,107,107,0.15); border: 1px solid rgba(255,107,107,0.4); color: #ff6b6b; }
+
+        /* Tearsheet comparison */
+        .wi-tearsheet {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.85rem; margin-bottom: 1.5rem;
+        }
+        @media (max-width: 700px) { .wi-tearsheet { grid-template-columns: 1fr; } }
+        .wi-ts-col {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px; padding: 1.1rem;
+        }
+        .wi-ts-col.ts-diff { border-color: rgba(254,188,17,0.2); background: rgba(254,188,17,0.04); }
+        .wi-ts-col h4 {
+            font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.35); margin-bottom: 0.7rem;
+            padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .wi-ts-col.ts-diff h4 { color: rgba(254,188,17,0.6); border-bottom-color: rgba(254,188,17,0.1); }
+        .wi-metric-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.38rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.82rem;
+        }
+        .wi-metric-row:last-child { border-bottom: none; }
+        .wi-metric-label { color: rgba(255,255,255,0.4); }
+        .wi-metric-value { font-weight: 700; }
+
+        /* Keep old comparison grid for backward compat */
         .wi-comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
         @media (max-width: 600px) { .wi-comparison-grid { grid-template-columns: 1fr; } }
         .wi-comparison-card {
@@ -379,12 +456,17 @@
             font-size: 0.75rem; color: rgba(255,255,255,0.4);
             text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;
         }
-        .wi-metric-row {
-            display: flex; justify-content: space-between; padding: 0.4rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.85rem;
+
+        /* Old impact card (kept for hypo results) */
+        .wi-impact-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(254,188,17,0.2);
+            border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center;
         }
-        .wi-metric-label { color: rgba(255,255,255,0.5); }
-        .wi-metric-value { font-weight: 600; }
+        .wi-impact-card .impact-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .wi-impact-card .impact-value { font-size: 2rem; font-weight: 700; }
+        .wi-impact-card .impact-value.positive { color: #4ade80; }
+        .wi-impact-card .impact-value.negative { color: #f87171; }
+        .wi-impact-card .impact-detail { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem; }
 
         .wi-chart-container {
             background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
@@ -526,30 +608,41 @@
                 </div>
             </div>
 
-            <!-- What-If Trade Analyzer -->
-            <section class="what-if-section" id="whatIfSection">
-                <div class="what-if-header" onclick="toggleWhatIf()">
+            <!-- Scenario Lab -->
+            <section class="scenario-lab" id="whatIfSection">
+                <div class="scenario-lab-header">
                     <div>
-                        <h2><i class="fas fa-flask"></i> What-If Trade Analyzer</h2>
-                        <p class="what-if-subtitle">See how the portfolio would have performed with different trades</p>
+                        <div class="scenario-lab-title">⚗️ Scenario Lab</div>
+                        <div class="scenario-lab-subtitle">Explore alternate trade histories — what could have been</div>
                     </div>
-                    <i class="fas fa-chevron-down toggle-icon" id="whatIfToggle"></i>
                 </div>
-                <div class="what-if-body" id="whatIfBody">
-                    <div class="what-if-tabs">
-                        <button class="what-if-tab active" data-tab="undo" onclick="switchWhatIfTab('undo')">
-                            <i class="fas fa-undo"></i> Undo a Trade
-                        </button>
-                        <button class="what-if-tab" data-tab="modify" onclick="switchWhatIfTab('modify')">
-                            <i class="fas fa-edit"></i> Modify a Trade
-                        </button>
-                        <button class="what-if-tab" data-tab="add" onclick="switchWhatIfTab('add')">
-                            <i class="fas fa-plus-circle"></i> Add Hypothetical
-                        </button>
-                        <button class="what-if-tab" data-tab="frozen" onclick="switchWhatIfTab('frozen')">
-                            <i class="fas fa-snowflake"></i> Frozen Portfolio
-                        </button>
+
+                <!-- 4-card scenario picker -->
+                <div class="scenario-card-grid">
+                    <div class="scenario-card sc-active" data-tab="undo" onclick="switchWhatIfTab('undo')">
+                        <span class="sc-icon">↩️</span>
+                        <div class="sc-title">Undo a Trade</div>
+                        <div class="sc-desc">Remove a buy or sell from history and see the impact</div>
                     </div>
+                    <div class="scenario-card" data-tab="modify" onclick="switchWhatIfTab('modify')">
+                        <span class="sc-icon">✏️</span>
+                        <div class="sc-title">Tweak a Trade</div>
+                        <div class="sc-desc">Change the size or price of an existing trade</div>
+                    </div>
+                    <div class="scenario-card" data-tab="add" onclick="switchWhatIfTab('add')">
+                        <span class="sc-icon">✨</span>
+                        <div class="sc-title">Add a Position</div>
+                        <div class="sc-desc">What if we'd bought NVDA in 2022? Try any ticker</div>
+                    </div>
+                    <div class="scenario-card" data-tab="frozen" onclick="switchWhatIfTab('frozen')">
+                        <span class="sc-icon">❄️</span>
+                        <div class="sc-title">Freeze & Compare</div>
+                        <div class="sc-desc">Hold the portfolio since a past date, no changes</div>
+                    </div>
+                </div>
+
+                <!-- Form area (always visible, swaps content) -->
+                <div class="scenario-form-area sf-open" id="scenarioFormArea">
                     <div class="what-if-panel" id="whatIfPanel"></div>
                     <div class="what-if-results" id="whatIfResults"></div>
                 </div>
@@ -627,6 +720,8 @@ async function loadStockHistory() {
         renderSummary();
         renderTable();
         renderLeaderboard();
+        // Auto-init Scenario Lab with first tab
+        switchWhatIfTab('undo');
         document.getElementById('loadingOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = '';
     } catch (err) {
@@ -1106,21 +1201,18 @@ var whatIfCurrentTab = 'undo';
 var whatIfOpen = false;
 
 function toggleWhatIf() {
-    whatIfOpen = !whatIfOpen;
-    document.getElementById('whatIfBody').classList.toggle('open', whatIfOpen);
-    document.getElementById('whatIfToggle').classList.toggle('open', whatIfOpen);
-    if (whatIfOpen && allStocks.length > 0) {
-        renderWhatIfTab(whatIfCurrentTab);
-    }
+    // Legacy — no longer used but kept for safety
 }
 
 function switchWhatIfTab(tab) {
     whatIfCurrentTab = tab;
-    document.querySelectorAll('.what-if-tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.tab === tab);
+    // Update scenario card highlights
+    document.querySelectorAll('.scenario-card').forEach(function(c) {
+        c.classList.toggle('sc-active', c.dataset.tab === tab);
     });
-    document.getElementById('whatIfResults').classList.remove('visible');
-    document.getElementById('whatIfResults').innerHTML = '';
+    var resultsEl = document.getElementById('whatIfResults');
+    resultsEl.classList.remove('visible');
+    resultsEl.innerHTML = '';
     renderWhatIfTab(tab);
 }
 
@@ -1488,41 +1580,76 @@ function computeStockMetrics(txs, stock) {
 
 function showComparisonResults(stock, actual, whatIf, diff, mode, removedTxs) {
     var resultsEl = document.getElementById('whatIfResults');
-    var impactCls = diff.returnDiff >= 0 ? 'positive' : 'negative';
-    var impactSign = diff.returnDiff >= 0 ? '+' : '';
-    var valueSign = diff.valueDiff >= 0 ? '+' : '';
+    var isBetter = diff.valueDiff >= 0;
+    var heroSign = diff.valueDiff >= 0 ? '+' : '-';
+    var retSign  = diff.returnDiff >= 0 ? '+' : '';
+    var heroCls  = isBetter ? 'positive' : 'negative';
 
-    var modeLabel = mode === 'undo' ? 'Undoing' : 'Modifying';
-    var descText = mode === 'undo'
-        ? modeLabel + ' ' + removedTxs.length + ' transaction(s) on ' + stock.symbol
-        : modeLabel + ' trades on ' + stock.symbol;
+    var scenarioLabel = mode === 'undo'
+        ? 'Undo ' + removedTxs.length + ' trade' + (removedTxs.length !== 1 ? 's' : '') + ' on ' + stock.symbol
+        : 'Modified trades on ' + stock.symbol;
 
-    var html = '<div class="wi-impact-card">' +
-        '<div class="impact-label">' + descText + '</div>' +
-        '<div class="impact-value ' + impactCls + '">' + impactSign + diff.returnDiff.toFixed(2) + '% Return Impact</div>' +
-        '<div class="impact-detail">' + valueSign + fmtCurrency(Math.abs(diff.valueDiff)) + ' value difference • ' +
-        (diff.valueDiff >= 0 ? 'Would have been better' : 'Would have been worse') + '</div>' +
+    // ── Impact Hero ──
+    var html = '<div class="wi-impact-hero">' +
+        '<div>' +
+            '<div class="wi-hero-label">Value Difference</div>' +
+            '<div class="wi-hero-number ' + heroCls + '">' + heroSign + fmtCurrency(Math.abs(diff.valueDiff)) + '</div>' +
+        '</div>' +
+        '<div class="wi-hero-detail">' +
+            '<div class="wi-hero-label">Scenario</div>' +
+            '<div class="wi-hero-desc">' + scenarioLabel + '</div>' +
+            '<div style="margin-top:0.4rem;font-size:0.82rem;color:rgba(255,255,255,0.45);">' +
+                retSign + diff.returnDiff.toFixed(2) + '% return difference &nbsp;•&nbsp; ' +
+                (diff.cagrDiff >= 0 ? '+' : '') + diff.cagrDiff.toFixed(2) + '% CAGR difference' +
+            '</div>' +
+        '</div>' +
+        '<div class="wi-hero-badge ' + (isBetter ? 'better' : 'worse') + '">' +
+            (isBetter ? '📈 Would have been better' : '📉 Would have been worse') +
+        '</div>' +
         '</div>';
 
-    html += '<div class="wi-comparison-grid">' +
-        '<div class="wi-comparison-card"><h4><i class="fas fa-chart-line" style="color:#60a5fa;"></i> Actual</h4>' +
-        wiMetricRow('Total Invested', fmtCurrency(actual.totalCost)) +
-        wiMetricRow('Current Value', fmtCurrency(actual.currentValue)) +
-        wiMetricRow('Sell Proceeds', fmtCurrency(actual.totalSellProceeds)) +
-        wiMetricRow('Total Return', (actual.totalReturn >= 0 ? '+' : '') + actual.totalReturn.toFixed(2) + '%', actual.totalReturn >= 0 ? '#4ade80' : '#f87171') +
-        wiMetricRow('CAGR', (actual.cagr >= 0 ? '+' : '') + actual.cagr.toFixed(2) + '%', actual.cagr >= 0 ? '#4ade80' : '#f87171') +
-        wiMetricRow('Net Shares', actual.netShares.toFixed(3)) +
-        '</div>' +
-        '<div class="wi-comparison-card"><h4><i class="fas fa-flask" style="color:#febc11;"></i> What-If</h4>' +
-        wiMetricRow('Total Invested', fmtCurrency(whatIf.totalCost), whatIf.totalCost !== actual.totalCost ? '#febc11' : null) +
-        wiMetricRow('Current Value', fmtCurrency(whatIf.currentValue), whatIf.currentValue !== actual.currentValue ? '#febc11' : null) +
-        wiMetricRow('Sell Proceeds', fmtCurrency(whatIf.totalSellProceeds), whatIf.totalSellProceeds !== actual.totalSellProceeds ? '#febc11' : null) +
-        wiMetricRow('Total Return', (whatIf.totalReturn >= 0 ? '+' : '') + whatIf.totalReturn.toFixed(2) + '%', whatIf.totalReturn >= actual.totalReturn ? '#4ade80' : '#f87171') +
-        wiMetricRow('CAGR', (whatIf.cagr >= 0 ? '+' : '') + whatIf.cagr.toFixed(2) + '%', whatIf.cagr >= actual.cagr ? '#4ade80' : '#f87171') +
-        wiMetricRow('Net Shares', whatIf.netShares.toFixed(3), whatIf.netShares !== actual.netShares ? '#febc11' : null) +
-        '</div></div>';
+    // ── 3-column Tearsheet ──
+    function diff$(a, b) { var d = a - b; return (d >= 0 ? '+' : '') + fmtCurrency(Math.abs(d)); }
+    function diffPct(a, b) { var d = a - b; return (d >= 0 ? '+' : '') + d.toFixed(2) + '%'; }
+    function tsRow(label, val, color) {
+        var style = color ? ' style="color:' + color + ';"' : '';
+        return '<div class="wi-metric-row"><span class="wi-metric-label">' + label + '</span><span class="wi-metric-value"' + style + '>' + val + '</span></div>';
+    }
 
-    // Cumulative return chart using price history
+    html += '<div class="wi-tearsheet">' +
+        // Actual column
+        '<div class="wi-ts-col">' +
+            '<h4>📊 Actual</h4>' +
+            tsRow('Invested', fmtCurrency(actual.totalCost)) +
+            tsRow('Current Value', fmtCurrency(actual.currentValue)) +
+            tsRow('Sell Proceeds', fmtCurrency(actual.totalSellProceeds)) +
+            tsRow('Total Return', (actual.totalReturn >= 0 ? '+' : '') + actual.totalReturn.toFixed(2) + '%', actual.totalReturn >= 0 ? '#20c997' : '#ff6b6b') +
+            tsRow('CAGR', (actual.cagr >= 0 ? '+' : '') + actual.cagr.toFixed(2) + '%', actual.cagr >= 0 ? '#20c997' : '#ff6b6b') +
+            tsRow('Shares', actual.netShares.toFixed(3)) +
+        '</div>' +
+        // What-If column
+        '<div class="wi-ts-col">' +
+            '<h4>⚗️ What-If</h4>' +
+            tsRow('Invested', fmtCurrency(whatIf.totalCost), whatIf.totalCost !== actual.totalCost ? '#febc11' : null) +
+            tsRow('Current Value', fmtCurrency(whatIf.currentValue), whatIf.currentValue !== actual.currentValue ? (whatIf.currentValue > actual.currentValue ? '#20c997' : '#ff6b6b') : null) +
+            tsRow('Sell Proceeds', fmtCurrency(whatIf.totalSellProceeds), whatIf.totalSellProceeds !== actual.totalSellProceeds ? '#febc11' : null) +
+            tsRow('Total Return', (whatIf.totalReturn >= 0 ? '+' : '') + whatIf.totalReturn.toFixed(2) + '%', whatIf.totalReturn >= actual.totalReturn ? '#20c997' : '#ff6b6b') +
+            tsRow('CAGR', (whatIf.cagr >= 0 ? '+' : '') + whatIf.cagr.toFixed(2) + '%', whatIf.cagr >= actual.cagr ? '#20c997' : '#ff6b6b') +
+            tsRow('Shares', whatIf.netShares.toFixed(3), whatIf.netShares !== actual.netShares ? '#febc11' : null) +
+        '</div>' +
+        // Difference column
+        '<div class="wi-ts-col ts-diff">' +
+            '<h4>Δ Difference</h4>' +
+            tsRow('Invested Δ', diff$(whatIf.totalCost, actual.totalCost), null) +
+            tsRow('Value Δ', diff$(whatIf.currentValue, actual.currentValue), isBetter ? '#20c997' : '#ff6b6b') +
+            tsRow('Proceeds Δ', diff$(whatIf.totalSellProceeds, actual.totalSellProceeds), null) +
+            tsRow('Return Δ', diffPct(whatIf.totalReturn, actual.totalReturn), diff.returnDiff >= 0 ? '#20c997' : '#ff6b6b') +
+            tsRow('CAGR Δ', diffPct(whatIf.cagr, actual.cagr), diff.cagrDiff >= 0 ? '#20c997' : '#ff6b6b') +
+            tsRow('Shares Δ', (whatIf.netShares - actual.netShares >= 0 ? '+' : '') + (whatIf.netShares - actual.netShares).toFixed(3), null) +
+        '</div>' +
+        '</div>';
+
+    // Chart
     html += '<div class="wi-chart-container">' +
         '<h4><i class="fas fa-chart-area"></i> Price Performance — ' + stock.symbol + '</h4>' +
         '<div class="wi-chart-wrap"><canvas id="whatIfChart"></canvas></div></div>';
@@ -1532,10 +1659,7 @@ function showComparisonResults(stock, actual, whatIf, diff, mode, removedTxs) {
     resultsEl.innerHTML = html;
     resultsEl.classList.add('visible');
 
-    // Draw comparison chart
     setTimeout(function() { drawWhatIfChart(stock); }, 50);
-
-    // Scroll to results
     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
