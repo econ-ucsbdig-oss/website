@@ -1431,6 +1431,139 @@
         }
         .chart-download-btn:hover { background: rgba(254,188,17,0.3); }
 
+        /* btn-info style for analytics export button */
+        .btn-info {
+            background: rgba(96,165,250,0.15);
+            border-color: rgba(96,165,250,0.4);
+            color: #60a5fa;
+        }
+        .btn-info:hover { background: rgba(96,165,250,0.28); }
+
+        /* Methodology panel */
+        .methodology-panel {
+            background: rgba(15,20,30,0.6);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            margin-top: 1.2rem;
+            overflow: hidden;
+        }
+        .methodology-toggle {
+            width: 100%;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 0.9rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: color 0.2s, background 0.2s;
+        }
+        .methodology-toggle:hover { color: #febc11; background: rgba(254,188,17,0.04); }
+        .methodology-toggle i.fa-flask { color: #febc11; margin-right: 0.5rem; }
+        #methodologyChevron { transition: transform 0.25s; }
+        .methodology-body {
+            padding: 0 1.4rem 1.4rem;
+        }
+        .methodology-intro {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.82rem;
+            line-height: 1.6;
+            margin-bottom: 1.2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .methodology-intro strong { color: rgba(255,255,255,0.75); }
+        .methodology-intro ul { margin: 0.5rem 0 0 1.2rem; }
+        .methodology-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 900px) { .methodology-grid { grid-template-columns: 1fr; } }
+        .meth-block {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 8px;
+            padding: 0.9rem 1rem;
+        }
+        .meth-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #febc11;
+            margin-bottom: 0.45rem;
+            letter-spacing: 0.02em;
+        }
+        .meth-title i { margin-right: 0.4rem; }
+        .meth-formula {
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: #c9d1d9;
+            background: rgba(0,0,0,0.25);
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+        .meth-desc {
+            font-size: 0.76rem;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.55;
+            margin-bottom: 0.6rem;
+        }
+        .meth-desc em { color: rgba(255,255,255,0.6); font-style: normal; font-weight: 600; }
+        .meth-replicate {
+            font-size: 0.73rem;
+            color: rgba(255,255,255,0.35);
+            line-height: 1.4;
+        }
+        .meth-replicate code {
+            background: rgba(96,165,250,0.1);
+            border: 1px solid rgba(96,165,250,0.15);
+            border-radius: 3px;
+            padding: 0.1rem 0.35rem;
+            color: #93c5fd;
+            font-size: 0.7rem;
+        }
+        .meth-tag {
+            background: rgba(254,188,17,0.12);
+            border: 1px solid rgba(254,188,17,0.2);
+            border-radius: 3px;
+            color: #febc11;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.1rem 0.4rem;
+            margin-right: 0.4rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .meth-datasources {
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .meth-ds-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 0.7rem;
+            letter-spacing: 0.03em;
+        }
+        .meth-ds-title i { color: #febc11; margin-right: 0.4rem; }
+        .meth-ds-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.74rem;
+        }
+        .meth-ds-table tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .meth-ds-table tr:last-child { border-bottom: none; }
+        .meth-ds-table td { padding: 0.4rem 0.6rem; color: rgba(255,255,255,0.45); }
+        .meth-ds-table td:first-child { color: rgba(255,255,255,0.7); font-weight: 600; width: 30%; white-space: nowrap; }
+
         /* Period selector + mode toggle */
         .perf-controls-row {
             display: flex;
@@ -1560,6 +1693,9 @@
                     </button>
                     <button class="btn btn-warning" onclick="exportCSV()">
                         <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <button class="btn btn-info" onclick="exportAnalyticsCSV()" id="exportAnalyticsBtn" title="Download all computed analytics metrics as CSV">
+                        <i class="fas fa-calculator"></i> Export Analytics
                     </button>
                 </div>
             </div>
@@ -1703,6 +1839,119 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Loading state -->
+            <div class="perf-loading" id="perfLoading">
+                <div class="spinner"></div>
+                <div>Loading Performance Intelligence...</div>
+                <div style="font-size:0.75rem; margin-top:0.5rem; color:rgba(255,255,255,0.3);">Crunching 1 year of daily returns across all holdings</div>
+            </div>
+
+            <!-- Methodology / Replication Instructions -->
+            <div class="methodology-panel" id="methodologyPanel">
+                <button class="methodology-toggle" onclick="toggleMethodology()">
+                    <span><i class="fas fa-flask"></i> How These Numbers Are Calculated</span>
+                    <i class="fas fa-chevron-down" id="methodologyChevron"></i>
+                </button>
+                <div class="methodology-body" id="methodologyBody" style="display:none;">
+                    <div class="methodology-intro">
+                        <p>All metrics are computed from daily closing prices sourced from <strong>Polygon.io</strong>. The two modes differ in how portfolio weights are determined:</p>
+                        <ul>
+                            <li><strong>Current Weights</strong> — applies today's holdings weights to the entire lookback period (simulated).</li>
+                            <li><strong>True Historical (default)</strong> — reconstructs actual day-by-day holdings from transaction records, computing a pure price TWR that excludes capital additions (wire transfers, donations).</li>
+                        </ul>
+                    </div>
+
+                    <div class="methodology-grid">
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-chart-line"></i> Daily Returns</div>
+                            <div class="meth-formula">r<sub>t</sub> = (P<sub>t</sub> − P<sub>t−1</sub>) / P<sub>t−1</sub></div>
+                            <div class="meth-desc">Simple price return for each holding each day. Portfolio daily return = weighted sum of holding returns. In True Historical mode, yesterday's holdings snapshot is used as weights — new capital enters the denominator only on the following day, eliminating distortion from donations/wire transfers.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=( B2 - B1 ) / B1</code> down a daily price column, then <code>=SUMPRODUCT(weights, returns)</code> for the portfolio.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-layer-group"></i> Cumulative Return</div>
+                            <div class="meth-formula">C<sub>t</sub> = C<sub>t−1</sub> × (1 + r<sub>t</sub>) &nbsp;, &nbsp; C<sub>0</sub> = 1</div>
+                            <div class="meth-desc">Chain-linked (geometric) compounding. Reported return = (C<sub>final</sub> − 1) × 100%. Period sub-returns (1M, 3M, 6M, YTD) use the ratio of cumulative values at the relevant start date.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Start with 1 in row 2. Each subsequent row: <code>=C1*(1+r)</code>. Final return: <code>=(C_last - 1)</code>.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-ruler"></i> Annualized Volatility</div>
+                            <div class="meth-formula">σ<sub>ann</sub> = σ<sub>daily</sub> × √252</div>
+                            <div class="meth-desc">Sample standard deviation of daily returns (divides by n−1), annualized by multiplying by √252 (trading days per year). Expressed as a percentage.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=STDEV(daily_returns) * SQRT(252)</code></div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-balance-scale"></i> Sharpe Ratio</div>
+                            <div class="meth-formula">S = (r̄<sub>excess</sub> / σ<sub>excess</sub>) × √252</div>
+                            <div class="meth-desc">Excess return = daily return − (4.3% ÷ 252). The ratio of mean daily excess return to sample std dev of daily excess returns, scaled to annual. Risk-free rate: <strong>4.3% per annum</strong> (≈ current T-Bill rate).</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=AVERAGE(excess_rets)/STDEV(excess_rets)*SQRT(252)</code> where <code>excess_rets = daily_rets - (0.043/252)</code>.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-arrow-down"></i> Sortino Ratio</div>
+                            <div class="meth-formula">Sortino = (r̄<sub>excess</sub> / σ<sub>down</sub>) × √252</div>
+                            <div class="meth-formula" style="font-size:0.78rem; margin-top:0.3rem;">σ<sub>down</sub> = √( Σ<sub>all days</sub> min(r<sub>excess</sub>, 0)² / n )</div>
+                            <div class="meth-desc">Like Sharpe, but penalises only downside volatility. Downside deviation = RMS of negative excess returns, summed over <em>all</em> n days (positive days contribute 0). Dividing by n (all days) — not just the count of negative days — is the standard formula; using negative-day count only would artificially inflate the ratio.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=AVERAGE(excess)/SQRT(SUMPRODUCT(MIN(excess,0)^2)/COUNT(excess))*SQRT(252)</code></div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-magnet"></i> Beta</div>
+                            <div class="meth-formula">β = Cov(r<sub>port</sub>, r<sub>SPY</sub>) / Var(r<sub>SPY</sub>)</div>
+                            <div class="meth-desc">OLS slope of portfolio daily returns on SPY daily returns over the selected period. Benchmark: S&P 500 via SPY ETF. β > 1 = amplified market moves; β < 1 = dampened.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=COVARIANCE.P(port_rets, spy_rets)/VAR.P(spy_rets)</code> or use <code>=SLOPE(port_rets, spy_rets)</code>.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-star"></i> Jensen's Alpha</div>
+                            <div class="meth-formula">α = (R<sub>port</sub> − r<sub>f</sub>) − β × (R<sub>SPY</sub> − r<sub>f</sub>)</div>
+                            <div class="meth-desc">Annualized excess return above the CAPM expected return. R<sub>port</sub> and R<sub>SPY</sub> are geometric annualizations: (C<sub>final</sub>)<sup>252/n</sup> − 1. r<sub>f</sub> = 4.3%. Positive alpha = outperformance after adjusting for market risk taken.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Annualize with <code>=(1+total_ret)^(252/n)-1</code>, then <code>=ann_port - rf - beta*(ann_spy - rf)</code>.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-water"></i> Max Drawdown</div>
+                            <div class="meth-formula">MDD = max<sub>t</sub>( (Peak<sub>t</sub> − C<sub>t</sub>) / Peak<sub>t</sub> )</div>
+                            <div class="meth-desc">Largest peak-to-trough decline in the cumulative return series over the selected period. Peak<sub>t</sub> = running maximum of the cumulative series up to day t. Expressed as a negative percentage.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Add a running-max column with <code>=MAX($C$2:C2)</code>, drawdown column <code>=(C2-peak)/peak</code>, then <code>=MIN(drawdown_col)</code>.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-th"></i> Effective Positions (HHI)</div>
+                            <div class="meth-formula">N<sub>eff</sub> = 1 / Σ w<sub>i</sub>²</div>
+                            <div class="meth-desc">Inverse of the Herfindahl-Hirschman Index (HHI). Ranges from 1 (100% in one stock) to N (equally weighted across N stocks). Measures concentration: an equally-weighted 30-stock portfolio scores ~30; a portfolio with 80% in one stock scores much lower.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=1/SUMPRODUCT(weights^2)</code> where weights are the market-value fractions summing to 1.</div>
+                        </div>
+
+                        <div class="meth-block">
+                            <div class="meth-title"><i class="fas fa-calendar-alt"></i> Calendar Year Returns</div>
+                            <div class="meth-formula">R<sub>yr</sub> = (C<sub>Dec 31</sub> / C<sub>Dec 31 prior yr</sub>) − 1</div>
+                            <div class="meth-desc">Computed from the sparkline (weekly-sampled cumulative return series). Each % value is first converted to a multiplier (p/100 + 1), then year-over-year return = (end multiplier / start-of-year multiplier − 1) × 100. Years with fewer than 8 data points are excluded as incomplete.</div>
+                            <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> Use the cumulative return column, find Jan 1 and Dec 31 values for each year, then <code>=(dec31/jan1)-1</code>.</div>
+                        </div>
+
+                    </div><!-- end methodology-grid -->
+
+                    <div class="meth-datasources">
+                        <div class="meth-ds-title"><i class="fas fa-database"></i> Data Sources & Assumptions</div>
+                        <table class="meth-ds-table">
+                            <tr><td>Price Data</td><td>Polygon.io daily closing prices (adjusted for splits)</td></tr>
+                            <tr><td>Benchmark</td><td>SPY ETF (S&P 500 proxy)</td></tr>
+                            <tr><td>Risk-Free Rate</td><td>4.3% per annum (≈ US T-Bill rate), applied as 4.3%/252 per trading day</td></tr>
+                            <tr><td>Trading Days/Year</td><td>252</td></tr>
+                            <tr><td>Lookback Windows</td><td>3M = 70 days · 6M = 135 days · 1Y = 260 days · 2Y = 510 days · All = 1,300 days</td></tr>
+                            <tr><td>Std Dev Convention</td><td>Sample (n−1) for Sharpe/Vol; population (n) for Sortino downside deviation</td></tr>
+                            <tr><td>True Historical TWR</td><td>Transaction records from Fidelity activity CSVs; holdings reconstructed day-by-day</td></tr>
+                        </table>
+                    </div>
+
+                </div><!-- end methodology-body -->
+            </div><!-- end methodology-panel -->
 
             <!-- Loading state -->
             <div class="perf-loading" id="perfLoading">
@@ -2967,6 +3216,119 @@
         toast.textContent = message;
         toast.style.opacity = '1';
         setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+    }
+
+    /* ── Methodology panel toggle ── */
+    function toggleMethodology() {
+        var body = document.getElementById('methodologyBody');
+        var chevron = document.getElementById('methodologyChevron');
+        var isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'block';
+        chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
+    /* ── Analytics CSV export ── */
+    function exportAnalyticsCSV() {
+        if (!perfIntelData || !perfIntelData.portfolio) {
+            showSuccessMessage('Load analytics first by connecting to the server.');
+            return;
+        }
+        var p = perfIntelData.portfolio;
+        var b = perfIntelData.benchmark || {};
+        var today = new Date().toISOString().split('T')[0];
+        var mode = currentPerfMode === 'historical' ? 'True Historical (TWR)' : 'Current Weights';
+        var periodLabel = { '3m':'3-Month','6m':'6-Month','ytd':'YTD','1y':'1-Year','2y':'2-Year','all':'All-Time' }[currentPerfPeriod] || '1-Year';
+
+        function fmt(v, decimals) {
+            if (v == null || isNaN(v)) return 'N/A';
+            return Number(v).toFixed(decimals == null ? 4 : decimals);
+        }
+
+        // ── Section 1: Portfolio summary metrics ──
+        var lines = [];
+        lines.push('DIG Portfolio Analytics Export');
+        lines.push('Generated,' + today);
+        lines.push('Period,' + periodLabel);
+        lines.push('Mode,' + mode);
+        lines.push('Risk-Free Rate,4.3% per annum');
+        lines.push('Benchmark,SPY (S&P 500 ETF)');
+        lines.push('');
+
+        lines.push('SECTION 1: PORTFOLIO METRICS');
+        lines.push('Metric,Portfolio,SPY Benchmark,Formula');
+        lines.push('Return (period),' + fmt(p.return1y,2) + '%,' + fmt(b.return1y,2) + '%,(C_final/C_start - 1) × 100');
+        lines.push('Return 1M,' + fmt(p.return1m,2) + '%,' + fmt(b.return1m,2) + '%,(C_t / C_{t-22} - 1) × 100');
+        lines.push('Return 3M,' + fmt(p.return3m,2) + '%,' + fmt(b.return3m,2) + '%,(C_t / C_{t-63} - 1) × 100');
+        lines.push('Return 6M,' + fmt(p.return6m,2) + '%,' + fmt(b.return6m,2) + '%,(C_t / C_{t-126} - 1) × 100');
+        lines.push('Return YTD,' + fmt(p.returnYtd,2) + '%,' + fmt(b.returnYtd,2) + '%,(C_t / C_{Jan1} - 1) × 100');
+        lines.push('Annualized Volatility,' + fmt(p.annualizedVol,2) + '%,N/A,STDEV(daily_rets) × sqrt(252)');
+        lines.push('Sharpe Ratio,' + fmt(p.sharpe,4) + ',N/A,(mean_excess / stdev_excess) × sqrt(252)  rf=4.3%/252');
+        lines.push('Sortino Ratio,' + fmt(p.sortino,4) + ',N/A,(mean_excess / downside_dev) × sqrt(252)  downside_dev=sqrt(sum(min(r_ex 0)^2)/n)');
+        lines.push('Beta (vs SPY),' + fmt(p.beta,4) + ',1.0000,cov(r_port r_spy) / var(r_spy)');
+        lines.push("Jensen's Alpha," + fmt(p.alpha,2) + '%,N/A,(ann_port - rf) - beta×(ann_spy - rf)  rf=4.3%');
+        lines.push('Max Drawdown,' + fmt(-Math.abs(p.maxDrawdown),2) + '%,N/A,max((peak - C_t) / peak)');
+        lines.push('Effective Positions,' + fmt(p.effectivePositions,1) + ',N/A,1 / sum(weight_i^2)');
+        lines.push('');
+
+        // ── Section 2: Per-holding returns ──
+        lines.push('SECTION 2: PER-HOLDING PERFORMANCE');
+        if (perfIntelData.stockPerformance && perfIntelData.stockPerformance.length) {
+            lines.push('Symbol,Weight (%),Price,1D (%),1W (%),1M (%),3M (%),YTD (%)');
+            perfIntelData.stockPerformance.forEach(function(s) {
+                lines.push([
+                    s.symbol,
+                    fmt(s.weight,2),
+                    fmt(s.price,2),
+                    fmt(s.ret1d,2),
+                    s.ret1w != null ? fmt(s.ret1w,2) : 'N/A',
+                    s.ret1m != null ? fmt(s.ret1m,2) : 'N/A',
+                    s.ret3m != null ? fmt(s.ret3m,2) : 'N/A',
+                    s.retYtd != null ? fmt(s.retYtd,2) : 'N/A'
+                ].join(','));
+            });
+        }
+        lines.push('');
+
+        // ── Section 3: Cumulative return time series ──
+        lines.push('SECTION 3: CUMULATIVE RETURN SERIES (sparkline — weekly sampled)');
+        lines.push('NOTE: Values are cumulative % return from period start. Multiply by holdings value to get $ P&L.');
+        lines.push('Date,Portfolio Cum. Return (%),SPY Cum. Return (%)');
+        if (perfIntelData.sparkline) {
+            var spDates = perfIntelData.sparkline.dates || [];
+            var spPort = perfIntelData.sparkline.portfolio || [];
+            var spSpy = perfIntelData.sparkline.spy || [];
+            for (var i = 0; i < spDates.length; i++) {
+                lines.push(spDates[i] + ',' + fmt(spPort[i],4) + ',' + fmt(spSpy[i],4));
+            }
+        }
+        lines.push('');
+
+        // ── Section 4: Replication methodology notes ──
+        lines.push('SECTION 4: REPLICATION NOTES');
+        lines.push('"Step 1: Get daily closing prices for each holding from Polygon.io (or Yahoo Finance / Bloomberg)."');
+        lines.push('"Step 2: Compute daily return for each holding: r = (P_t - P_{t-1}) / P_{t-1}."');
+        lines.push('"Step 3: Compute portfolio daily return as weighted sum of holding returns."');
+        lines.push('"  - Current Weights mode: use today\'s market-value weights throughout."');
+        lines.push('"  - True Historical mode: use yesterday\'s actual share counts as weights (TWR)."');
+        lines.push('"Step 4: Build cumulative series: C[0]=1, C[t] = C[t-1] × (1 + r[t])."');
+        lines.push('"Step 5: Vol = STDEV(daily_rets) × sqrt(252).  [sample std dev, n-1]"');
+        lines.push('"Step 6: Excess returns = daily_rets - 0.043/252.  Sharpe = AVERAGE(excess)/STDEV(excess) × sqrt(252)."');
+        lines.push('"Step 7: Sortino downside_dev = sqrt(SUMPRODUCT(MIN(excess,0)^2) / COUNT(excess)).  Sortino = AVERAGE(excess)/downside_dev × sqrt(252)."');
+        lines.push('"Step 8: Beta = SLOPE(port_rets, spy_rets)  or  COVARIANCE.P(port,spy)/VAR.P(spy)."');
+        lines.push('"Step 9: Annualize port & SPY: ann_r = (C_final)^(252/n) - 1.  Alpha = (ann_port - 0.043) - beta×(ann_spy - 0.043)."');
+        lines.push('"Step 10: Max Drawdown: running peak = MAX($C$2:C_t). DD = (peak - C_t)/peak. MDD = MIN(DD_col)."');
+
+        var csvContent = lines.join('\n');
+        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'DIG_Analytics_' + today + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showSuccessMessage('Analytics CSV downloaded — includes metrics, per-holding data, return series, and replication notes.');
     }
 
     function exportCSV() {
