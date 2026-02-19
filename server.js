@@ -2514,6 +2514,62 @@ async function computeHistoricalAnalytics(currentHoldings, period) {
     };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CLIENT-SIDE ANALYTICS SUPPORT ENDPOINTS
+// These two lightweight endpoints power the new client-side analytics approach.
+// Each returns a small, fast payload so Vercel serverless never times out.
+// The browser fetches all symbols in parallel and does the math locally.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/portfolio/prices?symbol=X&from=YYYY-MM-DD&to=YYYY-MM-DD
+// Returns price array for a single symbol. ~1 Polygon call, always fast.
+app.get('/api/portfolio/prices', async (req, res) => {
+    try {
+        const symbol = (req.query.symbol || '').toUpperCase().trim();
+        const from   = req.query.from || new Date(Date.now() - 260 * 86400000).toISOString().split('T')[0];
+        const to     = req.query.to   || new Date().toISOString().split('T')[0];
+        if (!symbol || !/^[A-Z]{1,6}$/.test(symbol)) {
+            return res.status(400).json({ error: 'Invalid symbol' });
+        }
+        const daysDiff = Math.ceil((new Date(to) - new Date(from)) / 86400000) + 10;
+        const prices = await fetchHistoricalPrices(symbol, 'day', from, to, Math.max(daysDiff, 50));
+        if (!prices || prices.length === 0) {
+            return res.json({ symbol, prices: [] });
+        }
+        // Return {date, close} pairs — minimal payload
+        const result = prices.map(p => ({
+            d: p.date ? p.date.split('T')[0] : '',
+            c: p.close
+        }));
+        res.set('Cache-Control', 'public, max-age=300'); // 5 min CDN cache
+        res.json({ symbol, prices: result });
+    } catch (error) {
+        console.error('Error fetching prices for', req.query.symbol, ':', error.message);
+        res.status(500).json({ error: 'Failed to fetch prices' });
+    }
+});
+
+// GET /api/portfolio/snapshots
+// Returns the reconstructed historical holdings snapshots from activity CSVs.
+// No Polygon calls — reads local CSV files only. Always fast (<200ms).
+app.get('/api/portfolio/snapshots', (req, res) => {
+    try {
+        const currentHoldings = CANONICAL_HOLDINGS;
+        const transactions = parseActivityCSVs();
+        const snapshots = reconstructHistoricalHoldings(currentHoldings, transactions);
+        // Serialize: convert Date objects to ISO strings, keep holdings map
+        const out = snapshots.map(s => ({
+            date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date),
+            holdings: s.holdings
+        }));
+        res.set('Cache-Control', 'public, max-age=60'); // 1 min CDN cache
+        res.json({ snapshots: out, currentHoldings });
+    } catch (error) {
+        console.error('Error building snapshots:', error.message);
+        res.status(500).json({ error: 'Failed to build snapshots' });
+    }
+});
+
 // GET endpoint — serves pre-warmed result instantly if available
 app.get('/api/portfolio/analytics-warm', (req, res) => {
     const period = req.query.period || '1y';

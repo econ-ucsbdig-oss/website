@@ -4011,6 +4011,101 @@
         });
     });
 
+    // ── CLIENT-SIDE ANALYTICS ENGINE ─────────────────────────────────────────
+    // Fetches price data per-symbol (lightweight proxy, never times out) and
+    // runs TWR / Sharpe / Sortino / Beta / Alpha in the browser. This avoids
+    // Vercel's 60-second serverless limit entirely.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Cache snapshots so we only fetch once per page load
+    var _snapshotsCache = null;
+
+    function getPeriodDates(period) {
+        var today = new Date();
+        var toDate = today.toISOString().split('T')[0];
+        var fromDate;
+        var lookbackDays;
+        if (period === 'ytd') {
+            var jan1 = new Date(today.getFullYear(), 0, 1);
+            lookbackDays = Math.ceil((today - jan1) / 86400000) + 10;
+        } else {
+            var map = { '3m': 70, '6m': 135, '1y': 260, '2y': 510, 'all': 1300 };
+            lookbackDays = map[period] || 260;
+        }
+        fromDate = new Date(Date.now() - lookbackDays * 86400000).toISOString().split('T')[0];
+        return { fromDate, toDate, lookbackDays };
+    }
+
+    function clientComputeRiskMetrics(portfolioReturns, spyReturns) {
+        var n = Math.min(portfolioReturns.length, spyReturns.length);
+        if (n < 5) return null;
+        var pr = portfolioReturns.slice(-n);
+        var sr = spyReturns.slice(-n);
+
+        // Cumulative return series
+        var cumPort = [1], cumSpy = [1];
+        for (var i = 0; i < n; i++) {
+            cumPort.push(cumPort[i] * (1 + (pr[i] || 0)));
+            cumSpy.push(cumSpy[i] * (1 + (sr[i] || 0)));
+        }
+
+        var avgPort = pr.reduce(function(a,b){return a+b;},0) / n;
+        var portVar = n > 1 ? pr.reduce(function(s,r){return s+Math.pow(r-avgPort,2);},0)/(n-1) : 0;
+        var annVol = Math.sqrt(portVar) * Math.sqrt(252) * 100;
+
+        var avgSpy = sr.reduce(function(a,b){return a+b;},0) / n;
+        var cov = 0, mktVar = 0;
+        for (var i = 0; i < n; i++) {
+            cov += (pr[i] - avgPort) * (sr[i] - avgSpy);
+            mktVar += Math.pow(sr[i] - avgSpy, 2);
+        }
+        var beta = mktVar > 0 ? (cov/n)/(mktVar/n) : 1;
+
+        var rfDaily = 0.043/252;
+        var excess = pr.map(function(r){return r - rfDaily;});
+        var avgExcess = excess.reduce(function(a,b){return a+b;},0)/excess.length;
+        var exStd = excess.length > 1
+            ? Math.sqrt(excess.reduce(function(s,r){return s+Math.pow(r-avgExcess,2);},0)/(excess.length-1))
+            : 0;
+        var sharpe = exStd > 0 ? (avgExcess/exStd)*Math.sqrt(252) : 0;
+
+        var dwnSumSq = excess.reduce(function(s,r){return s+Math.pow(Math.min(r,0),2);},0);
+        var dwnStd = Math.sqrt(dwnSumSq/excess.length) || 0.0001;
+        var sortino = (avgExcess/dwnStd)*Math.sqrt(252);
+
+        var peak = 1, maxDD = 0;
+        for (var i = 1; i < cumPort.length; i++) {
+            if (cumPort[i] > peak) peak = cumPort[i];
+            var dd = (peak - cumPort[i])/peak;
+            if (dd > maxDD) maxDD = dd;
+        }
+
+        var annPort = Math.pow(cumPort[cumPort.length-1], 252/n) - 1;
+        var annSpy  = Math.pow(cumSpy[cumSpy.length-1],  252/n) - 1;
+        var alpha   = (annPort - 0.043) - beta*(annSpy - 0.043);
+
+        function pRet(arr, days) {
+            if (arr.length < days+1) return null;
+            return (arr[arr.length-1]/arr[arr.length-1-days]-1)*100;
+        }
+        var ytdDays = Math.min(n, Math.floor((new Date() - new Date(new Date().getFullYear(),0,1))/86400000));
+
+        return {
+            cumPort, cumSpy, annualizedVol: annVol, beta, sharpe, sortino,
+            maxDrawdown: maxDD*100, alpha: alpha*100,
+            return1m:  pRet(cumPort, Math.min(22,n)),
+            return3m:  pRet(cumPort, Math.min(63,n)),
+            return6m:  pRet(cumPort, Math.min(126,n)),
+            returnYtd: pRet(cumPort, Math.min(ytdDays,n)),
+            return1y:  (cumPort[cumPort.length-1]-1)*100,
+            benchReturn1m:  pRet(cumSpy, Math.min(22,n)),
+            benchReturn3m:  pRet(cumSpy, Math.min(63,n)),
+            benchReturn6m:  pRet(cumSpy, Math.min(126,n)),
+            benchReturnYtd: pRet(cumSpy, Math.min(ytdDays,n)),
+            benchReturn1y:  (cumSpy[cumSpy.length-1]-1)*100
+        };
+    }
+
     async function loadPerformanceIntel(period, mode) {
         period = period || currentPerfPeriod;
         mode = mode || currentPerfMode;
@@ -4019,64 +4114,186 @@
         const inlineLoading = document.getElementById('perfInlineLoading');
         const inlineMsg = document.getElementById('perfInlineLoadingMsg');
 
-        // Cancel any in-flight request
         if (perfAbortController) { try { perfAbortController.abort(); } catch(e) {} }
         perfAbortController = new AbortController();
+        const sig = perfAbortController.signal;
 
-        // Show appropriate loading state
         const isFirstLoad = !perfIntelData;
         if (isFirstLoad) {
             if (loadingEl) loadingEl.style.display = '';
         } else {
             if (inlineLoading) {
-                inlineMsg.textContent = mode === 'historical' ? 'Reconstructing historical portfolio...' : 'Loading ' + period.toUpperCase() + '...';
+                inlineMsg.textContent = 'Loading ' + period.toUpperCase() + '...';
                 inlineLoading.style.display = 'flex';
             }
         }
 
         try {
-            const totalValue = portfolioData.reduce(function(s, h) { return s + h.quantity * h.lastPrice; }, 0) || 1;
             var data;
 
             if (mode === 'historical') {
-                // Try the pre-warmed cache first — instant if server already computed it
-                var warmRes = await fetch(apiBase + '/api/portfolio/analytics-warm?period=' + period, {
-                    signal: perfAbortController.signal
-                });
-                if (warmRes.ok) {
-                    var warmData = await warmRes.json();
-                    if (!warmData.warming) {
-                        // Cache hit — instant response
-                        data = warmData;
+                // ── NEW: client-side analytics ───────────────────────────────
+                // 1. Get holdings snapshots (fast, no Polygon)
+                if (!_snapshotsCache) {
+                    var snapRes = await fetch(apiBase + '/api/portfolio/snapshots', { signal: sig });
+                    if (!snapRes.ok) throw new Error('Snapshots unavailable');
+                    _snapshotsCache = await snapRes.json();
+                }
+                var snapshotData = _snapshotsCache;
+                var snapshots = snapshotData.snapshots; // [{date, holdings}]
+                var currentHoldings = snapshotData.currentHoldings; // [{symbol, quantity}]
+
+                // 2. Determine date range
+                var { fromDate, toDate, lookbackDays } = getPeriodDates(period);
+                var fromDateMs = new Date(fromDate).getTime();
+
+                // 3. Determine which symbols were held during this period
+                var symSet = new Set();
+                snapshots.forEach(function(s) {
+                    if (new Date(s.date).getTime() >= fromDateMs - 30*86400000) {
+                        Object.keys(s.holdings).forEach(function(sym){ symSet.add(sym); });
                     }
+                });
+                currentHoldings.forEach(function(h){ symSet.add(h.symbol); });
+                symSet.add('SPY');
+                var symbols = Array.from(symSet).filter(function(s){ return /^[A-Z]{1,6}$/.test(s); });
+
+                // 4. Fetch all symbol prices in parallel (each call is fast)
+                if (inlineLoading && !isFirstLoad) {
+                    inlineMsg.textContent = 'Fetching ' + symbols.length + ' symbols…';
+                    inlineLoading.style.display = 'flex';
+                } else if (loadingEl) {
+                    loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.85rem;padding:1rem;text-align:center"><i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;color:#febc11"></i>Fetching ' + symbols.length + ' symbols in parallel…</div>';
+                    loadingEl.style.display = '';
                 }
 
-                // Cache miss (still warming) — fall back to the full POST
-                if (!data) {
-                    if (inlineLoading && !isFirstLoad) {
-                        inlineMsg.textContent = 'Computing ' + period.toUpperCase() + ' analytics…';
+                var priceMap = {};
+                var fetchPromises = symbols.map(function(sym) {
+                    var url = apiBase + '/api/portfolio/prices?symbol=' + sym + '&from=' + fromDate + '&to=' + toDate;
+                    return fetch(url, { signal: sig })
+                        .then(function(r){ return r.ok ? r.json() : null; })
+                        .then(function(j){ if (j && j.prices) priceMap[sym] = j.prices; })
+                        .catch(function(){});
+                });
+                await Promise.all(fetchPromises);
+
+                var spyPrices = priceMap['SPY'] || [];
+                if (spyPrices.length < 10) throw new Error('Insufficient SPY data');
+
+                // 5. Build date-indexed price lookups
+                var priceLookup = {};
+                Object.keys(priceMap).forEach(function(sym) {
+                    priceLookup[sym] = {};
+                    (priceMap[sym] || []).forEach(function(p){ priceLookup[sym][p.d] = p.c; });
+                });
+
+                // 6. Compute TWR daily returns using snapshot holdings
+                var portfolioReturns = [];
+                for (var i = 1; i < spyPrices.length; i++) {
+                    var prevDate = spyPrices[i-1].d;
+                    var currDate = spyPrices[i].d;
+                    var prevMs   = new Date(prevDate).getTime();
+
+                    // Find snapshot applicable on prevDate
+                    var prevSnap = snapshots[0].holdings;
+                    for (var si = 0; si < snapshots.length; si++) {
+                        if (new Date(snapshots[si].date).getTime() <= prevMs) prevSnap = snapshots[si].holdings;
+                        else break;
                     }
-                    var postRes = await fetch(apiBase + '/api/portfolio/historical-analytics', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            currentHoldings: portfolioData.map(function(h) { return { symbol: h.symbol, quantity: h.quantity }; }),
-                            period: period
-                        }),
-                        signal: perfAbortController.signal
+
+                    var prevVal = 0, todayVal = 0;
+                    Object.keys(prevSnap).forEach(function(sym) {
+                        var shares = prevSnap[sym];
+                        var pp = priceLookup[sym] && priceLookup[sym][prevDate];
+                        var cp = priceLookup[sym] && priceLookup[sym][currDate];
+                        if (pp) prevVal  += shares * pp;
+                        if (cp) todayVal += shares * cp;
                     });
-                    if (!postRes.ok) throw new Error('API returned ' + postRes.status);
-                    data = await postRes.json();
+                    portfolioReturns.push(prevVal > 100 ? (todayVal - prevVal)/prevVal : 0);
                 }
+
+                var spyReturns = [];
+                for (var i = 1; i < spyPrices.length; i++) {
+                    spyReturns.push((spyPrices[i].c - spyPrices[i-1].c)/spyPrices[i-1].c);
+                }
+
+                // 7. Compute risk metrics client-side
+                var metrics = clientComputeRiskMetrics(portfolioReturns, spyReturns);
+                if (!metrics) throw new Error('Insufficient data for analytics');
+
+                var { cumPort, cumSpy } = metrics;
+                var numDays = Math.min(portfolioReturns.length, spyReturns.length);
+
+                // 8. Build sparkline (sampled)
+                var step = numDays <= 70 ? 1 : numDays <= 260 ? Math.max(1, Math.floor(numDays/65)) : Math.max(1, Math.floor(numDays/100));
+                var sparkPort = [], sparkSpy = [], sparkDates = [];
+                for (var i = 0; i <= numDays; i += step) {
+                    var idx = Math.min(i, cumPort.length-1);
+                    sparkPort.push((cumPort[idx]-1)*100);
+                    sparkSpy.push((cumSpy[idx]-1)*100);
+                    sparkDates.push(spyPrices[Math.min(i, spyPrices.length-1)].d);
+                }
+                // Ensure last point is included
+                if (sparkDates[sparkDates.length-1] !== spyPrices[spyPrices.length-1].d) {
+                    sparkPort.push((cumPort[cumPort.length-1]-1)*100);
+                    sparkSpy.push((cumSpy[cumSpy.length-1]-1)*100);
+                    sparkDates.push(spyPrices[spyPrices.length-1].d);
+                }
+
+                // 9. Per-stock performance (for heatmap)
+                var totalPortVal = currentHoldings.reduce(function(s,h) {
+                    var p = priceMap[h.symbol];
+                    return s + (p && p.length ? h.quantity * p[p.length-1].c : 0);
+                }, 0) || 1;
+                var stockPerf = currentHoldings.map(function(h) {
+                    var prices = priceMap[h.symbol] || [];
+                    if (prices.length < 2) return null;
+                    var last = prices[prices.length-1].c;
+                    var ytdDays2 = Math.floor((new Date() - new Date(new Date().getFullYear(),0,1))/86400000);
+                    return {
+                        symbol: h.symbol,
+                        weight: (h.quantity * last) / totalPortVal * 100,
+                        price: last,
+                        ret1d: prices.length>=2 ? (last/prices[prices.length-2].c-1)*100 : 0,
+                        ret1w: prices.length>=6 ? (last/prices[Math.max(0,prices.length-6)].c-1)*100 : null,
+                        ret1m: prices.length>=22 ? (last/prices[Math.max(0,prices.length-22)].c-1)*100 : null,
+                        ret3m: prices.length>=63 ? (last/prices[Math.max(0,prices.length-63)].c-1)*100 : null,
+                        retYtd: ytdDays2>0&&prices.length>ytdDays2 ? (last/prices[Math.max(0,prices.length-1-ytdDays2)].c-1)*100 : null
+                    };
+                }).filter(Boolean);
+
+                data = {
+                    portfolio: {
+                        return1m: metrics.return1m, return3m: metrics.return3m,
+                        return6m: metrics.return6m, returnYtd: metrics.returnYtd, return1y: metrics.return1y,
+                        annualizedVol: metrics.annualizedVol, beta: metrics.beta,
+                        sharpe: metrics.sharpe, sortino: metrics.sortino,
+                        maxDrawdown: metrics.maxDrawdown, alpha: metrics.alpha,
+                        effectivePositions: currentHoldings.length
+                    },
+                    benchmark: {
+                        return1m: metrics.benchReturn1m, return3m: metrics.benchReturn3m,
+                        return6m: metrics.benchReturn6m, returnYtd: metrics.benchReturnYtd,
+                        return1y: metrics.benchReturn1y
+                    },
+                    sparkline: { dates: sparkDates, portfolio: sparkPort, spy: sparkSpy },
+                    stockPerformance: stockPerf,
+                    dataPoints: numDays,
+                    mode: 'historical'
+                };
+
             } else {
+                // Current-weights mode — still a single lightweight server call
+                // (only needs current prices, not full history per holding)
+                const totalValue = portfolioData.reduce(function(s,h){return s+h.quantity*h.lastPrice;},0)||1;
                 var postRes = await fetch(apiBase + '/api/portfolio/analytics', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        holdings: portfolioData.map(function(h) { return { symbol: h.symbol, weight: (h.quantity * h.lastPrice) / totalValue }; }),
+                        holdings: portfolioData.map(function(h){return{symbol:h.symbol,weight:(h.quantity*h.lastPrice)/totalValue};}),
                         period: period
                     }),
-                    signal: perfAbortController.signal
+                    signal: sig
                 });
                 if (!postRes.ok) throw new Error('API returned ' + postRes.status);
                 data = await postRes.json();
@@ -4089,11 +4306,11 @@
             if (inlineLoading) inlineLoading.style.display = 'none';
             renderPerformanceIntel();
         } catch (err) {
-            if (err.name === 'AbortError') return; // cancelled, ignore
-            console.warn('Performance Intelligence unavailable:', err.message);
+            if (err.name === 'AbortError') return;
+            console.warn('Performance Intelligence error:', err.message);
             if (inlineLoading) inlineLoading.style.display = 'none';
             if (isFirstLoad && loadingEl) {
-                loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:0.85rem;"><i class="fas fa-chart-line" style="margin-right:0.5rem;"></i>Performance Intelligence requires API connection. Connect to load analytics.</div>';
+                loadingEl.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:0.85rem;"><i class="fas fa-chart-line" style="margin-right:0.5rem;"></i>Performance Intelligence requires API connection.</div>';
             }
         }
     }
