@@ -1044,15 +1044,12 @@
             margin-top: 0.25rem;
         }
 
-        /* Performance scoreboard grid */
+        /* Performance scoreboard: stacked layout */
         .perf-scoreboard {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 1.5rem;
             margin-bottom: 1.5rem;
-        }
-        @media (max-width: 992px) {
-            .perf-scoreboard { grid-template-columns: 1fr; }
         }
 
         /* Returns comparison card */
@@ -1175,15 +1172,13 @@
         .risk-pill-val.warn { color: #fcc419; }
         .risk-pill-val.bad  { color: #ff6b6b; }
 
-        /* Risk metrics panel */
+        /* Risk metrics panel — full width, horizontal layout */
         .perf-risk-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(254,188,17,0.15);
             border-radius: 14px;
             padding: 1.5rem;
             backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
         }
         .perf-risk-card h3 {
             font-size: 0.85rem;
@@ -1193,17 +1188,23 @@
             margin-bottom: 1rem;
         }
         .perf-risk-card h3 i { color: #febc11; margin-right: 0.5rem; }
+        .risk-card-body {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        @media (max-width: 768px) { .risk-card-body { grid-template-columns: 1fr; } }
         .risk-radar-container {
             position: relative;
-            height: 200px;
-            margin-bottom: 1rem;
-            flex: 1;
+            height: 240px;
         }
         .risk-metrics-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 0.6rem;
         }
+        @media (max-width: 900px) { .risk-metrics-grid { grid-template-columns: 1fr 1fr; } }
         .risk-metric-pill {
             display: flex;
             justify-content: space-between;
@@ -1656,15 +1657,17 @@
                 </div>
 
                 <!-- Risk Radar -->
-                <div class="perf-risk-card" style="position:relative;">
+                <div class="perf-risk-card">
                     <div class="perf-card-header">
                         <h3><i class="fas fa-shield-alt"></i> Risk Profile</h3>
                         <button class="chart-expand-btn" onclick="openChartModal('radar')" title="Expand chart"><i class="fas fa-expand-alt"></i></button>
                     </div>
-                    <div class="risk-radar-container">
-                        <canvas id="riskRadarChart"></canvas>
+                    <div class="risk-card-body">
+                        <div class="risk-radar-container">
+                            <canvas id="riskRadarChart"></canvas>
+                        </div>
+                        <div class="risk-metrics-grid" id="riskMetricsGrid"></div>
                     </div>
-                    <div class="risk-metrics-grid" id="riskMetricsGrid"></div>
                 </div>
             </div>
 
@@ -3946,20 +3949,38 @@
         var ctx = document.getElementById('perfSparklineChart');
         if (ctx) { perfSparklineChart = new Chart(ctx.getContext('2d'), getSparklineConfig(d)); }
 
-        // ── Period Returns table ──
-        var periods = ['return1m', 'return3m', 'return6m', 'returnYtd', 'return1y'];
+        // ── Period Returns table — columns adapt to selected period ──
+        // Each entry: [label, dataKey]
+        // The API always returns 1m/3m/6m/ytd/1y; for longer windows the 1y value IS the full period
+        var periodCols = {
+            '3m':  [['1M','return1m'],['2M','return2m'],['3M','return3m']],
+            '6m':  [['1M','return1m'],['3M','return3m'],['6M','return6m']],
+            'ytd': [['1M','return1m'],['3M','return3m'],['YTD','returnYtd']],
+            '1y':  [['1M','return1m'],['3M','return3m'],['6M','return6m'],['YTD','returnYtd'],['1Y','return1y']],
+            '2y':  [['3M','return3m'],['6M','return6m'],['YTD','returnYtd'],['1Y','return1y'],['2Y','return1y']],
+            'all': [['6M','return6m'],['YTD','returnYtd'],['1Y','return1y'],['Full','return1y']]
+        };
+        var cols = periodCols[currentPerfPeriod] || periodCols['1y'];
+
         function retCell(val) {
             if (val == null) return '<td>—</td>';
             var cls = val >= 0 ? 'ret-positive' : 'ret-negative';
             return '<td class="' + cls + '">' + (val >= 0 ? '+' : '') + val.toFixed(2) + '%</td>';
         }
+
+        // Update table headers dynamically
+        var thead = document.querySelector('#perfReturnsTable thead tr');
+        if (thead) {
+            thead.innerHTML = '<th></th>' + cols.map(function(c) { return '<th>' + c[0] + '</th>'; }).join('');
+        }
+
         var tbody = '<tr><td class="ret-label" style="color:#febc11;">⚡ DIG</td>';
-        periods.forEach(function(k) { tbody += retCell(p[k]); });
+        cols.forEach(function(c) { tbody += retCell(p[c[1]]); });
         tbody += '</tr><tr><td class="ret-label" style="color:#4dabf7;">📊 SPY</td>';
-        periods.forEach(function(k) { tbody += retCell(b[k]); });
+        cols.forEach(function(c) { tbody += retCell(b[c[1]]); });
         tbody += '</tr><tr class="alpha-row"><td class="ret-label">🏆 α</td>';
-        periods.forEach(function(k) {
-            var pv = p[k], bv = b[k];
+        cols.forEach(function(c) {
+            var pv = p[c[1]], bv = b[c[1]];
             if (pv == null || bv == null) { tbody += '<td>—</td>'; return; }
             var alpha = pv - bv;
             var cls = alpha >= 0 ? 'ret-positive' : 'ret-negative';

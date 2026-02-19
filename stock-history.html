@@ -42,11 +42,11 @@
             display: flex; justify-content: space-between; align-items: center;
             max-width: 1400px; margin: 0 auto; padding: 0 2rem;
         }
-        .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; color: #febc11; }
-        .nav-links { display: flex; list-style: none; gap: 2rem; }
+        .logo { display: flex; align-items: center; gap: 1rem; font-size: 1.8rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-links { display: flex; list-style: none; gap: 3rem; }
         .nav-links a {
-            color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 500;
-            transition: color 0.3s; position: relative; font-size: 0.95rem;
+            color: white; text-decoration: none; font-weight: 600;
+            transition: all 0.3s ease; position: relative; font-size: 1.1rem;
         }
         .nav-links a::after {
             content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 2px;
@@ -1939,10 +1939,12 @@ function showFrozenResults(data, frozenDate) {
         '</div>' +
     '</div>';
 
-    // Note: end values differ in scale because new capital was added to the actual portfolio
+    // Methodology note
     html += '<div style="background:rgba(254,188,17,0.06);border:1px solid rgba(254,188,17,0.15);border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.8rem;color:rgba(255,255,255,0.55);">' +
         '<i class="fas fa-info-circle" style="color:#febc11;margin-right:0.5rem;"></i>' +
-        'Both returns are price-based from ' + dateLabel + '. The end values differ in scale because new capital was added to the actual portfolio over time — this is expected and not a performance difference.' +
+        '<strong style="color:rgba(255,255,255,0.75);">Methodology:</strong> ' +
+        'Frozen portfolio uses simple price return (same shares held throughout). ' +
+        'Actual portfolio uses <strong style="color:rgba(255,255,255,0.65);">Time-Weighted Return (TWR)</strong> — daily price returns chained together, stripping out the effect of new capital contributions (wire transfers/donations) so both numbers reflect pure investment skill.' +
     '</div>';
 
     // Comparison cards
@@ -1951,7 +1953,7 @@ function showFrozenResults(data, frozenDate) {
     // Actual
     html += '<div class="wi-comparison-card"><h4><i class="fas fa-chart-line" style="color:#60a5fa;"></i> Actual Portfolio (Today)</h4>';
     html += wiMetricRow('Current Value', fmtCurrency(data.actual.endValue));
-    html += wiMetricRow('Price Return Since ' + dateLabel, (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(2) + '%', actualReturn >= 0 ? '#4ade80' : '#f87171');
+    html += wiMetricRow('TWR Since ' + dateLabel, (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(2) + '%', actualReturn >= 0 ? '#4ade80' : '#f87171');
     html += wiMetricRow('Holdings', data.actual.numHoldings + ' stocks');
     if (data.actual.holdings) {
         var topActual = data.actual.holdings.slice(0, 5);

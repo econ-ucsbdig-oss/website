@@ -2101,52 +2101,77 @@ app.post('/api/portfolio/frozen-comparison', async (req, res) => {
             return res.status(400).json({ error: 'Insufficient price data for this date range' });
         }
 
-        // --- Walk forward day by day, computing both portfolios ---
-        // Frozen portfolio: same shares every day (frozenHoldings)
-        // Actual portfolio: shares change based on snapshots (backward-reconstructed)
-        const frozenValues = [];
-        const actualValues = [];
-        const dates = [];
-
-        for (const dateStr of sortedDates) {
-            const d = new Date(dateStr);
-
-            // Frozen portfolio value (same shares throughout)
-            let frozenVal = 0;
-            for (const [sym, qty] of Object.entries(frozenHoldings)) {
+        // --- Helper: get portfolio value for a given holdings snapshot on a given date ---
+        function portfolioValueOn(holdings, dateStr) {
+            let val = 0;
+            for (const [sym, qty] of Object.entries(holdings)) {
+                if (sym === 'SPAXX' || qty < 0.001) continue;
                 const lookup = priceLookup[sym] || {};
                 const price = lookup[dateStr];
-                if (price) frozenVal += qty * price;
-                else {
-                    // Use nearest earlier price
+                if (price) {
+                    val += qty * price;
+                } else {
                     const symDates = Object.keys(lookup).sort();
                     const nearest = findNearestPrice(lookup, symDates, dateStr);
-                    if (nearest) frozenVal += qty * nearest;
+                    if (nearest) val += qty * nearest;
                 }
             }
+            return val;
+        }
 
-            // Actual portfolio value (shares change with transactions)
+        // --- Walk forward day by day, computing both portfolios ---
+        // Frozen portfolio: same shares every day (frozenHoldings) — simple index approach
+        // Actual portfolio: TWR approach — chain daily returns using PREVIOUS day's holdings
+        //   as weights. This means new capital (donations/wires) doesn't inflate the return
+        //   because we always divide by the value of the SAME shares from the previous day.
+        //   Formula: dailyReturn_t = (V(shares_prev, price_t) - V(shares_prev, price_prev)) / V(shares_prev, price_prev)
+        //   Then: cumulativeTWR = product of (1 + dailyReturn_t) - 1
+
+        const frozenValues = [];
+        const dates = [];
+
+        // For actual TWR: track (cumulative multiplier, previous snapshot, previous date value)
+        let actualTWRMult = 1.0; // cumulative TWR multiplier
+        let prevDateStr = null;
+        let prevActualSnap = null;
+        const actualTWRSeries = []; // parallel to frozenValues/dates
+
+        for (let di = 0; di < sortedDates.length; di++) {
+            const dateStr = sortedDates[di];
+            const d = new Date(dateStr);
+
+            // --- Frozen portfolio value (same shares throughout) ---
+            let frozenVal = portfolioValueOn(frozenHoldings, dateStr);
+
+            // --- Actual portfolio: find the snapshot applicable on this date ---
             let actualSnap = snapshots[0].holdings;
             for (const s of snapshots) {
                 if (s.date <= d) actualSnap = s.holdings;
                 else break;
             }
-            let actualVal = 0;
-            for (const [sym, qty] of Object.entries(actualSnap)) {
-                if (sym === 'SPAXX' || qty < 0.001) continue;
-                const lookup = priceLookup[sym] || {};
-                const price = lookup[dateStr];
-                if (price) actualVal += qty * price;
-                else {
-                    const symDates = Object.keys(lookup).sort();
-                    const nearest = findNearestPrice(lookup, symDates, dateStr);
-                    if (nearest) actualVal += qty * nearest;
+
+            // --- Actual TWR: compute daily price return using PREVIOUS day's holdings ---
+            if (di === 0) {
+                // First day: baseline. Just initialize.
+                prevDateStr = dateStr;
+                prevActualSnap = actualSnap;
+            } else {
+                // Value of yesterday's holdings at yesterday's prices
+                const prevValYest = portfolioValueOn(prevActualSnap, prevDateStr);
+                // Value of yesterday's holdings at today's prices (pure price return)
+                const prevValToday = portfolioValueOn(prevActualSnap, dateStr);
+
+                if (prevValYest > 50) {
+                    const dayRet = (prevValToday - prevValYest) / prevValYest;
+                    actualTWRMult *= (1 + dayRet);
                 }
+                prevDateStr = dateStr;
+                prevActualSnap = actualSnap; // update to today's snapshot for next iteration
             }
 
-            if (frozenVal > 100 && actualVal > 100) {
+            if (frozenVal > 100) {
                 frozenValues.push(frozenVal);
-                actualValues.push(actualVal);
+                actualTWRSeries.push(actualTWRMult);
                 dates.push(dateStr);
             }
         }
@@ -2156,20 +2181,24 @@ app.post('/api/portfolio/frozen-comparison', async (req, res) => {
         }
 
         // --- Compute cumulative returns (as %) ---
-        // Both portfolios use simple price-based returns from the frozen date.
-        // This is an apples-to-apples comparison: given the SAME set of stocks at the
-        // frozen date, how would prices alone have grown vs what actually happened?
-        // The actual portfolio value will differ in scale due to new capital added over
-        // time, so we normalise both to their own day-1 value (% return from frozen date).
+        // Frozen: simple price-based return (same shares every day, no new capital)
+        // Actual: TWR-adjusted (daily returns chain, eliminating effect of new capital)
+        // Both are now true price-return comparisons.
         const frozenStart = frozenValues[0];
-        const actualStart = actualValues[0];
         const frozenCumReturns = frozenValues.map(v => ((v / frozenStart) - 1) * 100);
-        const actualCumReturns = actualValues.map(v => ((v / actualStart) - 1) * 100);
+        // TWR series starts at 1.0 (0% return on day 0)
+        const actualCumReturns = actualTWRSeries.map(m => (m - 1) * 100);
 
         const frozenEndValue = frozenValues[frozenValues.length - 1];
-        const actualEndValue = actualValues[actualValues.length - 1];
         const frozenTotalReturn = frozenCumReturns[frozenCumReturns.length - 1];
         const actualTotalReturn = actualCumReturns[actualCumReturns.length - 1];
+        // Compute actual end value from today's current holdings (for display only — not used in return calc)
+        const actualEndValue = currentHoldings.reduce((sum, h) => {
+            const lookup = priceLookup[h.symbol] || {};
+            const symDates = Object.keys(lookup).sort();
+            const latestPrice = symDates.length > 0 ? lookup[symDates[symDates.length - 1]] : 0;
+            return sum + h.quantity * latestPrice;
+        }, 0);
 
         // --- Build holdings summaries ---
         const frozenHoldingsList = Object.entries(frozenHoldings)
