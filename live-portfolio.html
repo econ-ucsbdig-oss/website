@@ -1077,10 +1077,10 @@
             margin-bottom: 1rem;
         }
 
-        /* ── Below-chart 3-column stats layout ── */
+        /* ── Below-chart 2-column stats layout ── */
         .perf-stats-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1.4fr;
             gap: 1rem;
             margin-top: 1rem;
         }
@@ -1157,7 +1157,7 @@
         .cal-year-val { font-weight: 700; width: 52px; text-align: right; font-size: 0.78rem; }
         .cal-year-val.cal-pos { color: #20c997; }
         .cal-year-val.cal-neg { color: #ff6b6b; }
-        .cal-spy-val { color: rgba(255,255,255,0.3); font-size: 0.68rem; width: 48px; text-align: right; }
+        .cal-spy-val { color: rgba(255,255,255,0.35); font-size: 0.68rem; width: 72px; text-align: right; flex-shrink: 0; }
 
         /* Inline risk pills (in the 3rd stat panel) */
         .risk-pill-row {
@@ -1651,11 +1651,6 @@
                         <div class="perf-stat-panel">
                             <div class="perf-stat-panel-title">Calendar Year Returns</div>
                             <div id="perfCalendarYears"></div>
-                        </div>
-                        <!-- Col 3: Risk Metrics -->
-                        <div class="perf-stat-panel">
-                            <div class="perf-stat-panel-title">Risk Metrics</div>
-                            <div id="perfRiskPills"></div>
                         </div>
                     </div>
                 </div>
@@ -3976,8 +3971,41 @@
         // ── Calendar Year Returns ──
         var calEl = document.getElementById('perfCalendarYears');
         if (calEl) {
-            var calYears = p.calendarYears || null;
+            // Helper: build {year: returnPct} from sparkline dates + cumulative array
+            function sparklineToCalYears(dates, cumArr) {
+                if (!dates || !cumArr || dates.length < 2) return {};
+                var byYear = {};
+                for (var i = 0; i < dates.length; i++) {
+                    var yr = String(dates[i]).slice(0, 4);
+                    if (!byYear[yr]) byYear[yr] = { first: i, last: i };
+                    byYear[yr].last = i;
+                }
+                var result = {};
+                Object.keys(byYear).forEach(function(yr) {
+                    var fi = byYear[yr].first;
+                    var li = byYear[yr].last;
+                    // Use value at start of year relative to the series start (index 0 = 1.0)
+                    var startVal = fi === 0 ? 1 : cumArr[fi - 1];
+                    var endVal   = cumArr[li];
+                    if (startVal && startVal !== 0) {
+                        result[yr] = (endVal / startVal - 1) * 100;
+                    }
+                });
+                return result;
+            }
+
+            var calYears    = p.calendarYears || null;
             var calSpyYears = b.calendarYears || null;
+
+            // Fall back to computing from sparkline data
+            var spark = d.sparkline || {};
+            if ((!calYears || Object.keys(calYears).length === 0) && spark.dates && spark.portfolio) {
+                calYears = sparklineToCalYears(spark.dates, spark.portfolio);
+            }
+            if ((!calSpyYears || Object.keys(calSpyYears).length === 0) && spark.dates && spark.spy) {
+                calSpyYears = sparklineToCalYears(spark.dates, spark.spy);
+            }
+
             if (calYears && Object.keys(calYears).length > 0) {
                 var vals = Object.values(calYears);
                 var maxAbs = Math.max.apply(null, vals.map(Math.abs)) || 1;
@@ -3986,7 +4014,7 @@
                     var spyV = calSpyYears ? calSpyYears[yr] : null;
                     var pct = Math.min(Math.abs(v) / maxAbs * 100, 100);
                     var posClass = v >= 0 ? 'cal-pos' : 'cal-neg';
-                    var spyStr = spyV != null ? (spyV >= 0 ? '+' : '') + spyV.toFixed(1) + '%' : '';
+                    var spyStr = spyV != null ? ' vs ' + (spyV >= 0 ? '+' : '') + spyV.toFixed(1) + '%' : '';
                     return '<div class="cal-year-row">' +
                         '<span class="cal-year-label">' + yr + '</span>' +
                         '<div class="cal-bar-track"><div class="cal-bar-fill ' + posClass + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
@@ -3995,25 +4023,8 @@
                         '</div>';
                 }).join('');
             } else {
-                // Derive from sparkline data if calendarYears not available
-                calEl.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:0.75rem;">Calendar data available after full year of trading</div>';
+                calEl.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-size:0.75rem;">No historical data available</div>';
             }
-        }
-
-        // ── Risk Pills ──
-        var riskEl = document.getElementById('perfRiskPills');
-        if (riskEl) {
-            var metrics = [
-                { label: 'Beta',       val: p.beta.toFixed(2),               cls: Math.abs(p.beta - 1) < 0.2 ? 'good' : Math.abs(p.beta - 1) < 0.5 ? 'warn' : 'bad' },
-                { label: 'Sharpe',     val: p.sharpe.toFixed(2),             cls: p.sharpe >= 1.0 ? 'good' : p.sharpe >= 0.5 ? 'warn' : 'bad' },
-                { label: 'Sortino',    val: p.sortino.toFixed(2),            cls: p.sortino >= 1.5 ? 'good' : p.sortino >= 0.8 ? 'warn' : 'bad' },
-                { label: 'Vol (Ann.)', val: p.annualizedVol.toFixed(1) + '%', cls: p.annualizedVol < 15 ? 'good' : p.annualizedVol < 25 ? 'warn' : 'bad' },
-                { label: 'Max DD',     val: '-' + p.maxDrawdown.toFixed(1) + '%', cls: p.maxDrawdown < 10 ? 'good' : p.maxDrawdown < 20 ? 'warn' : 'bad' },
-                { label: 'Eff. Pos.', val: p.effectivePositions.toFixed(1),  cls: p.effectivePositions >= 10 ? 'good' : p.effectivePositions >= 6 ? 'warn' : 'bad' }
-            ];
-            riskEl.innerHTML = metrics.map(function(m) {
-                return '<div class="risk-pill-row"><span class="risk-pill-label">' + m.label + '</span><span class="risk-pill-val ' + m.cls + '">' + m.val + '</span></div>';
-            }).join('');
         }
 
         // Also refresh KPI strip with latest data in case period changed

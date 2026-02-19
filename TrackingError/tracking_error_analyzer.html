@@ -3405,7 +3405,8 @@
                 renderEquityCurveChart(
                     results.equityCurve.portfolio,
                     results.equityCurve.benchmark,
-                    results.equityCurve.startValue
+                    results.equityCurve.startValue,
+                    results.equityCurve.timestamps || []
                 );
             }
         }
@@ -3418,7 +3419,7 @@
             return curve;
         }
 
-        function renderEquityCurveChart(portfolioCurve, benchmarkCurve, startValue) {
+        function renderEquityCurveChart(portfolioCurve, benchmarkCurve, startValue, timestamps) {
             const svg = document.getElementById('equityCurveSvg');
             if (!svg) return;
 
@@ -3491,10 +3492,27 @@
             const portfolioPath = makePath(p);
             const benchmarkPath = makePath(b);
 
+            // Date labels on X-axis (use timestamps array if available, else generate index-based)
+            const dateLabels = [];
+            const numDateLabels = 5;
+            for (let i = 0; i <= numDateLabels; i++) {
+                const idx = Math.floor((i / numDateLabels) * (n - 1));
+                const x = xToSvg(idx);
+                let dateStr = '';
+                if (timestamps && timestamps[idx]) {
+                    const d = new Date(timestamps[idx]);
+                    dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+                } else {
+                    // fallback: show relative index as fraction of period
+                    dateStr = `Day ${idx}`;
+                }
+                dateLabels.push(`<text class="axis-label" x="${x}" y="${height - padding.bottom + 20}" text-anchor="middle">${dateStr}</text>`);
+            }
+
             svg.innerHTML = `
-                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
                 ${grid}
                 ${axis}
+                ${dateLabels.join('')}
                 <path d="${benchmarkPath}" fill="none" stroke="#4ade80" stroke-width="2" />
                 <path d="${portfolioPath}" fill="none" stroke="#febc11" stroke-width="2.5" />
             `;
@@ -3597,7 +3615,6 @@
             `;
 
             svg.innerHTML = `
-                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
                 ${xGrid}
                 ${yGrid}
                 ${axis}
@@ -3689,7 +3706,6 @@
             const tePath = makePath(rollingTESeries);
 
             svg.innerHTML = `
-                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
                 ${grid}
                 ${axis}
                 ${dateLabels.join('')}
@@ -3783,7 +3799,6 @@
             const betaPath = makePath(rollingBetaSeries);
 
             svg.innerHTML = `
-                <rect x="0" y="0" width="${width}" height="${height}" fill="white" />
                 ${grid}
                 ${axis}
                 ${dateLabels.join('')}
@@ -3809,7 +3824,8 @@
                         portfolio: portfolioCurve,
                         benchmark: benchmarkCurve,
                         portfolioEnd: portfolioCurve[portfolioCurve.length - 1],
-                        benchmarkEnd: benchmarkCurve[benchmarkCurve.length - 1]
+                        benchmarkEnd: benchmarkCurve[benchmarkCurve.length - 1],
+                        timestamps: results.series?.timestamps || []
                     };
                 }
             } catch (e) {
