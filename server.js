@@ -1166,9 +1166,9 @@ app.post('/api/portfolio/analytics', async (req, res) => {
         }
         const ytdDays = Math.min(numDays, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 86400000));
 
-        // --- Annualized volatility ---
+        // --- Annualized volatility (sample std dev, n-1) ---
         const avgPortReturn = portfolioReturns.reduce((a, b) => a + b, 0) / numDays;
-        const portVariance = portfolioReturns.reduce((s, r) => s + Math.pow(r - avgPortReturn, 2), 0) / numDays;
+        const portVariance = numDays > 1 ? portfolioReturns.reduce((s, r) => s + Math.pow(r - avgPortReturn, 2), 0) / (numDays - 1) : 0;
         const annualizedVol = Math.sqrt(portVariance) * Math.sqrt(252) * 100;
 
         // --- Portfolio Beta ---
@@ -1181,17 +1181,19 @@ app.post('/api/portfolio/analytics', async (req, res) => {
         }
         const beta = marketVariance > 0 ? (covariance / commonLen) / (marketVariance / commonLen) : 1;
 
-        // --- Sharpe Ratio (assuming 5% risk-free rate) ---
-        const riskFreeDaily = 0.05 / 252;
+        // --- Sharpe Ratio (4.3% annual risk-free rate, sample std dev) ---
+        const riskFreeDaily = 0.043 / 252;
         const excessReturns = portfolioReturns.map(r => r - riskFreeDaily);
         const avgExcess = excessReturns.reduce((a, b) => a + b, 0) / excessReturns.length;
-        const excessStd = Math.sqrt(excessReturns.reduce((s, r) => s + Math.pow(r - avgExcess, 2), 0) / excessReturns.length);
+        const excessStd = excessReturns.length > 1
+            ? Math.sqrt(excessReturns.reduce((s, r) => s + Math.pow(r - avgExcess, 2), 0) / (excessReturns.length - 1))
+            : 0;
         const sharpe = excessStd > 0 ? (avgExcess / excessStd) * Math.sqrt(252) : 0;
 
-        // --- Sortino Ratio ---
+        // --- Sortino Ratio (downside deviation from 0, not from mean) ---
         const downsideReturns = excessReturns.filter(r => r < 0);
-        const downsideStd = downsideReturns.length > 0
-            ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / downsideReturns.length)
+        const downsideStd = downsideReturns.length > 1
+            ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / (downsideReturns.length - 1))
             : 0.0001;
         const sortino = (avgExcess / downsideStd) * Math.sqrt(252);
 
@@ -1206,7 +1208,7 @@ app.post('/api/portfolio/analytics', async (req, res) => {
         // --- Alpha (Jensen's) ---
         const annPortReturn = (Math.pow(cumPort[cumPort.length - 1], 252 / numDays) - 1);
         const annSpyReturn = (Math.pow(cumSpy[cumSpy.length - 1], 252 / numDays) - 1);
-        const alpha = (annPortReturn - 0.05) - beta * (annSpyReturn - 0.05);
+        const alpha =  (annPortReturn - 0.043) - beta * (annSpyReturn - 0.043);
 
         // --- Per-stock performance for heatmap ---
         const stockPerf = [];
@@ -1288,7 +1290,7 @@ function computeRiskMetrics(portfolioReturns, spyReturns, numDays) {
     }
 
     const avgPortReturn = portfolioReturns.reduce((a, b) => a + b, 0) / numDays;
-    const portVariance = portfolioReturns.reduce((s, r) => s + Math.pow(r - avgPortReturn, 2), 0) / numDays;
+    const portVariance = numDays > 1 ? portfolioReturns.reduce((s, r) => s + Math.pow(r - avgPortReturn, 2), 0) / (numDays - 1) : 0;
     const annualizedVol = Math.sqrt(portVariance) * Math.sqrt(252) * 100;
 
     const avgSpyReturn = spyReturns.reduce((a, b) => a + b, 0) / spyReturns.length;
@@ -1300,15 +1302,19 @@ function computeRiskMetrics(portfolioReturns, spyReturns, numDays) {
     }
     const beta = marketVariance > 0 ? (covariance / commonLen) / (marketVariance / commonLen) : 1;
 
-    const riskFreeDaily = 0.05 / 252;
+    // Sharpe: (annualized excess return) / (annualized std dev), sample std dev (n-1)
+    const riskFreeDaily = 0.043 / 252;
     const excessReturns = portfolioReturns.map(r => r - riskFreeDaily);
     const avgExcess = excessReturns.reduce((a, b) => a + b, 0) / excessReturns.length;
-    const excessStd = Math.sqrt(excessReturns.reduce((s, r) => s + Math.pow(r - avgExcess, 2), 0) / excessReturns.length);
+    const excessStd = excessReturns.length > 1
+        ? Math.sqrt(excessReturns.reduce((s, r) => s + Math.pow(r - avgExcess, 2), 0) / (excessReturns.length - 1))
+        : 0;
     const sharpe = excessStd > 0 ? (avgExcess / excessStd) * Math.sqrt(252) : 0;
 
+    // Sortino: downside deviation from zero
     const downsideReturns = excessReturns.filter(r => r < 0);
-    const downsideStd = downsideReturns.length > 0
-        ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / downsideReturns.length)
+    const downsideStd = downsideReturns.length > 1
+        ? Math.sqrt(downsideReturns.reduce((s, r) => s + r * r, 0) / (downsideReturns.length - 1))
         : 0.0001;
     const sortino = (avgExcess / downsideStd) * Math.sqrt(252);
 
@@ -1321,7 +1327,7 @@ function computeRiskMetrics(portfolioReturns, spyReturns, numDays) {
 
     const annPortReturn = numDays > 0 ? (Math.pow(cumPort[cumPort.length - 1], 252 / numDays) - 1) : 0;
     const annSpyReturn = numDays > 0 ? (Math.pow(cumSpy[cumSpy.length - 1], 252 / numDays) - 1) : 0;
-    const alpha = (annPortReturn - 0.05) - beta * (annSpyReturn - 0.05);
+    const alpha =  (annPortReturn - 0.043) - beta * (annSpyReturn - 0.043);
 
     function periodReturn(cumArr, days) {
         if (cumArr.length < days + 1) return null;
@@ -1598,33 +1604,44 @@ app.post('/api/portfolio/historical-analytics', async (req, res) => {
             });
         }
 
-        // Parse external cash flows for TWR adjustment (wire transfers, share deposits)
-        const cashFlows = parseExternalCashFlows();
+        // Compute TWR daily returns using snapshot holdings.
+        // For each day we compute: return = (V(prev_holdings, today_price) - V(prev_holdings, prev_price)) / V(prev_holdings, prev_price)
+        // Using YESTERDAY'S holdings as weights eliminates any capital addition effect —
+        // new shares bought with wire/donations only enter the denominator the following day.
+        // This is correct TWR without needing to parse cash flow CSV records at all.
+        const portfolioReturns = [];
+        for (let i = 1; i < spyPrices.length; i++) {
+            const prevDateStr = spyPrices[i - 1].date ? spyPrices[i - 1].date.split('T')[0] : '';
+            const currDateStr = spyPrices[i].date ? spyPrices[i].date.split('T')[0] : '';
+            const prevD = new Date(prevDateStr);
 
-        // For each trading day, find applicable holdings snapshot and compute portfolio value
-        const dailyValues = [];
-        for (const bar of spyPrices) {
-            const dateStr = bar.date ? bar.date.split('T')[0] : '';
-            const d = new Date(dateStr);
-
-            // Find most recent snapshot <= this date
-            let snap = snapshots[0].holdings;
+            // Holdings snapshot applicable for the PREVIOUS day (pre-transaction state)
+            let prevSnap = snapshots[0].holdings;
             for (const s of snapshots) {
-                if (s.date <= d) snap = s.holdings;
+                if (s.date <= prevD) prevSnap = s.holdings;
                 else break;
             }
 
-            let totalVal = 0;
-            for (const [sym, shares] of Object.entries(snap)) {
-                const price = priceLookup[sym] && priceLookup[sym][dateStr];
-                if (price) totalVal += shares * price;
+            // Value of yesterday's holdings at yesterday's prices
+            let prevVal = 0;
+            for (const [sym, shares] of Object.entries(prevSnap)) {
+                const price = priceLookup[sym] && priceLookup[sym][prevDateStr];
+                if (price) prevVal += shares * price;
             }
-            dailyValues.push({ date: dateStr, value: totalVal });
-        }
 
-        // Compute TWR-adjusted daily portfolio returns
-        // This removes the impact of wire transfers and share deposits from returns
-        const portfolioReturns = computeTWRAdjustedReturns(dailyValues, cashFlows);
+            // Value of yesterday's holdings at today's prices (pure price appreciation)
+            let todayVal = 0;
+            for (const [sym, shares] of Object.entries(prevSnap)) {
+                const price = priceLookup[sym] && priceLookup[sym][currDateStr];
+                if (price) todayVal += shares * price;
+            }
+
+            if (prevVal > 100) {
+                portfolioReturns.push((todayVal - prevVal) / prevVal);
+            } else {
+                portfolioReturns.push(0);
+            }
+        }
 
         // SPY daily returns
         const spyReturns = [];

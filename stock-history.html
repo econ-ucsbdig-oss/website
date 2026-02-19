@@ -1914,28 +1914,28 @@ function showFrozenResults(data, frozenDate) {
 
     var actualReturn = data.actual.totalReturn;
     var frozenReturn = data.frozen.totalReturn;
-    // Return difference: positive means frozen beat actual (active trading hurt)
-    var diff = frozenReturn - actualReturn;
+    // Positive diff = active trading beat buy-and-hold (good!)
+    var diff = actualReturn - frozenReturn;
     var diffCls = diff >= 0 ? 'positive' : 'negative';
     var diffSign = diff >= 0 ? '+' : '';
-    var winner = diff >= 0 ? 'Frozen portfolio had better price performance' : 'Active trading had better price performance';
+    var winner = diff >= 0 ? 'Active trading outperformed buy-and-hold' : 'Buy-and-hold outperformed active trading';
 
     // Hero: the return difference
     var html = '<div class="wi-impact-hero">' +
         '<div>' +
-            '<div class="wi-hero-label">Price Return Since ' + dateLabel + '</div>' +
-            '<div class="wi-hero-number ' + diffCls + '">' + diffSign + diff.toFixed(1) + '% difference</div>' +
+            '<div class="wi-hero-label">Active vs Buy-and-Hold (since ' + dateLabel + ')</div>' +
+            '<div class="wi-hero-number ' + diffCls + '">' + diffSign + diff.toFixed(1) + '% active edge</div>' +
         '</div>' +
         '<div class="wi-hero-detail">' +
             '<div class="wi-hero-label">Verdict</div>' +
             '<div class="wi-hero-desc">' + winner + '</div>' +
             '<div style="margin-top:0.4rem;font-size:0.82rem;color:rgba(255,255,255,0.45);">' +
-                'Frozen: ' + (frozenReturn >= 0 ? '+' : '') + frozenReturn.toFixed(1) + '%' +
-                ' &nbsp;•&nbsp; Actual: ' + (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(1) + '%' +
+                'Actual (TWR): ' + (actualReturn >= 0 ? '+' : '') + actualReturn.toFixed(1) + '%' +
+                ' &nbsp;•&nbsp; Frozen: ' + (frozenReturn >= 0 ? '+' : '') + frozenReturn.toFixed(1) + '%' +
             '</div>' +
         '</div>' +
-        '<div class="wi-hero-badge ' + (diff <= 0 ? 'better' : 'worse') + '">' +
-            (diff <= 0 ? '📈 Trading added value' : '📉 Buy-and-hold won') +
+        '<div class="wi-hero-badge ' + (diff >= 0 ? 'better' : 'worse') + '">' +
+            (diff >= 0 ? '📈 Trading added value' : '📉 Buy-and-hold won') +
         '</div>' +
     '</div>';
 
