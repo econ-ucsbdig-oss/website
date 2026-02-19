@@ -673,6 +673,64 @@
                     <div class="what-if-panel" id="whatIfPanel"></div>
                     <div class="what-if-results" id="whatIfResults"></div>
                 </div>
+
+                <!-- Methodology / CSV — inside the Scenario Lab box -->
+                <div class="methodology-panel" style="margin-top:1.5rem;">
+                    <button class="methodology-toggle" onclick="toggleScenarioMethodology()">
+                        <span><i class="fas fa-flask"></i> How These Scenarios Are Calculated</span>
+                        <span style="display:flex;align-items:center;gap:1rem;">
+                            <a href="#" onclick="event.stopPropagation();exportScenarioCSV();return false;" style="font-size:0.78rem;color:#febc11;text-decoration:none;opacity:0.85;"><i class="fas fa-download" style="margin-right:0.3rem;"></i>Download CSV</a>
+                            <i class="fas fa-chevron-down" id="scenarioMethodologyChevron"></i>
+                        </span>
+                    </button>
+                    <div class="methodology-body" id="scenarioMethodologyBody" style="display:none;">
+                        <div class="methodology-intro">
+                            <p>All scenario calculations use transaction records from Fidelity activity CSVs. Four scenario modes are available:</p>
+                            <ul>
+                                <li><strong>Undo Trades</strong> — removes selected buy/sell(s) and recomputes cost basis, value, and return as if they never happened.</li>
+                                <li><strong>Modify Trades</strong> — lets you change the price or quantity of a transaction and see the dollar and return impact.</li>
+                                <li><strong>Hypothetical Trade</strong> — simulates buying or selling a given dollar amount on any date and computes holding period return and CAGR.</li>
+                                <li><strong>Frozen Portfolio</strong> — compares active trading (Time-Weighted Return) against a buy-and-hold baseline frozen at the start of the year.</li>
+                            </ul>
+                        </div>
+                        <div class="methodology-grid">
+                            <div class="meth-block">
+                                <div class="meth-title"><i class="fas fa-dollar-sign"></i> Total Return</div>
+                                <div class="meth-formula">R = (End Value − Cost Basis) / Cost Basis × 100</div>
+                                <div class="meth-desc">End Value = current market value of remaining shares + total proceeds from any sales. Cost Basis = sum of all buy amounts. For undo/modify scenarios, both actual and what-if are computed independently using their respective transaction sets.</div>
+                                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=(current_value + sell_proceeds - total_cost) / total_cost</code></div>
+                            </div>
+                            <div class="meth-block">
+                                <div class="meth-title"><i class="fas fa-chart-line"></i> CAGR</div>
+                                <div class="meth-formula">CAGR = (1 + R/100)<sup>1/years</sup> − 1</div>
+                                <div class="meth-desc">Compound Annual Growth Rate annualizes the total return over the holding period. Holding period = days from first buy to today (or last sell). Requires at least ~36 days to be meaningful.</div>
+                                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=(1 + total_return)^(1 / (days/365.25)) - 1</code></div>
+                            </div>
+                            <div class="meth-block">
+                                <div class="meth-title"><i class="fas fa-snowflake"></i> Frozen Portfolio (TWR)</div>
+                                <div class="meth-formula">TWR = Π (1 + r<sub>t</sub>) − 1</div>
+                                <div class="meth-desc">The actual portfolio return uses Time-Weighted Return — daily price returns chained together using the previous day's holdings as weights. This strips out the effect of capital additions so the comparison reflects pure investment skill. The frozen portfolio uses a simple price return on holdings as they stood at the start of the year.</div>
+                                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>C[t] = C[t-1] × (1 + daily_return)</code>, then <code>TWR = C[final] - 1</code>.</div>
+                            </div>
+                            <div class="meth-block">
+                                <div class="meth-title"><i class="fas fa-flask"></i> Hypothetical Trade</div>
+                                <div class="meth-formula">Shares = $ Amount / Entry Price</div>
+                                <div class="meth-desc">Simulates buying a fixed dollar amount at the closing price on the selected date. If a sell date is chosen, it computes the exit P&L. If still holding, current market price is used. All prices from Polygon.io adjusted closing prices.</div>
+                                <div class="meth-replicate"><span class="meth-tag">Replicate in Excel</span> <code>=(shares * current_price - shares * entry_price) / (shares * entry_price)</code></div>
+                            </div>
+                        </div>
+                        <div class="meth-datasources">
+                            <div class="meth-ds-title"><i class="fas fa-database"></i> Data Sources</div>
+                            <table class="meth-ds-table">
+                                <tr><td>Transaction Data</td><td>Fidelity activity CSVs (buys, sells, dividend reinvestments, transfers)</td></tr>
+                                <tr><td>Price Data</td><td>Polygon.io daily closing prices (adjusted for splits and dividends)</td></tr>
+                                <tr><td>CAGR Denominator</td><td>365.25 days per year (accounts for leap years)</td></tr>
+                                <tr><td>TWR Method</td><td>Snapshot-based: previous day's holdings used as weights each day</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
             <!-- Leaderboard -->
