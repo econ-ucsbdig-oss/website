@@ -972,8 +972,11 @@
             const ttmRevenue = recentQ.reduce((s, q) => s + (q.revenues || 0), 0);
             const ttmOpIncome = recentQ.reduce((s, q) => s + (q.operatingIncome || 0), 0);
             const ttmNetIncome = recentQ.reduce((s, q) => s + (q.netIncome || 0), 0);
-            const ttmCashFlow = recentQ.reduce((s, q) => s + (q.cashFlow || 0), 0);
+            const ttmCashFlow = recentQ.reduce((s, q) => s + (q.cashFlow || 0), 0); // net_cash_flow (all activities) — kept for raw CSV export only
             const ttmOperatingCF = recentQ.reduce((s, q) => s + (q.operatingCashFlow || 0), 0);
+            const ttmCapEx = recentQ.reduce((s, q) => s + (q.capEx || 0), 0); // net_cash_flow_from_investing_activities (typically negative)
+            // True FCF = Operating CF - CapEx spending. capEx field is investing CF (negative), so adding it subtracts capex.
+            const ttmTrueFCF = ttmOperatingCF + ttmCapEx;
             let avgOpMargin = ttmRevenue > 0 ? ttmOpIncome / ttmRevenue : 0.15;
 
             // For companies with negative operating margins, use a floor that mean-reverts
@@ -1029,13 +1032,14 @@
                 // FCF conversion ratio: use operating cash flow / operating income if available
                 // For negative operating income companies, use operating cash flow directly if positive
                 let fcf;
-                if (hasNegativeMargin && ttmOperatingCF > 0) {
-                    // Company generates cash despite negative GAAP op income (common for high-growth companies)
-                    const cashMargin = ttmRevenue > 0 ? ttmOperatingCF / ttmRevenue : 0.05;
-                    const projectedCashMargin = cashMargin + (0.12 - cashMargin) * (yr / 5); // mean-revert toward 12%
-                    fcf = revenue * Math.max(projectedCashMargin, opMargin * 0.70);
+                if (hasNegativeMargin && ttmTrueFCF > 0) {
+                    // Company generates true FCF despite negative GAAP op income (common for high-SBC growth companies like SNOW)
+                    const fcfMargin = ttmRevenue > 0 ? ttmTrueFCF / ttmRevenue : 0.05;
+                    const projectedFCFMargin = fcfMargin + (0.12 - fcfMargin) * (yr / 5); // mean-revert toward 12%
+                    fcf = revenue * Math.max(projectedFCFMargin, opMargin * 0.70);
                 } else if (opIncome > 0) {
-                    const fcfRatio = ttmOpIncome > 0 ? clamp(ttmCashFlow / ttmOpIncome, 0.4, 1.0) : 0.70;
+                    // Use true FCF (operatingCF - capEx) / opIncome for conversion ratio
+                    const fcfRatio = ttmOpIncome > 0 ? clamp(ttmTrueFCF / ttmOpIncome, 0.3, 1.0) : 0.65;
                     fcf = opIncome * fcfRatio;
                 } else {
                     // Negative FCF — discount the loss but floor at a fraction of revenue
@@ -1064,10 +1068,13 @@
                                   nonCurrentLiabilities > 0 ? nonCurrentLiabilities * 0.70 :
                                   (latestFinancial.liabilities || 0) * 0.40;
 
-            const totalEquity = latestFinancial.equity || 1;
-            const debtToEquity = Math.max(financialDebt, 0) / Math.max(totalEquity, 1);
-            const debtWeight = debtToEquity / (1 + debtToEquity);
-            const equityWeight = 1 - debtWeight;
+            const totalEquity = latestFinancial.equity || 1; // book equity (kept for reference)
+            // Use market-value weights for WACC (theoretically correct; book equity is distorted by buybacks/intangibles)
+            const mvEquity = Math.max(marketCap, 1);
+            const mvDebt = Math.max(financialDebt, 0);
+            const totalCapital = mvEquity + mvDebt;
+            const equityWeight = mvEquity / totalCapital;
+            const debtWeight = mvDebt / totalCapital;
             const costOfDebt = riskFreeRate + 0.02;
             const taxRate = 0.21;
             const waccCalc = clamp(equityWeight * costOfEquity + debtWeight * costOfDebt * (1 - taxRate), 0.06, 0.15);
@@ -1149,7 +1156,7 @@
 
             // --- RENDER ---
             renderDCFOutput(symbol, companyName, currentPrice, marketCap, sharesOutstanding, beta,
-                ttmRevenue, ttmOpIncome, ttmNetIncome, ttmCashFlow, avgOpMargin, historicalGrowth,
+                ttmRevenue, ttmOpIncome, ttmNetIncome, ttmTrueFCF, avgOpMargin, historicalGrowth,
                 projections, wacc, costOfEquity, costOfDebt, equityWeight, debtWeight, riskFreeRate, taxRate,
                 tvPerpGrowth, tvExitMultiple, terminalValue, pvFCFs, pvTerminal, enterpriseValue,
                 netDebt, equityValue, fairValue, upside, verdict, verdictClass,
