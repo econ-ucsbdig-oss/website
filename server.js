@@ -295,6 +295,9 @@ async function fetchFinancials(symbol, limit = 4) {
                 nonCurrentLiabilities: financial.financials?.balance_sheet?.noncurrent_liabilities?.value,
                 equity: financial.financials?.balance_sheet?.equity?.value,
                 longTermDebt: financial.financials?.balance_sheet?.long_term_debt?.value,
+                cashAndEquivalents: financial.financials?.balance_sheet?.cash_and_cash_equivalents_and_short_term_investments?.value
+                    ?? financial.financials?.balance_sheet?.cash_and_equivalents?.value
+                    ?? financial.financials?.balance_sheet?.cash_and_cash_equivalents?.value,
                 cashFlow: financial.financials?.cash_flow_statement?.net_cash_flow?.value,
                 operatingCashFlow: financial.financials?.cash_flow_statement?.net_cash_flow_from_operating_activities?.value,
                 capEx: financial.financials?.cash_flow_statement?.net_cash_flow_from_investing_activities?.value,

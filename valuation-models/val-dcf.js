@@ -266,6 +266,13 @@ async function runDCF(symbol, overrides) {
             dcfWarnings.push(`Current TTM operating margin is ${(avgOpMargin * 100).toFixed(1)}% (negative). The model assumes margin improvement toward profitability over 5 years.`);
         }
 
+        // Issue 1: Warn if investing CF is abnormally large relative to revenue.
+        // net_cash_flow_from_investing_activities includes M&A, securities purchases, and PP&E —
+        // not just maintenance capex. A ratio > 25% of revenue suggests M&A noise is distorting FCF.
+        if (ttmRevenue > 0 && ttmCapEx < 0 && Math.abs(ttmCapEx) / ttmRevenue > 0.25) {
+            dcfWarnings.push(`Investing cash outflows (${fmtBig(ttmCapEx)}) represent ${((Math.abs(ttmCapEx) / ttmRevenue) * 100).toFixed(0)}% of TTM revenue — likely includes acquisitions or securities purchases beyond maintenance CapEx. FCF may be understated if significant M&A occurred in the period.`);
+        }
+
         // YoY growth rates
         const growthRates = [];
         for (let i = 0; i < quarterly.length - 4; i++) {
@@ -368,6 +375,15 @@ async function runDCF(symbol, overrides) {
         const exitMultiple = overrides.exitMultiple != null ? overrides.exitMultiple : sectorProfile.exitMultiple;
         const tvExitMultiple = lastOpIncome > 0 ? lastOpIncome * exitMultiple : 0;
 
+        // Issue 2: Implied perpetuity growth rate embedded in the exit multiple terminal value.
+        // Equating Gordon Growth (TV = FCF₅(1+g)/(WACC−g)) to exit TV and solving for g:
+        //   g = (TV·WACC − FCF₅) / (TV + FCF₅)
+        // This lets us show how aggressive (or conservative) the exit multiple assumption really is.
+        let impliedGrowthFromExitMultiple = null;
+        if (tvExitMultiple > 0 && lastFCF > 0) {
+            impliedGrowthFromExitMultiple = (tvExitMultiple * wacc - lastFCF) / (tvExitMultiple + lastFCF);
+        }
+
         let terminalValue;
         if (tvPerpGrowth > 0 && tvExitMultiple > 0) {
             terminalValue = (tvPerpGrowth + tvExitMultiple) / 2; // blend both
@@ -382,18 +398,22 @@ async function runDCF(symbol, overrides) {
             dcfWarnings.push('Terminal value based on revenue multiple (2x) because projected FCF and operating income remain negative in Year 5.');
         }
 
-        // --- STEP 5: DCF ---
+        // --- STEP 5: DCF (Mid-Year Convention) ---
+        // FCFs discounted at n-0.5 (cash earned throughout year, not all at year-end)
+        // Terminal value discounted at year 5 end (perpetuity starts after projection period)
         let pvFCFs = 0;
-        projections.forEach(p => { pvFCFs += p.fcf / Math.pow(1 + wacc, p.year); });
+        projections.forEach(p => { pvFCFs += p.fcf / Math.pow(1 + wacc, p.year - 0.5); });
         const pvTerminal = terminalValue / Math.pow(1 + wacc, 5);
         const enterpriseValue = pvFCFs + pvTerminal;
 
-        // Estimate cash: use current assets as proxy (includes cash, receivables, inventory)
-        // A better proxy is ~50% of current assets for cash + short-term investments
+        // Cash: prefer explicit cash & equivalents from balance sheet; fall back to current assets proxy
         const currentAssets = latestFinancial.currentAssets || 0;
-        const estCash = currentAssets > 0
-            ? currentAssets * 0.50
-            : (latestFinancial.assets || 0) * 0.10; // fallback
+        const reportedCash = latestFinancial.cashAndEquivalents || 0;
+        const estCash = reportedCash > 0
+            ? reportedCash                          // best: actual cash + ST investments line
+            : currentAssets > 0
+                ? currentAssets * 0.50              // fallback: 50% of current assets
+                : (latestFinancial.assets || 0) * 0.10; // last resort
 
         // Net debt = financial debt - cash (not total liabilities)
         const netDebt = financialDebt - estCash;
@@ -425,7 +445,7 @@ async function runDCF(symbol, overrides) {
             else if (tvExit > 0) tvBlend = tvExit;
             else tvBlend = projections[4].revenue * 2; // revenue multiple fallback
             let pv = 0;
-            projections.forEach(p => { pv += p.fcf / Math.pow(1 + w, p.year); });
+            projections.forEach(p => { pv += p.fcf / Math.pow(1 + w, p.year - 0.5); }); // mid-year
             pv += tvBlend / Math.pow(1 + w, 5);
             const eq = pv - netDebt; // netDebt can be negative (net cash), which adds value
             return sharesOutstanding > 0 ? Math.max(eq / sharesOutstanding, 0) : 0;
@@ -437,7 +457,8 @@ async function runDCF(symbol, overrides) {
             projections, wacc, costOfEquity, costOfDebt, equityWeight, debtWeight, riskFreeRate, taxRate,
             tvPerpGrowth, tvExitMultiple, terminalValue, pvFCFs, pvTerminal, enterpriseValue,
             netDebt, equityValue, fairValue, upside, verdict, verdictClass,
-            sensTable, waccRange, growthRange, quarterly, dcfWarnings, sectorProfile, exitMultiple, terminalGrowthRate);
+            sensTable, waccRange, growthRange, quarterly, dcfWarnings, sectorProfile, exitMultiple, terminalGrowthRate,
+            impliedGrowthFromExitMultiple);
 
     } catch (err) {
         console.error('DCF Error:', err);
@@ -449,7 +470,8 @@ function renderDCFOutput(symbol, companyName, currentPrice, marketCap, sharesOut
     ttmRev, ttmOp, ttmNet, ttmFCF, avgMargin, histGrowth,
     projections, wacc, coe, cod, eqW, debtW, rf, taxR,
     tvPerp, tvExit, tv, pvFCFs, pvTV, ev, netDebt, eqVal, fairVal, upside, verdict, verdictClass,
-    sensTable, waccRange, growthRange, quarterly, dcfWarnings, sectorProfile, exitMultiple, terminalGrowthRate) {
+    sensTable, waccRange, growthRange, quarterly, dcfWarnings, sectorProfile, exitMultiple, terminalGrowthRate,
+    impliedGrowthFromExitMultiple) {
     sectorProfile = sectorProfile || SECTOR_PROFILES.default;
     exitMultiple  = exitMultiple  || sectorProfile.exitMultiple;
     terminalGrowthRate = terminalGrowthRate || sectorProfile.terminalGrowth;
@@ -546,7 +568,7 @@ function renderDCFOutput(symbol, companyName, currentPrice, marketCap, sharesOut
             <h3><i class="fas fa-infinity"></i> Terminal Value & DCF Bridge</h3>
             <table class="val-table">
                 <tr><td>Terminal Value (Perpetuity Growth @ ${(terminalGrowthRate * 100).toFixed(1)}%)</td><td>${fmtBig(tvPerp)}</td></tr>
-                <tr><td>Terminal Value (Exit Multiple @ ${exitMultiple}x Op Income)</td><td>${fmtBig(tvExit)}</td></tr>
+                <tr><td>Terminal Value (Exit Multiple @ ${exitMultiple}x Op Income)${impliedGrowthFromExitMultiple != null ? `<br><span style="opacity:0.6;font-size:0.78rem;">implies ~${(impliedGrowthFromExitMultiple * 100).toFixed(1)}% perpetuity growth</span>` : ''}</td><td>${fmtBig(tvExit)}</td></tr>
                 <tr><td>Blended Terminal Value</td><td class="highlight">${fmtBig(tv)}</td></tr>
                 <tr style="border-top:1px solid rgba(255,255,255,0.15);"><td>PV of Projected FCFs</td><td>${fmtBig(pvFCFs)}</td></tr>
                 <tr><td>PV of Terminal Value</td><td>${fmtBig(pvTV)}</td></tr>
