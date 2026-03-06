@@ -2717,10 +2717,15 @@ async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252 } =
             beta = calcBetaFromReturns(stockRet, mktRet);
         }
 
-        // Relative ATR: stock ATR / SPY ATR (same period)
-        if (atr != null) {
+        // Relative ATR: stock ATR% / SPY ATR% (normalized by price to avoid skew)
+        if (atr != null && price > 0) {
             const spyATR = calcATR(spyPrices, atrPeriod);
-            if (spyATR && spyATR > 0) relATR = atr / spyATR;
+            const spyLatest = spyPrices[spyPrices.length - 1];
+            if (spyATR && spyATR > 0 && spyLatest && spyLatest.close > 0) {
+                const stockAtrPct = (atr / price) * 100;
+                const spyAtrPct = (spyATR / spyLatest.close) * 100;
+                relATR = stockAtrPct / spyAtrPct;
+            }
         }
     } catch (e) {
         // SPY fetch failed — beta & relATR stay null
@@ -2745,8 +2750,6 @@ async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252 } =
         rvol,
         sma200,
         fromSMA200: sma200 ? ((price - sma200) / sma200) * 100 : null,
-        atr,
-        atrPeriod,
         atrPct: atr && price > 0 ? (atr / price) * 100 : null,
         relATR,
         perfDay,
