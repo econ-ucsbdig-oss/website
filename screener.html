@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Screener - UCSB Dean's Investment Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6; color: #e0e0e0; overflow-x: hidden; background: transparent;
+        }
+
+        /* Background */
+        .bg-animation {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0f1419, #1e3c72, #2a3c5f, #0f1419);
+            background-size: 300% 300%; animation: gradientShift 20s ease infinite; z-index: -2;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .particle { position: absolute; border-radius: 50%; animation: float 12s ease-in-out infinite; opacity: 0.3; }
+        .particle.gold { background: radial-gradient(circle, rgba(254,188,17,0.6), rgba(255,215,0,0.3)); }
+        .particle.blue { background: radial-gradient(circle, rgba(30,60,114,0.6), rgba(42,60,95,0.3)); }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; }
+        }
+
+        /* Nav */
+        header { position: fixed; top: 0; width: 100%; z-index: 1000; background: rgba(15,20,25,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(254,188,17,0.15); }
+        nav { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.5rem; font-weight: 700; color: #febc11; }
+        .nav-links { display: flex; list-style: none; gap: 3rem; }
+        .nav-links a { color: white; text-decoration: none; font-weight: 600; font-size: 1.1rem; transition: all 0.3s ease; position: relative; }
+        .nav-links a::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 0; background: #febc11; transition: width 0.3s ease; }
+        .nav-links a:hover::after { width: 100%; }
+        .nav-links a:hover { color: #febc11; transform: translateY(-2px); }
+        .nav-links a.active { color: #febc11; }
+        .nav-links a.active::after { width: 100%; }
+        .live-portfolio-link {
+            background: linear-gradient(135deg, #28a745, #20c997) !important; color: white !important;
+            padding: 0.5rem 1rem !important; border-radius: 20px !important; font-weight: 600 !important; transition: all 0.3s ease !important;
+        }
+        .live-portfolio-link:hover { background: linear-gradient(135deg, #20c997, #28a745) !important; transform: translateY(-3px) !important; box-shadow: 0 4px 12px rgba(40,167,69,0.3) !important; }
+        .mobile-menu-toggle { display: none; flex-direction: column; cursor: pointer; padding: 0.5rem; }
+        .mobile-menu-toggle span { width: 25px; height: 3px; background: #febc11; margin: 3px 0; transition: 0.3s; border-radius: 2px; }
+        @media (max-width: 768px) {
+            .mobile-menu-toggle { display: flex; }
+            .nav-links { position: fixed; top: 80px; left: -100%; width: 100%; height: calc(100vh - 80px); background: rgba(0,0,0,0.95); flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 3rem; transition: left 0.3s ease; backdrop-filter: blur(20px); }
+            .nav-links.active { left: 0; }
+            .nav-links li { margin: 1rem 0; }
+            .nav-links a { font-size: 1.5rem; }
+        }
+
+        /* Page layout */
+        .page-container { max-width: 1800px; margin: 100px auto 2rem; padding: 0 1.5rem; display: flex; gap: 1.5rem; }
+
+        /* ── Watchlist sidebar ── */
+        .watchlist-panel {
+            width: 240px; min-width: 240px; flex-shrink: 0;
+            background: rgba(255,255,255,0.04); border-radius: 14px; border: 1px solid rgba(254,188,17,0.1);
+            backdrop-filter: blur(10px); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+            max-height: calc(100vh - 130px); position: sticky; top: 100px;
+        }
+        .watchlist-panel h3 {
+            color: #febc11; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .watchlist-input-row { display: flex; gap: 0.4rem; }
+        .watchlist-input-row input {
+            flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; color: #fff; padding: 0.4rem 0.6rem; font-size: 0.85rem; outline: none;
+        }
+        .watchlist-input-row input:focus { border-color: #febc11; }
+        .watchlist-input-row input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .watchlist-actions { display: flex; flex-direction: column; gap: 0.4rem; }
+        .watchlist-actions .btn { font-size: 0.8rem; padding: 0.4rem 0.6rem; width: 100%; text-align: center; }
+
+        .watchlist-list {
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+            min-height: 60px;
+        }
+        .watchlist-list::-webkit-scrollbar { width: 4px; }
+        .watchlist-list::-webkit-scrollbar-thumb { background: rgba(254,188,17,0.3); border-radius: 2px; }
+
+        .watchlist-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.35rem 0.5rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600;
+            color: #e0e0e0; transition: background 0.15s; cursor: default;
+        }
+        .watchlist-item:hover { background: rgba(254,188,17,0.08); }
+        .watchlist-item .remove-ticker {
+            background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer;
+            font-size: 0.9rem; padding: 0 4px; line-height: 1; transition: color 0.15s;
+        }
+        .watchlist-item .remove-ticker:hover { color: #f44336; }
+
+        .watchlist-empty {
+            color: rgba(255,255,255,0.3); font-size: 0.8rem; text-align: center;
+            padding: 1.5rem 0.5rem; line-height: 1.5;
+        }
+        .watchlist-count { color: rgba(255,255,255,0.4); font-size: 0.75rem; }
+
+        /* ── Main content ── */
+        .main-content { flex: 1; min-width: 0; }
+
+        .page-header { text-align: center; margin-bottom: 1.5rem; }
+        .page-header h1 {
+            font-size: 2.5rem; font-weight: 700; color: #febc11;
+            text-shadow: 0 2px 10px rgba(254,188,17,0.3);
+        }
+        .page-header p { color: rgba(255,255,255,0.6); margin-top: 0.5rem; font-size: 1.1rem; }
+
+        /* Status bar */
+        .status-bar {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+            margin-bottom: 1rem; padding: 0.6rem 1rem;
+            background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(254,188,17,0.08);
+        }
+        .status-bar .left { display: flex; align-items: center; gap: 0.75rem; }
+        .status-text { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+        .active-filters-summary { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .filter-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(254,188,17,0.15); color: #febc11; border: 1px solid rgba(254,188,17,0.3);
+            border-radius: 12px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600;
+        }
+        .filter-badge .remove-filter {
+            background: none; border: none; color: #febc11; cursor: pointer; font-size: 0.85rem;
+            padding: 0; line-height: 1; opacity: 0.7;
+        }
+        .filter-badge .remove-filter:hover { opacity: 1; }
+
+        .btn {
+            padding: 0.5rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; border: none; transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #febc11, #f0a500); color: #0f1419; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(254,188,17,0.3); }
+        .btn-secondary { background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.15); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.14); color: #fff; }
+        .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+        .btn-danger { background: rgba(244,67,54,0.15); color: #ef5350; border: 1px solid rgba(244,67,54,0.3); }
+        .btn-danger:hover { background: rgba(244,67,54,0.25); }
+
+        /* Table container */
+        .table-wrapper {
+            background: rgba(255,255,255,0.04); border-radius: 14px; border: 1px solid rgba(254,188,17,0.1);
+            overflow-x: auto; backdrop-filter: blur(10px);
+        }
+
+        /* Screener table */
+        .screener-table {
+            width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap;
+        }
+        .screener-table thead { position: sticky; top: 0; z-index: 10; }
+        .screener-table th {
+            background: rgba(15,20,25,0.95); color: rgba(255,255,255,0.7); font-weight: 600;
+            padding: 0 0.9rem; text-align: right; border-bottom: 2px solid rgba(254,188,17,0.2);
+            cursor: pointer; user-select: none; transition: color 0.2s; position: relative;
+        }
+        .screener-table th:first-child { text-align: left; }
+        .screener-table th:hover { color: #febc11; }
+        .screener-table th.sorted { color: #febc11; }
+        .screener-table th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
+
+        /* Column header layout */
+        .col-header {
+            display: flex; flex-direction: column; align-items: stretch; gap: 0;
+        }
+        .col-header-top {
+            display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+            padding: 0.5rem 0;
+        }
+        th:first-child .col-header-top { justify-content: flex-start; }
+        .col-header-top .col-label { flex: 0 0 auto; }
+        .filter-icon {
+            background: none; border: none; color: rgba(255,255,255,0.25); cursor: pointer;
+            font-size: 0.7rem; padding: 2px 4px; line-height: 1; transition: color 0.15s;
+            flex-shrink: 0;
+        }
+        .filter-icon:hover { color: #febc11; }
+        .filter-icon.active { color: #febc11; }
+
+        /* Filter indicator under column header */
+        .col-filter-indicator {
+            font-size: 0.65rem; color: #febc11; background: rgba(254,188,17,0.1);
+            border-radius: 3px; padding: 1px 5px; margin-bottom: 4px;
+            text-align: center; white-space: nowrap; line-height: 1.4;
+        }
+
+        /* Filter dropdown */
+        .filter-dropdown {
+            position: absolute; top: 100%; right: 0; z-index: 100;
+            background: rgba(20,25,30,0.98); border: 1px solid rgba(254,188,17,0.3);
+            border-radius: 10px; padding: 0.75rem; min-width: 180px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5); backdrop-filter: blur(20px);
+            display: none;
+        }
+        .filter-dropdown.open { display: block; }
+        .filter-dropdown label {
+            display: block; color: rgba(255,255,255,0.6); font-size: 0.75rem;
+            margin-bottom: 0.25rem; font-weight: 400;
+        }
+        .filter-dropdown input {
+            width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; color: #fff; padding: 0.35rem 0.5rem; font-size: 0.8rem;
+            outline: none; margin-bottom: 0.5rem;
+        }
+        .filter-dropdown input:focus { border-color: #febc11; }
+        .filter-dropdown .filter-actions { display: flex; gap: 0.4rem; }
+        .filter-dropdown .filter-actions .btn { flex: 1; font-size: 0.75rem; padding: 0.3rem; }
+
+        .screener-table td {
+            padding: 0.55rem 0.9rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-variant-numeric: tabular-nums;
+        }
+        .screener-table td:first-child { text-align: left; }
+
+        .screener-table tbody tr { transition: background 0.15s; }
+        .screener-table tbody tr:hover { background: rgba(254,188,17,0.06); }
+
+        .ticker-cell {
+            font-weight: 700; color: #febc11; letter-spacing: 0.5px;
+        }
+        .ticker-cell a { color: inherit; text-decoration: none; }
+        .ticker-cell a:hover { text-decoration: underline; }
+
+        /* Color helpers */
+        .pos { color: #4caf50; }
+        .neg { color: #f44336; }
+        .neutral { color: rgba(255,255,255,0.5); }
+        .muted { color: rgba(255,255,255,0.4); }
+
+        /* Loading overlay */
+        .loading-overlay {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 4rem 2rem; text-align: center;
+        }
+        .loading-overlay .spinner {
+            width: 48px; height: 48px; border: 4px solid rgba(254,188,17,0.2);
+            border-top-color: #febc11; border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-overlay p { margin-top: 1.2rem; color: rgba(255,255,255,0.5); }
+
+        /* Empty state */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 4rem 2rem; text-align: center; color: rgba(255,255,255,0.4);
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; color: rgba(254,188,17,0.3); }
+        .empty-state p { font-size: 1rem; line-height: 1.6; }
+
+        /* Heatmap cell background */
+        .heatmap-cell {
+            border-radius: 4px; padding: 0.3rem 0.6rem; display: inline-block; min-width: 60px; text-align: right;
+        }
+        .heatmap-strong-pos { background: rgba(76,175,80,0.25); color: #81c784; }
+        .heatmap-pos { background: rgba(76,175,80,0.12); color: #66bb6a; }
+        .heatmap-neutral { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); }
+        .heatmap-neg { background: rgba(244,67,54,0.12); color: #ef5350; }
+        .heatmap-strong-neg { background: rgba(244,67,54,0.25); color: #e57373; }
+
+        /* RVol bar */
+        .rvol-bar-container { display: inline-flex; align-items: center; gap: 6px; }
+        .rvol-bar { height: 6px; border-radius: 3px; min-width: 4px; max-width: 60px; }
+        .rvol-high { background: #febc11; }
+        .rvol-normal { background: rgba(255,255,255,0.25); }
+        .rvol-low { background: rgba(255,255,255,0.1); }
+
+        /* Footer */
+        .page-footer {
+            text-align: center; padding: 2rem; color: rgba(255,255,255,0.3); font-size: 0.8rem;
+        }
+
+        @media (max-width: 900px) {
+            .page-container { flex-direction: column; padding: 0 0.5rem; }
+            .watchlist-panel { width: 100%; min-width: 0; position: static; max-height: none; flex-direction: row; flex-wrap: wrap; }
+            .watchlist-list { flex-direction: row; flex-wrap: wrap; min-height: auto; }
+            .watchlist-item { flex: 0 0 auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-animation"></div>
+<div class="particles">
+    <div class="particle gold" style="width:6px;height:6px;top:15%;left:10%;animation-delay:0s;animation-duration:14s"></div>
+    <div class="particle blue" style="width:8px;height:8px;top:25%;left:80%;animation-delay:2s;animation-duration:16s"></div>
+    <div class="particle gold" style="width:4px;height:4px;top:60%;left:30%;animation-delay:4s;animation-duration:12s"></div>
+    <div class="particle blue" style="width:10px;height:10px;top:80%;left:70%;animation-delay:1s;animation-duration:18s"></div>
+    <div class="particle gold" style="width:5px;height:5px;top:40%;left:55%;animation-delay:3s;animation-duration:15s"></div>
+</div>
+
+<header>
+    <nav>
+        <div class="logo"><i class="fas fa-chart-line"></i><span>DIG</span></div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html#home">Home</a></li>
+            <li><a href="index.html#board">Advisory Board</a></li>
+            <li><a href="live-portfolio.html" class="live-portfolio-link">Live Portfolio</a></li>
+            <li><a href="stock-history.html">Stock History</a></li>
+            <li><a href="valuation.html">Valuation</a></li>
+            <li><a href="screener.html" class="active">Screener</a></li>
+            <li><a href="TrackingError/tracking_error_analyzer.html">Tracking Error</a></li>
+        </ul>
+        <div class="mobile-menu-toggle" id="mobileMenuToggle">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+</header>
+
+<div class="page-container">
+    <!-- Watchlist sidebar -->
+    <div class="watchlist-panel">
+        <h3><i class="fas fa-eye"></i> Watchlist</h3>
+        <div class="watchlist-input-row">
+            <input type="text" id="tickerInput" placeholder="AAPL, NVDA..." />
+            <button class="btn btn-primary btn-sm" id="addBtn" title="Add tickers"><i class="fas fa-plus"></i></button>
+        </div>
+        <div class="watchlist-actions">
+            <button class="btn btn-secondary btn-sm" id="addAllPortfolioBtn"><i class="fas fa-briefcase"></i> Add All Portfolio</button>
+            <button class="btn btn-danger btn-sm" id="clearAllBtn"><i class="fas fa-trash"></i> Clear All</button>
+        </div>
+        <div class="watchlist-count" id="watchlistCount">0 tickers</div>
+        <div class="watchlist-list" id="watchlistList">
+            <div class="watchlist-empty">Add tickers above or load the full portfolio to get started.</div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1><i class="fas fa-filter"></i> Stock Screener</h1>
+            <p>Finviz-style technical overview with column filters</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="left">
+                <span class="status-text" id="statusText">Add tickers to begin</span>
+                <div class="active-filters-summary" id="activeFiltersSummary"></div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="clearFiltersBtn" style="display:none"><i class="fas fa-times"></i> Clear Filters</button>
+        </div>
+
+        <div class="table-wrapper" id="tableWrapper">
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-search-dollar"></i>
+                <p>Your screener is empty.<br/>Add tickers in the watchlist or click <strong>"Add All Portfolio"</strong> to load DIG holdings.</p>
+            </div>
+        </div>
+
+        <div class="page-footer">
+            Data via Polygon.io &bull; 15-min cache &bull; UCSB Dean's Investment Group
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    const API_BASE = window.location.origin;
+
+    // Portfolio tickers (mirrored from server for "Add All" without an extra API call)
+    const PORTFOLIO_TICKERS = [
+        'VOO','VTV','SPY','TSM','GOOGL','MSFT','AMZN','ASML','SNOW','NUKZ',
+        'VRT','COST','XLV','CEG','JPM','PANW','FLUT','SCHW','REMX','FCX','DXCM','PSA'
+    ];
+
+    // Column definitions — filterable: true means user can set min/max
+    const COLUMNS = [
+        { key: 'symbol',     label: 'Ticker',      align: 'left',  fmt: 'ticker',  filterable: false },
+        { key: 'price',      label: 'Price',        align: 'right', fmt: 'dollar',  filterable: true },
+        { key: 'change',     label: 'Chg %',        align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'volume',     label: 'Volume',       align: 'right', fmt: 'bignum',  filterable: true },
+        { key: 'rvol',       label: 'RVol',         align: 'right', fmt: 'rvol',    filterable: true },
+        { key: 'sma200',     label: 'SMA200',       align: 'right', fmt: 'dollar',  filterable: true },
+        { key: 'fromSMA200', label: 'From SMA200',  align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'atr',        label: 'ATR(14)',      align: 'right', fmt: 'decimal2',filterable: true },
+        { key: 'atrPct',     label: 'ATR %',        align: 'right', fmt: 'pct',     filterable: true },
+        { key: 'relATR',     label: 'Rel ATR',      align: 'right', fmt: 'decimal2',filterable: true },
+        { key: 'perfDay',    label: 'Day',          align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'perfWeek',   label: 'Week',         align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'perfYTD',    label: 'YTD',          align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'perfYear',   label: '1 Year',       align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'beta',       label: 'Beta',         align: 'right', fmt: 'decimal2',filterable: true },
+        { key: 'high52w',    label: '52W High',     align: 'right', fmt: 'dollar',  filterable: true },
+        { key: 'low52w',     label: '52W Low',      align: 'right', fmt: 'dollar',  filterable: true },
+        { key: 'fromHigh52w',label: 'From 52W Hi',  align: 'right', fmt: 'pctHeat', filterable: true },
+        { key: 'earningsDate',label: 'Earnings',    align: 'right', fmt: 'date',    filterable: false },
+    ];
+
+    // State
+    let allRows = [];           // raw data from server (keyed by symbol)
+    let watchlist = [];         // ordered list of ticker strings
+    let sortKey = 'symbol';
+    let sortAsc = true;
+    let filters = {};           // { colKey: { min: number|null, max: number|null } }
+    let openFilterKey = null;   // which column's filter dropdown is open
+
+    // ── Formatting helpers ──
+    function fmtDollar(v) { return v != null ? '$' + v.toFixed(2) : '—'; }
+    function fmtDecimal2(v) { return v != null ? v.toFixed(2) : '—'; }
+    function fmtPct(v) { return v != null ? v.toFixed(2) + '%' : '—'; }
+    function fmtBigNum(v) {
+        if (v == null) return '—';
+        if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+        if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+        if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+        return v.toLocaleString();
+    }
+    function fmtDate(v) {
+        if (!v) return '—';
+        const d = new Date(v);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function heatClass(v) {
+        if (v == null) return 'heatmap-neutral';
+        if (v >= 5) return 'heatmap-strong-pos';
+        if (v > 0) return 'heatmap-pos';
+        if (v <= -5) return 'heatmap-strong-neg';
+        if (v < 0) return 'heatmap-neg';
+        return 'heatmap-neutral';
+    }
+    function colorClass(v) {
+        if (v == null) return 'muted';
+        return v > 0 ? 'pos' : v < 0 ? 'neg' : 'neutral';
+    }
+
+    function renderCell(col, row) {
+        const v = row[col.key];
+        switch (col.fmt) {
+            case 'ticker':
+                return `<span class="ticker-cell"><a href="valuation.html?ticker=${row.symbol}">${row.symbol}</a></span>`;
+            case 'dollar': return `<span class="${v != null ? '' : 'muted'}">${fmtDollar(v)}</span>`;
+            case 'decimal2': return `<span>${fmtDecimal2(v)}</span>`;
+            case 'pct': return `<span class="${colorClass(v)}">${fmtPct(v)}</span>`;
+            case 'pctHeat':
+                return `<span class="heatmap-cell ${heatClass(v)}">${fmtPct(v)}</span>`;
+            case 'bignum': return `<span>${fmtBigNum(v)}</span>`;
+            case 'rvol':
+                if (v == null) return '<span class="muted">—</span>';
+                const barW = Math.min(Math.max(v * 30, 4), 60);
+                const cls = v >= 2 ? 'rvol-high' : v >= 0.8 ? 'rvol-normal' : 'rvol-low';
+                return `<span class="rvol-bar-container"><span class="rvol-bar ${cls}" style="width:${barW}px"></span>${v.toFixed(2)}x</span>`;
+            case 'date': return `<span class="muted">${fmtDate(v)}</span>`;
+            default: return String(v ?? '—');
+        }
+    }
+
+    // ── Filtering ──
+    function applyFilters(dataRows) {
+        const activeFilters = Object.entries(filters).filter(([, f]) => f.min != null || f.max != null);
+        if (activeFilters.length === 0) return dataRows;
+        return dataRows.filter(row => {
+            for (const [key, f] of activeFilters) {
+                const v = row[key];
+                if (v == null) return false;
+                if (f.min != null && v < f.min) return false;
+                if (f.max != null && v > f.max) return false;
+            }
+            return true;
+        });
+    }
+
+    function getFilterLabel(key) {
+        const f = filters[key];
+        if (!f) return null;
+        const col = COLUMNS.find(c => c.key === key);
+        if (!col) return null;
+        if (f.min != null && f.max != null) return `${f.min} - ${f.max}`;
+        if (f.min != null) return `>= ${f.min}`;
+        if (f.max != null) return `<= ${f.max}`;
+        return null;
+    }
+
+    function hasActiveFilters() {
+        return Object.values(filters).some(f => f.min != null || f.max != null);
+    }
+
+    // ── Sort ──
+    function sortRows(dataRows) {
+        return [...dataRows].sort((a, b) => {
+            let va = a[sortKey], vb = b[sortKey];
+            if (va == null && vb == null) return 0;
+            if (va == null) return 1;
+            if (vb == null) return -1;
+            if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+            return sortAsc ? va - vb : vb - va;
+        });
+    }
+
+    // ── Render ──
+    function renderTable() {
+        const wrapper = document.getElementById('tableWrapper');
+        const statusEl = document.getElementById('statusText');
+        const summaryEl = document.getElementById('activeFiltersSummary');
+        const clearBtn = document.getElementById('clearFiltersBtn');
+
+        // Get rows for watchlist symbols
+        const watchlistSet = new Set(watchlist);
+        const dataRows = allRows.filter(r => watchlistSet.has(r.symbol));
+
+        if (dataRows.length === 0) {
+            wrapper.innerHTML = `<div class="empty-state" id="emptyState">
+                <i class="fas fa-search-dollar"></i>
+                <p>Your screener is empty.<br/>Add tickers in the watchlist or click <strong>"Add All Portfolio"</strong> to load DIG holdings.</p>
+            </div>`;
+            statusEl.textContent = 'Add tickers to begin';
+            summaryEl.innerHTML = '';
+            clearBtn.style.display = 'none';
+            return;
+        }
+
+        const filtered = applyFilters(dataRows);
+        const sorted = sortRows(filtered);
+
+        // Render filter summary badges
+        const activeFilterKeys = Object.entries(filters).filter(([, f]) => f.min != null || f.max != null);
+        if (activeFilterKeys.length > 0) {
+            clearBtn.style.display = '';
+            summaryEl.innerHTML = activeFilterKeys.map(([key]) => {
+                const col = COLUMNS.find(c => c.key === key);
+                return `<span class="filter-badge">${col.label}: ${getFilterLabel(key)}
+                    <button class="remove-filter" data-key="${key}">&times;</button></span>`;
+            }).join('');
+            summaryEl.querySelectorAll('.remove-filter').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    delete filters[btn.dataset.key];
+                    renderTable();
+                });
+            });
+        } else {
+            clearBtn.style.display = 'none';
+            summaryEl.innerHTML = '';
+        }
+
+        statusEl.textContent = `${filtered.length} of ${dataRows.length} symbols${activeFilterKeys.length ? ' (filtered)' : ''}`;
+
+        // Build table
+        let html = '<table class="screener-table"><thead><tr>';
+        for (const col of COLUMNS) {
+            const isSorted = sortKey === col.key;
+            const arrow = isSorted ? (sortAsc ? ' <span class="sort-arrow">&#9650;</span>' : ' <span class="sort-arrow">&#9660;</span>') : '';
+            const filterActive = filters[col.key] && (filters[col.key].min != null || filters[col.key].max != null);
+            const filterLabel = filterActive ? getFilterLabel(col.key) : null;
+
+            html += `<th class="${isSorted ? 'sorted' : ''}" style="text-align:${col.align}" data-key="${col.key}">`;
+            html += `<div class="col-header">`;
+            html += `<div class="col-header-top">`;
+            html += `<span class="col-label">${col.label}${arrow}</span>`;
+            if (col.filterable) {
+                html += `<button class="filter-icon ${filterActive ? 'active' : ''}" data-filter-key="${col.key}" title="Filter ${col.label}"><i class="fas fa-filter"></i></button>`;
+            }
+            html += `</div>`;
+            if (filterLabel) {
+                html += `<div class="col-filter-indicator">${filterLabel}</div>`;
+            }
+            // Filter dropdown (hidden by default)
+            if (col.filterable) {
+                const isOpen = openFilterKey === col.key;
+                const f = filters[col.key] || {};
+                html += `<div class="filter-dropdown ${isOpen ? 'open' : ''}" data-dropdown-key="${col.key}">`;
+                html += `<label>Min</label><input type="number" step="any" class="filter-min" data-col="${col.key}" value="${f.min != null ? f.min : ''}" placeholder="No min" />`;
+                html += `<label>Max</label><input type="number" step="any" class="filter-max" data-col="${col.key}" value="${f.max != null ? f.max : ''}" placeholder="No max" />`;
+                html += `<div class="filter-actions">`;
+                html += `<button class="btn btn-primary btn-sm filter-apply" data-col="${col.key}">Apply</button>`;
+                html += `<button class="btn btn-secondary btn-sm filter-clear" data-col="${col.key}">Clear</button>`;
+                html += `</div></div>`;
+            }
+            html += `</div></th>`;
+        }
+        html += '</tr></thead><tbody>';
+
+        for (const row of sorted) {
+            if (row.error) {
+                html += `<tr><td class="ticker-cell">${row.symbol}</td><td colspan="${COLUMNS.length - 1}" style="text-align:center;color:rgba(255,255,255,0.3)">Data unavailable</td></tr>`;
+                continue;
+            }
+            html += '<tr>';
+            for (const col of COLUMNS) {
+                html += `<td style="text-align:${col.align}">${renderCell(col, row)}</td>`;
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        wrapper.innerHTML = html;
+
+        // Bind header click for sorting (on label, not filter icon)
+        wrapper.querySelectorAll('.col-label').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = el.closest('th').dataset.key;
+                if (sortKey === key) { sortAsc = !sortAsc; }
+                else { sortKey = key; sortAsc = key === 'symbol'; }
+                renderTable();
+            });
+        });
+
+        // Bind filter icon clicks
+        wrapper.querySelectorAll('.filter-icon').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.dataset.filterKey;
+                openFilterKey = openFilterKey === key ? null : key;
+                renderTable();
+                // Focus min input if opened
+                if (openFilterKey === key) {
+                    const dd = wrapper.querySelector(`.filter-dropdown[data-dropdown-key="${key}"]`);
+                    if (dd) dd.querySelector('.filter-min').focus();
+                }
+            });
+        });
+
+        // Bind filter apply/clear
+        wrapper.querySelectorAll('.filter-apply').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.dataset.col;
+                const dd = wrapper.querySelector(`.filter-dropdown[data-dropdown-key="${key}"]`);
+                const minVal = dd.querySelector('.filter-min').value;
+                const maxVal = dd.querySelector('.filter-max').value;
+                filters[key] = {
+                    min: minVal !== '' ? parseFloat(minVal) : null,
+                    max: maxVal !== '' ? parseFloat(maxVal) : null,
+                };
+                openFilterKey = null;
+                renderTable();
+            });
+        });
+
+        wrapper.querySelectorAll('.filter-clear').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                delete filters[btn.dataset.col];
+                openFilterKey = null;
+                renderTable();
+            });
+        });
+
+        // Prevent dropdown clicks from bubbling to th (which would sort)
+        wrapper.querySelectorAll('.filter-dropdown').forEach(dd => {
+            dd.addEventListener('click', (e) => e.stopPropagation());
+        });
+
+        // Enter key in filter inputs triggers apply
+        wrapper.querySelectorAll('.filter-min, .filter-max').forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const key = input.dataset.col;
+                    wrapper.querySelector(`.filter-apply[data-col="${key}"]`).click();
+                }
+            });
+        });
+    }
+
+    // ── Watchlist rendering ──
+    function renderWatchlist() {
+        const list = document.getElementById('watchlistList');
+        const count = document.getElementById('watchlistCount');
+        count.textContent = `${watchlist.length} ticker${watchlist.length !== 1 ? 's' : ''}`;
+
+        if (watchlist.length === 0) {
+            list.innerHTML = '<div class="watchlist-empty">Add tickers above or load the full portfolio to get started.</div>';
+            return;
+        }
+
+        list.innerHTML = watchlist.map(sym =>
+            `<div class="watchlist-item">
+                <span>${sym}</span>
+                <button class="remove-ticker" data-sym="${sym}" title="Remove ${sym}">&times;</button>
+            </div>`
+        ).join('');
+
+        list.querySelectorAll('.remove-ticker').forEach(btn => {
+            btn.addEventListener('click', () => {
+                removeTicker(btn.dataset.sym);
+            });
+        });
+    }
+
+    // ── Ticker management ──
+    function addTickers(tickers) {
+        const existing = new Set(watchlist);
+        const newOnes = tickers.filter(t => t && !existing.has(t));
+        if (newOnes.length === 0) return;
+        watchlist = [...watchlist, ...newOnes];
+        renderWatchlist();
+        fetchForNewTickers(newOnes);
+    }
+
+    function removeTicker(sym) {
+        watchlist = watchlist.filter(s => s !== sym);
+        renderWatchlist();
+        renderTable();
+    }
+
+    function clearAll() {
+        watchlist = [];
+        allRows = [];
+        filters = {};
+        renderWatchlist();
+        renderTable();
+    }
+
+    // ── Fetch data ──
+    async function fetchForNewTickers(newSymbols) {
+        const wrapper = document.getElementById('tableWrapper');
+        const status = document.getElementById('statusText');
+
+        // If we have no data at all yet, show loading in the table area
+        const watchlistSet = new Set(watchlist);
+        const existingData = allRows.filter(r => watchlistSet.has(r.symbol));
+        if (existingData.length === 0) {
+            wrapper.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><p>Fetching screener data...</p></div>';
+        }
+        status.textContent = `Fetching ${newSymbols.join(', ')}...`;
+
+        try {
+            const resp = await fetch(`${API_BASE}/api/screener`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbols: newSymbols }),
+            });
+            if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+            const data = await resp.json();
+            const newRows = data.rows || [];
+            // Merge into allRows (replace if already exists)
+            const existingMap = new Map(allRows.map(r => [r.symbol, r]));
+            for (const r of newRows) existingMap.set(r.symbol, r);
+            allRows = [...existingMap.values()];
+            renderTable();
+        } catch (err) {
+            status.textContent = `Error loading: ${err.message}`;
+            // Still render what we have
+            renderTable();
+        }
+    }
+
+    // ── Event handlers ──
+    document.getElementById('addBtn').addEventListener('click', () => {
+        const input = document.getElementById('tickerInput');
+        const tickers = input.value.toUpperCase().split(/[\s,]+/).filter(Boolean);
+        input.value = '';
+        if (tickers.length > 0) addTickers(tickers);
+    });
+
+    document.getElementById('tickerInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('addBtn').click();
+    });
+
+    document.getElementById('addAllPortfolioBtn').addEventListener('click', () => {
+        addTickers(PORTFOLIO_TICKERS);
+    });
+
+    document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+        filters = {};
+        renderTable();
+    });
+
+    // Close filter dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (openFilterKey && !e.target.closest('.filter-dropdown') && !e.target.closest('.filter-icon')) {
+            openFilterKey = null;
+            renderTable();
+        }
+    });
+
+    // Mobile menu toggle
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (mobileToggle && navLinks) {
+        mobileToggle.addEventListener('click', () => {
+            mobileToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => navLinks.classList.remove('active'));
+        });
+    }
+
+    // Init — start empty
+    renderWatchlist();
+    renderTable();
+})();
+</script>
+</body>
+</html>

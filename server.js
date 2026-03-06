@@ -516,6 +516,10 @@ app.get('/TE', (req, res) => {
     res.sendFile(path.join(__dirname, 'TE', 'index.html'));
 });
 
+app.get('/screener', (req, res) => {
+    res.sendFile(path.join(__dirname, 'screener.html'));
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({
@@ -2608,6 +2612,213 @@ function scheduleAnalyticsCacheRefresh() {
         warmAnalyticsCache().catch(e => console.warn('Analytics cache refresh failed:', e.message));
     }, ANALYTICS_CACHE_TTL_MS);
 }
+
+// ─── Screener endpoint ─────────────────────────────────────────────
+// Returns enriched metrics for a list of symbols (defaults to portfolio holdings).
+// Data: price, SMA200, ATR(14), RVol, daily/weekly/YTD/yearly perf, beta, earnings date.
+
+const _screenerCache = { data: null, expiresAt: 0 };
+const SCREENER_CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
+
+async function computeScreenerRow(symbol) {
+    // We need ~260 trading days (1 yr) of daily bars for all calculations
+    const toDate = new Date().toISOString().split('T')[0];
+    const fromDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // ~400 cal days ≈ 260 trading days
+    const prices = await fetchHistoricalPrices(symbol, 'day', fromDate, toDate, 300);
+
+    if (!prices || prices.length < 20) {
+        return { symbol, error: 'Insufficient data' };
+    }
+
+    const latest = prices[prices.length - 1];
+    const price = latest.close;
+
+    // ── SMA 200 ──
+    const sma200 = prices.length >= 200
+        ? prices.slice(-200).reduce((s, p) => s + p.close, 0) / 200
+        : null;
+
+    // ── ATR(14) ──
+    let atr = null;
+    if (prices.length >= 15) {
+        const trValues = [];
+        for (let i = prices.length - 14; i < prices.length; i++) {
+            const high = prices[i].high;
+            const low = prices[i].low;
+            const prevClose = prices[i - 1].close;
+            trValues.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+        }
+        atr = trValues.reduce((a, b) => a + b, 0) / trValues.length;
+    }
+
+    // ── Relative Volume (current day vol / 3-month avg vol) ──
+    const vol3m = prices.length >= 63
+        ? prices.slice(-63).reduce((s, p) => s + p.volume, 0) / 63
+        : prices.reduce((s, p) => s + p.volume, 0) / prices.length;
+    const rvol = vol3m > 0 ? latest.volume / vol3m : null;
+
+    // ── Performance periods ──
+    const perfCalc = (daysBack) => {
+        if (prices.length < daysBack + 1) return null;
+        const refPrice = prices[prices.length - 1 - daysBack].close;
+        return refPrice > 0 ? ((price - refPrice) / refPrice) * 100 : null;
+    };
+
+    const perfDay = perfCalc(1);
+    const perfWeek = perfCalc(5);
+
+    // YTD: find first bar on or after Jan 1 of current year
+    const yearStart = new Date().getFullYear();
+    const ytdBar = prices.find(p => new Date(p.date).getFullYear() === yearStart);
+    const perfYTD = ytdBar ? ((price - ytdBar.close) / ytdBar.close) * 100 : null;
+
+    const perfYear = perfCalc(252);
+
+    // ── Beta & Relative ATR (vs SPY, 1yr daily) ──
+    let beta = null;
+    let relATR = null;
+    try {
+        const spyPrices = await fetchHistoricalPrices('SPY', 'day', fromDate, toDate, 300);
+        // Align by date
+        const spyMap = new Map(spyPrices.map(p => [p.date.split('T')[0], p]));
+        const aligned = prices.filter(p => spyMap.has(p.date.split('T')[0]));
+        if (aligned.length >= 60) {
+            const stockRet = [], mktRet = [];
+            for (let i = 1; i < aligned.length; i++) {
+                const prev = aligned[i - 1];
+                const curr = aligned[i];
+                const spyCurr = spyMap.get(curr.date.split('T')[0]);
+                const spyPrev = spyMap.get(prev.date.split('T')[0]);
+                if (spyCurr && spyPrev && spyPrev.close > 0 && prev.close > 0) {
+                    stockRet.push((curr.close - prev.close) / prev.close);
+                    mktRet.push((spyCurr.close - spyPrev.close) / spyPrev.close);
+                }
+            }
+            if (stockRet.length >= 30) {
+                const avgS = stockRet.reduce((a, b) => a + b, 0) / stockRet.length;
+                const avgM = mktRet.reduce((a, b) => a + b, 0) / mktRet.length;
+                let cov = 0, varM = 0;
+                for (let i = 0; i < stockRet.length; i++) {
+                    cov += (stockRet[i] - avgS) * (mktRet[i] - avgM);
+                    varM += (mktRet[i] - avgM) ** 2;
+                }
+                beta = varM > 0 ? cov / varM : null;
+            }
+        }
+
+        // ── SPY ATR(14) for Relative ATR ──
+        if (atr != null && spyPrices.length >= 15) {
+            const spyTR = [];
+            for (let i = spyPrices.length - 14; i < spyPrices.length; i++) {
+                const h = spyPrices[i].high, l = spyPrices[i].low, pc = spyPrices[i - 1].close;
+                spyTR.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+            }
+            const spyATR = spyTR.reduce((a, b) => a + b, 0) / spyTR.length;
+            if (spyATR > 0) relATR = atr / spyATR;
+        }
+    } catch (e) {
+        // SPY fetch failed — beta & relATR stay null
+    }
+
+    // ── 52-week high/low ──
+    const recent252 = prices.slice(-252);
+    const high52w = Math.max(...recent252.map(p => p.high));
+    const low52w = Math.min(...recent252.map(p => p.low));
+
+    // ── Avg volume 20d ──
+    const avgVol20 = prices.length >= 20
+        ? prices.slice(-20).reduce((s, p) => s + p.volume, 0) / 20
+        : null;
+
+    return {
+        symbol,
+        price,
+        change: perfDay,
+        volume: latest.volume,
+        avgVol20,
+        rvol,
+        sma200,
+        fromSMA200: sma200 ? ((price - sma200) / sma200) * 100 : null,
+        atr,
+        atrPct: atr && price > 0 ? (atr / price) * 100 : null,
+        relATR,
+        perfDay,
+        perfWeek,
+        perfYTD,
+        perfYear,
+        beta,
+        high52w,
+        low52w,
+        fromHigh52w: high52w > 0 ? ((price - high52w) / high52w) * 100 : null,
+    };
+}
+
+app.post('/api/screener', async (req, res) => {
+    try {
+        let { symbols } = req.body;
+        if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
+            // Default to portfolio holdings
+            symbols = CANONICAL_HOLDINGS.map(h => h.symbol);
+        }
+        symbols = symbols.map(s => s.toUpperCase());
+
+        // Check cache (only for default portfolio set)
+        const cacheKey = symbols.sort().join(',');
+        if (_screenerCache.data && _screenerCache.expiresAt > Date.now()
+            && _screenerCache.cacheKey === cacheKey) {
+            return res.json({ rows: _screenerCache.data, cached: true });
+        }
+
+        // Fetch all in parallel (batched to avoid rate limits)
+        const batchSize = 5;
+        const rows = [];
+        for (let i = 0; i < symbols.length; i += batchSize) {
+            const batch = symbols.slice(i, i + batchSize);
+            const results = await Promise.allSettled(batch.map(s => computeScreenerRow(s)));
+            for (const r of results) {
+                if (r.status === 'fulfilled') rows.push(r.value);
+                else rows.push({ symbol: batch[results.indexOf(r)], error: r.reason?.message });
+            }
+        }
+
+        // Try to fetch earnings dates (nice to have)
+        try {
+            const earningsPromises = symbols.map(async (sym) => {
+                try {
+                    // Polygon upcoming events endpoint — returns next earnings
+                    const data = await polygonFetch(`/vX/reference/tickers/${sym}/events`, {});
+                    const earningsEvent = data.results?.events?.find(e =>
+                        e.type === 'earnings' || e.type === 'earnings_release'
+                    );
+                    return { symbol: sym, earningsDate: earningsEvent?.date || null };
+                } catch {
+                    return { symbol: sym, earningsDate: null };
+                }
+            });
+            const earningsResults = await Promise.allSettled(earningsPromises);
+            const earningsMap = new Map();
+            for (const r of earningsResults) {
+                if (r.status === 'fulfilled' && r.value.earningsDate) {
+                    earningsMap.set(r.value.symbol, r.value.earningsDate);
+                }
+            }
+            for (const row of rows) {
+                row.earningsDate = earningsMap.get(row.symbol) || null;
+            }
+        } catch {
+            // Earnings dates are nice-to-have — don't fail the whole request
+        }
+
+        _screenerCache.data = rows;
+        _screenerCache.expiresAt = Date.now() + SCREENER_CACHE_TTL_MS;
+        _screenerCache.cacheKey = cacheKey;
+
+        res.json({ rows });
+    } catch (error) {
+        console.error('Screener error:', error.message);
+        res.status(500).json({ error: 'Failed to compute screener data' });
+    }
+});
 
 // Error handling middleware
 app.use((error, req, res, next) => {
