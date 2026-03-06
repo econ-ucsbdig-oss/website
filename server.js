@@ -2620,7 +2620,32 @@ function scheduleAnalyticsCacheRefresh() {
 const _screenerCache = { data: null, expiresAt: 0 };
 const SCREENER_CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
 
-async function computeScreenerRow(symbol) {
+// Helper: compute ATR for a given period from a price array
+function calcATR(prices, period) {
+    if (prices.length < period + 1) return null;
+    const trValues = [];
+    for (let i = prices.length - period; i < prices.length; i++) {
+        const h = prices[i].high, l = prices[i].low, pc = prices[i - 1].close;
+        trValues.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+    }
+    return trValues.reduce((a, b) => a + b, 0) / trValues.length;
+}
+
+// Helper: compute beta from two aligned return arrays
+function calcBetaFromReturns(stockReturns, mktReturns) {
+    if (stockReturns.length < 20) return null;
+    const n = stockReturns.length;
+    const avgS = stockReturns.reduce((a, b) => a + b, 0) / n;
+    const avgM = mktReturns.reduce((a, b) => a + b, 0) / n;
+    let cov = 0, varM = 0;
+    for (let i = 0; i < n; i++) {
+        cov += (stockReturns[i] - avgS) * (mktReturns[i] - avgM);
+        varM += (mktReturns[i] - avgM) ** 2;
+    }
+    return varM > 0 ? cov / varM : null;
+}
+
+async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252 } = {}) {
     // We need ~260 trading days (1 yr) of daily bars for all calculations
     const toDate = new Date().toISOString().split('T')[0];
     const fromDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // ~400 cal days ≈ 260 trading days
@@ -2638,18 +2663,8 @@ async function computeScreenerRow(symbol) {
         ? prices.slice(-200).reduce((s, p) => s + p.close, 0) / 200
         : null;
 
-    // ── ATR(14) ──
-    let atr = null;
-    if (prices.length >= 15) {
-        const trValues = [];
-        for (let i = prices.length - 14; i < prices.length; i++) {
-            const high = prices[i].high;
-            const low = prices[i].low;
-            const prevClose = prices[i - 1].close;
-            trValues.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
-        }
-        atr = trValues.reduce((a, b) => a + b, 0) / trValues.length;
-    }
+    // ── ATR (configurable period) ──
+    const atr = calcATR(prices, atrPeriod);
 
     // ── Relative Volume (current day vol / 3-month avg vol) ──
     const vol3m = prices.length >= 63
@@ -2666,6 +2681,9 @@ async function computeScreenerRow(symbol) {
 
     const perfDay = perfCalc(1);
     const perfWeek = perfCalc(5);
+    const perfMonth = perfCalc(21);
+    const perf3M = perfCalc(63);
+    const perf6M = perfCalc(126);
 
     // YTD: find first bar on or after Jan 1 of current year
     const yearStart = new Date().getFullYear();
@@ -2674,19 +2692,21 @@ async function computeScreenerRow(symbol) {
 
     const perfYear = perfCalc(252);
 
-    // ── Beta & Relative ATR (vs SPY, 1yr daily) ──
+    // ── Beta & Relative ATR (vs SPY) ──
     let beta = null;
     let relATR = null;
     try {
         const spyPrices = await fetchHistoricalPrices('SPY', 'day', fromDate, toDate, 300);
-        // Align by date
         const spyMap = new Map(spyPrices.map(p => [p.date.split('T')[0], p]));
         const aligned = prices.filter(p => spyMap.has(p.date.split('T')[0]));
-        if (aligned.length >= 60) {
+
+        // Beta with configurable lookback
+        const betaSlice = aligned.slice(-Math.min(betaPeriod, aligned.length));
+        if (betaSlice.length >= 30) {
             const stockRet = [], mktRet = [];
-            for (let i = 1; i < aligned.length; i++) {
-                const prev = aligned[i - 1];
-                const curr = aligned[i];
+            for (let i = 1; i < betaSlice.length; i++) {
+                const prev = betaSlice[i - 1];
+                const curr = betaSlice[i];
                 const spyCurr = spyMap.get(curr.date.split('T')[0]);
                 const spyPrev = spyMap.get(prev.date.split('T')[0]);
                 if (spyCurr && spyPrev && spyPrev.close > 0 && prev.close > 0) {
@@ -2694,27 +2714,13 @@ async function computeScreenerRow(symbol) {
                     mktRet.push((spyCurr.close - spyPrev.close) / spyPrev.close);
                 }
             }
-            if (stockRet.length >= 30) {
-                const avgS = stockRet.reduce((a, b) => a + b, 0) / stockRet.length;
-                const avgM = mktRet.reduce((a, b) => a + b, 0) / mktRet.length;
-                let cov = 0, varM = 0;
-                for (let i = 0; i < stockRet.length; i++) {
-                    cov += (stockRet[i] - avgS) * (mktRet[i] - avgM);
-                    varM += (mktRet[i] - avgM) ** 2;
-                }
-                beta = varM > 0 ? cov / varM : null;
-            }
+            beta = calcBetaFromReturns(stockRet, mktRet);
         }
 
-        // ── SPY ATR(14) for Relative ATR ──
-        if (atr != null && spyPrices.length >= 15) {
-            const spyTR = [];
-            for (let i = spyPrices.length - 14; i < spyPrices.length; i++) {
-                const h = spyPrices[i].high, l = spyPrices[i].low, pc = spyPrices[i - 1].close;
-                spyTR.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
-            }
-            const spyATR = spyTR.reduce((a, b) => a + b, 0) / spyTR.length;
-            if (spyATR > 0) relATR = atr / spyATR;
+        // Relative ATR: stock ATR / SPY ATR (same period)
+        if (atr != null) {
+            const spyATR = calcATR(spyPrices, atrPeriod);
+            if (spyATR && spyATR > 0) relATR = atr / spyATR;
         }
     } catch (e) {
         // SPY fetch failed — beta & relATR stay null
@@ -2740,13 +2746,18 @@ async function computeScreenerRow(symbol) {
         sma200,
         fromSMA200: sma200 ? ((price - sma200) / sma200) * 100 : null,
         atr,
+        atrPeriod,
         atrPct: atr && price > 0 ? (atr / price) * 100 : null,
         relATR,
         perfDay,
         perfWeek,
+        perfMonth,
+        perf3M,
+        perf6M,
         perfYTD,
         perfYear,
         beta,
+        betaPeriod,
         high52w,
         low52w,
         fromHigh52w: high52w > 0 ? ((price - high52w) / high52w) * 100 : null,
@@ -2755,15 +2766,22 @@ async function computeScreenerRow(symbol) {
 
 app.post('/api/screener', async (req, res) => {
     try {
-        let { symbols } = req.body;
+        let { symbols, atrPeriod, betaPeriod } = req.body;
         if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
             // Default to portfolio holdings
             symbols = CANONICAL_HOLDINGS.map(h => h.symbol);
         }
         symbols = symbols.map(s => s.toUpperCase());
 
-        // Check cache (only for default portfolio set)
-        const cacheKey = symbols.sort().join(',');
+        // Validate configurable periods
+        const validATR = [7, 14, 21, 50];
+        const validBeta = { '3m': 63, '6m': 126, '1y': 252 };
+        const atrP = validATR.includes(atrPeriod) ? atrPeriod : 14;
+        const betaP = validBeta[betaPeriod] || 252;
+        const opts = { atrPeriod: atrP, betaPeriod: betaP };
+
+        // Check cache (keyed by symbols + options)
+        const cacheKey = symbols.sort().join(',') + `|atr${atrP}|beta${betaP}`;
         if (_screenerCache.data && _screenerCache.expiresAt > Date.now()
             && _screenerCache.cacheKey === cacheKey) {
             return res.json({ rows: _screenerCache.data, cached: true });
@@ -2774,7 +2792,7 @@ app.post('/api/screener', async (req, res) => {
         const rows = [];
         for (let i = 0; i < symbols.length; i += batchSize) {
             const batch = symbols.slice(i, i + batchSize);
-            const results = await Promise.allSettled(batch.map(s => computeScreenerRow(s)));
+            const results = await Promise.allSettled(batch.map(s => computeScreenerRow(s, opts)));
             for (const r of results) {
                 if (r.status === 'fulfilled') rows.push(r.value);
                 else rows.push({ symbol: batch[results.indexOf(r)], error: r.reason?.message });

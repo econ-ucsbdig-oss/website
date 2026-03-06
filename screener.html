@@ -108,6 +108,43 @@
         }
         .watchlist-count { color: rgba(255,255,255,0.4); font-size: 0.75rem; }
 
+        /* ── Settings section in sidebar ── */
+        .sidebar-section {
+            border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.75rem;
+        }
+        .sidebar-section h4 {
+            color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 0.5rem;
+        }
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.4rem;
+        }
+        .setting-row label {
+            color: rgba(255,255,255,0.6); font-size: 0.8rem;
+        }
+        .setting-row select {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; color: #fff; padding: 0.25rem 0.4rem; font-size: 0.78rem;
+            outline: none; cursor: pointer;
+        }
+        .setting-row select:focus { border-color: #febc11; }
+        .setting-row select option { background: #1a1f25; color: #fff; }
+
+        /* Performance column toggles */
+        .perf-toggles {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.3rem;
+        }
+        .perf-toggle {
+            padding: 0.2rem 0.5rem; border-radius: 5px; font-size: 0.72rem; font-weight: 600;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.4); transition: all 0.15s;
+        }
+        .perf-toggle.active {
+            background: rgba(254,188,17,0.15); color: #febc11; border-color: rgba(254,188,17,0.4);
+        }
+        .perf-toggle:hover { border-color: rgba(254,188,17,0.3); }
+
         /* ── Main content ── */
         .main-content { flex: 1; min-width: 0; }
 
@@ -124,7 +161,7 @@
             margin-bottom: 1rem; padding: 0.6rem 1rem;
             background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(254,188,17,0.08);
         }
-        .status-bar .left { display: flex; align-items: center; gap: 0.75rem; }
+        .status-bar .left { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
         .status-text { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
         .active-filters-summary { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .filter-badge {
@@ -163,7 +200,7 @@
         .screener-table thead { position: sticky; top: 0; z-index: 10; }
         .screener-table th {
             background: rgba(15,20,25,0.95); color: rgba(255,255,255,0.7); font-weight: 600;
-            padding: 0 0.9rem; text-align: right; border-bottom: 2px solid rgba(254,188,17,0.2);
+            padding: 0 0.9rem; text-align: center; border-bottom: 2px solid rgba(254,188,17,0.2);
             cursor: pointer; user-select: none; transition: color 0.2s; position: relative;
         }
         .screener-table th:first-child { text-align: left; }
@@ -176,7 +213,7 @@
             display: flex; flex-direction: column; align-items: stretch; gap: 0;
         }
         .col-header-top {
-            display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
             padding: 0.5rem 0;
         }
         th:first-child .col-header-top { justify-content: flex-start; }
@@ -219,7 +256,7 @@
         .filter-dropdown .filter-actions .btn { flex: 1; font-size: 0.75rem; padding: 0.3rem; }
 
         .screener-table td {
-            padding: 0.55rem 0.9rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 0.55rem 0.9rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);
             font-variant-numeric: tabular-nums;
         }
         .screener-table td:first-child { text-align: left; }
@@ -334,6 +371,40 @@
         <div class="watchlist-list" id="watchlistList">
             <div class="watchlist-empty">Add tickers above or load the full portfolio to get started.</div>
         </div>
+
+        <!-- Settings -->
+        <div class="sidebar-section">
+            <h4><i class="fas fa-cog"></i> Settings</h4>
+            <div class="setting-row">
+                <label>ATR Period</label>
+                <select id="atrPeriodSelect">
+                    <option value="7">7</option>
+                    <option value="14" selected>14</option>
+                    <option value="21">21</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Beta Lookback</label>
+                <select id="betaPeriodSelect">
+                    <option value="3m">3 Month</option>
+                    <option value="6m">6 Month</option>
+                    <option value="1y" selected>1 Year</option>
+                </select>
+            </div>
+            <div style="margin-top:0.5rem;">
+                <label style="color:rgba(255,255,255,0.5);font-size:0.75rem;display:block;margin-bottom:0.3rem;">Performance Columns</label>
+                <div class="perf-toggles" id="perfToggles">
+                    <button class="perf-toggle active" data-perf="perfDay">Day</button>
+                    <button class="perf-toggle active" data-perf="perfWeek">Week</button>
+                    <button class="perf-toggle" data-perf="perfMonth">1M</button>
+                    <button class="perf-toggle" data-perf="perf3M">3M</button>
+                    <button class="perf-toggle" data-perf="perf6M">6M</button>
+                    <button class="perf-toggle active" data-perf="perfYTD">YTD</button>
+                    <button class="perf-toggle active" data-perf="perfYear">1Y</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Main content -->
@@ -376,36 +447,62 @@
         'VRT','COST','XLV','CEG','JPM','PANW','FLUT','SCHW','REMX','FCX','DXCM','PSA'
     ];
 
-    // Column definitions — filterable: true means user can set min/max
-    const COLUMNS = [
-        { key: 'symbol',     label: 'Ticker',      align: 'left',  fmt: 'ticker',  filterable: false },
-        { key: 'price',      label: 'Price',        align: 'right', fmt: 'dollar',  filterable: true },
-        { key: 'change',     label: 'Chg %',        align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'volume',     label: 'Volume',       align: 'right', fmt: 'bignum',  filterable: true },
-        { key: 'rvol',       label: 'RVol',         align: 'right', fmt: 'rvol',    filterable: true },
-        { key: 'sma200',     label: 'SMA200',       align: 'right', fmt: 'dollar',  filterable: true },
-        { key: 'fromSMA200', label: 'From SMA200',  align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'atr',        label: 'ATR(14)',      align: 'right', fmt: 'decimal2',filterable: true },
-        { key: 'atrPct',     label: 'ATR %',        align: 'right', fmt: 'pct',     filterable: true },
-        { key: 'relATR',     label: 'Rel ATR',      align: 'right', fmt: 'decimal2',filterable: true },
-        { key: 'perfDay',    label: 'Day',          align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'perfWeek',   label: 'Week',         align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'perfYTD',    label: 'YTD',          align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'perfYear',   label: '1 Year',       align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'beta',       label: 'Beta',         align: 'right', fmt: 'decimal2',filterable: true },
-        { key: 'high52w',    label: '52W High',     align: 'right', fmt: 'dollar',  filterable: true },
-        { key: 'low52w',     label: '52W Low',      align: 'right', fmt: 'dollar',  filterable: true },
-        { key: 'fromHigh52w',label: 'From 52W Hi',  align: 'right', fmt: 'pctHeat', filterable: true },
-        { key: 'earningsDate',label: 'Earnings',    align: 'right', fmt: 'date',    filterable: false },
-    ];
+    // All possible performance columns — visibility toggled by user
+    const PERF_COLUMNS = {
+        perfDay:  { key: 'perfDay',  label: 'Day',   fmt: 'pctHeat' },
+        perfWeek: { key: 'perfWeek', label: 'Week',  fmt: 'pctHeat' },
+        perfMonth:{ key: 'perfMonth',label: '1M',    fmt: 'pctHeat' },
+        perf3M:   { key: 'perf3M',   label: '3M',    fmt: 'pctHeat' },
+        perf6M:   { key: 'perf6M',   label: '6M',    fmt: 'pctHeat' },
+        perfYTD:  { key: 'perfYTD',  label: 'YTD',   fmt: 'pctHeat' },
+        perfYear: { key: 'perfYear', label: '1Y',    fmt: 'pctHeat' },
+    };
 
     // State
-    let allRows = [];           // raw data from server (keyed by symbol)
-    let watchlist = [];         // ordered list of ticker strings
+    let allRows = [];
+    let watchlist = [];
     let sortKey = 'symbol';
     let sortAsc = true;
-    let filters = {};           // { colKey: { min: number|null, max: number|null } }
-    let openFilterKey = null;   // which column's filter dropdown is open
+    let filters = {};
+    let openFilterKey = null;
+    let atrPeriod = 14;
+    let betaPeriod = '1y';
+    let visiblePerf = new Set(['perfDay', 'perfWeek', 'perfYTD', 'perfYear']);
+
+    // Build active column list dynamically
+    function getColumns() {
+        const cols = [
+            { key: 'symbol',     label: 'Ticker',      align: 'left',  fmt: 'ticker',  filterable: false },
+            { key: 'price',      label: 'Price',        align: 'right', fmt: 'dollar',  filterable: true },
+            { key: 'change',     label: 'Chg %',        align: 'right', fmt: 'pctHeat', filterable: true },
+            { key: 'volume',     label: 'Volume',       align: 'right', fmt: 'bignum',  filterable: true },
+            { key: 'rvol',       label: 'RVol',         align: 'right', fmt: 'rvol',    filterable: true },
+            { key: 'sma200',     label: 'SMA200',       align: 'right', fmt: 'dollar',  filterable: true },
+            { key: 'fromSMA200', label: 'From SMA200',  align: 'right', fmt: 'pctHeat', filterable: true },
+            { key: 'atr',        label: `ATR(${atrPeriod})`, align: 'right', fmt: 'decimal2',filterable: true },
+            { key: 'atrPct',     label: 'ATR %',        align: 'right', fmt: 'pct',     filterable: true },
+            { key: 'relATR',     label: 'Rel ATR',      align: 'right', fmt: 'decimal2',filterable: true },
+        ];
+
+        // Add visible performance columns in order
+        const perfOrder = ['perfDay','perfWeek','perfMonth','perf3M','perf6M','perfYTD','perfYear'];
+        for (const pk of perfOrder) {
+            if (visiblePerf.has(pk)) {
+                const pc = PERF_COLUMNS[pk];
+                cols.push({ key: pc.key, label: pc.label, align: 'right', fmt: pc.fmt, filterable: true });
+            }
+        }
+
+        const betaLabel = { '3m': 'Beta (3M)', '6m': 'Beta (6M)', '1y': 'Beta' };
+        cols.push(
+            { key: 'beta',       label: betaLabel[betaPeriod] || 'Beta', align: 'right', fmt: 'decimal2',filterable: true },
+            { key: 'high52w',    label: '52W High',     align: 'right', fmt: 'dollar',  filterable: true },
+            { key: 'low52w',     label: '52W Low',      align: 'right', fmt: 'dollar',  filterable: true },
+            { key: 'fromHigh52w',label: 'From 52W Hi',  align: 'right', fmt: 'pctHeat', filterable: true },
+            { key: 'earningsDate',label: 'Earnings',    align: 'right', fmt: 'date',    filterable: false },
+        );
+        return cols;
+    }
 
     // ── Formatting helpers ──
     function fmtDollar(v) { return v != null ? '$' + v.toFixed(2) : '—'; }
@@ -476,16 +573,10 @@
     function getFilterLabel(key) {
         const f = filters[key];
         if (!f) return null;
-        const col = COLUMNS.find(c => c.key === key);
-        if (!col) return null;
         if (f.min != null && f.max != null) return `${f.min} - ${f.max}`;
         if (f.min != null) return `>= ${f.min}`;
         if (f.max != null) return `<= ${f.max}`;
         return null;
-    }
-
-    function hasActiveFilters() {
-        return Object.values(filters).some(f => f.min != null || f.max != null);
     }
 
     // ── Sort ──
@@ -502,12 +593,12 @@
 
     // ── Render ──
     function renderTable() {
+        const COLUMNS = getColumns();
         const wrapper = document.getElementById('tableWrapper');
         const statusEl = document.getElementById('statusText');
         const summaryEl = document.getElementById('activeFiltersSummary');
         const clearBtn = document.getElementById('clearFiltersBtn');
 
-        // Get rows for watchlist symbols
         const watchlistSet = new Set(watchlist);
         const dataRows = allRows.filter(r => watchlistSet.has(r.symbol));
 
@@ -531,7 +622,8 @@
             clearBtn.style.display = '';
             summaryEl.innerHTML = activeFilterKeys.map(([key]) => {
                 const col = COLUMNS.find(c => c.key === key);
-                return `<span class="filter-badge">${col.label}: ${getFilterLabel(key)}
+                const label = col ? col.label : key;
+                return `<span class="filter-badge">${label}: ${getFilterLabel(key)}
                     <button class="remove-filter" data-key="${key}">&times;</button></span>`;
             }).join('');
             summaryEl.querySelectorAll('.remove-filter').forEach(btn => {
@@ -556,7 +648,7 @@
             const filterActive = filters[col.key] && (filters[col.key].min != null || filters[col.key].max != null);
             const filterLabel = filterActive ? getFilterLabel(col.key) : null;
 
-            html += `<th class="${isSorted ? 'sorted' : ''}" style="text-align:${col.align}" data-key="${col.key}">`;
+            html += `<th class="${isSorted ? 'sorted' : ''}" style="text-align:${col.key === 'symbol' ? 'left' : 'center'}" data-key="${col.key}">`;
             html += `<div class="col-header">`;
             html += `<div class="col-header-top">`;
             html += `<span class="col-label">${col.label}${arrow}</span>`;
@@ -567,7 +659,6 @@
             if (filterLabel) {
                 html += `<div class="col-filter-indicator">${filterLabel}</div>`;
             }
-            // Filter dropdown (hidden by default)
             if (col.filterable) {
                 const isOpen = openFilterKey === col.key;
                 const f = filters[col.key] || {};
@@ -590,14 +681,14 @@
             }
             html += '<tr>';
             for (const col of COLUMNS) {
-                html += `<td style="text-align:${col.align}">${renderCell(col, row)}</td>`;
+                html += `<td style="text-align:${col.key === 'symbol' ? 'left' : 'center'}">${renderCell(col, row)}</td>`;
             }
             html += '</tr>';
         }
         html += '</tbody></table>';
         wrapper.innerHTML = html;
 
-        // Bind header click for sorting (on label, not filter icon)
+        // Bind header click for sorting
         wrapper.querySelectorAll('.col-label').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -615,7 +706,6 @@
                 const key = btn.dataset.filterKey;
                 openFilterKey = openFilterKey === key ? null : key;
                 renderTable();
-                // Focus min input if opened
                 if (openFilterKey === key) {
                     const dd = wrapper.querySelector(`.filter-dropdown[data-dropdown-key="${key}"]`);
                     if (dd) dd.querySelector('.filter-min').focus();
@@ -623,7 +713,6 @@
             });
         });
 
-        // Bind filter apply/clear
         wrapper.querySelectorAll('.filter-apply').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -649,12 +738,10 @@
             });
         });
 
-        // Prevent dropdown clicks from bubbling to th (which would sort)
         wrapper.querySelectorAll('.filter-dropdown').forEach(dd => {
             dd.addEventListener('click', (e) => e.stopPropagation());
         });
 
-        // Enter key in filter inputs triggers apply
         wrapper.querySelectorAll('.filter-min, .filter-max').forEach(input => {
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -685,9 +772,7 @@
         ).join('');
 
         list.querySelectorAll('.remove-ticker').forEach(btn => {
-            btn.addEventListener('click', () => {
-                removeTicker(btn.dataset.sym);
-            });
+            btn.addEventListener('click', () => removeTicker(btn.dataset.sym));
         });
     }
 
@@ -720,7 +805,6 @@
         const wrapper = document.getElementById('tableWrapper');
         const status = document.getElementById('statusText');
 
-        // If we have no data at all yet, show loading in the table area
         const watchlistSet = new Set(watchlist);
         const existingData = allRows.filter(r => watchlistSet.has(r.symbol));
         if (existingData.length === 0) {
@@ -732,19 +816,41 @@
             const resp = await fetch(`${API_BASE}/api/screener`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symbols: newSymbols }),
+                body: JSON.stringify({ symbols: newSymbols, atrPeriod, betaPeriod }),
             });
             if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
             const data = await resp.json();
             const newRows = data.rows || [];
-            // Merge into allRows (replace if already exists)
             const existingMap = new Map(allRows.map(r => [r.symbol, r]));
             for (const r of newRows) existingMap.set(r.symbol, r);
             allRows = [...existingMap.values()];
             renderTable();
         } catch (err) {
             status.textContent = `Error loading: ${err.message}`;
-            // Still render what we have
+            renderTable();
+        }
+    }
+
+    // Re-fetch all current watchlist tickers (used when ATR/beta period changes)
+    async function refetchAll() {
+        if (watchlist.length === 0) return;
+        const wrapper = document.getElementById('tableWrapper');
+        const status = document.getElementById('statusText');
+        wrapper.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><p>Recalculating with new settings...</p></div>';
+        status.textContent = 'Recalculating...';
+
+        try {
+            const resp = await fetch(`${API_BASE}/api/screener`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbols: watchlist, atrPeriod, betaPeriod }),
+            });
+            if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+            const data = await resp.json();
+            allRows = data.rows || [];
+            renderTable();
+        } catch (err) {
+            status.textContent = `Error: ${err.message}`;
             renderTable();
         }
     }
@@ -769,6 +875,33 @@
 
     document.getElementById('clearFiltersBtn').addEventListener('click', () => {
         filters = {};
+        renderTable();
+    });
+
+    // ATR period change — re-fetch
+    document.getElementById('atrPeriodSelect').addEventListener('change', (e) => {
+        atrPeriod = parseInt(e.target.value);
+        refetchAll();
+    });
+
+    // Beta period change — re-fetch
+    document.getElementById('betaPeriodSelect').addEventListener('change', (e) => {
+        betaPeriod = e.target.value;
+        refetchAll();
+    });
+
+    // Performance column toggles
+    document.getElementById('perfToggles').addEventListener('click', (e) => {
+        const btn = e.target.closest('.perf-toggle');
+        if (!btn) return;
+        const key = btn.dataset.perf;
+        if (visiblePerf.has(key)) {
+            visiblePerf.delete(key);
+            btn.classList.remove('active');
+        } else {
+            visiblePerf.add(key);
+            btn.classList.add('active');
+        }
         renderTable();
     });
 
