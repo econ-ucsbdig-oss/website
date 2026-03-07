@@ -2090,6 +2090,9 @@
         { symbol: 'PSA', description: 'Public Storage', quantity: 20.725, sector: 'Specialized REITs', gicsSector: 'Real Estate', lastPrice: 302.00, type: 'stock', change: 0, changePercent: 0 }
     ];
 
+    // Cash / money market (SPAXX) — updated from Fidelity export Mar-05-2026
+    let cashBalance = 12125.86;
+
     const portfolioData = [...broadMarketETFs, ...equityHoldings];
 
     function toggleSectorView() {
@@ -2475,6 +2478,7 @@
                 liveStockCount++;
             }
         });
+        totalValue += cashBalance; // include money market (SPAXX)
 
         // Show day change from live API data, with fallback options
         let dayChangeStr = '';
@@ -2514,7 +2518,7 @@
             {
                 title: 'Number of Holdings',
                 value: portfolioData.length.toString(),
-                change: 'Excluding cash positions',
+                change: `Cash (SPAXX): ${formatCurrency(cashBalance)}`,
                 changeClass: ''
             },
             {
@@ -2799,10 +2803,10 @@
 
     function updateCompositionChart() {
         if (!compositionChart) return;
-        const totalValue = portfolioData.reduce((s, h) => s + (h.quantity * h.lastPrice), 0) || 1;
         const indexValue = broadMarketETFs.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
         const equityValue = equityHoldings.reduce((s, h) => s + (h.quantity * h.lastPrice), 0);
-        const cashValue = Math.max(totalValue - indexValue - equityValue, 0);
+        const totalValue = indexValue + equityValue + cashBalance || 1;
+        const cashValue = cashBalance;
         const pctIndex = indexValue / totalValue * 100;
         const pctEquity = equityValue / totalValue * 100;
         const pctCash = cashValue / totalValue * 100;

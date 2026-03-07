@@ -1,0 +1,30 @@
+﻿Account Number,Account Name,Symbol,Description,Quantity,Last Price,Last Price Change,Current Value,Today's Gain/Loss Dollar,Today's Gain/Loss Percent,Total Gain/Loss Dollar,Total Gain/Loss Percent,Percent Of Account,Cost Basis Total,Average Cost Basis,Type
+X85848622,Corporation,VOO,VANGUARD INDEX FUNDS S&P 500 ETF USD,590.669,$626.81,-$3.37,$370237.23,-$1990.56,-0.54%,+$89941.84,+32.08%,49.44%,$280295.39,$474.54,Margin,
+X85848622,Corporation,TSM,TAIWAN SEMICONDUCTOR MANUFACTURING SPON ADS EACH REP 5 ORD TWD10,137.398,$353.86,-$3.58,$48619.65,-$491.89,-1.01%,+$33619.72,+224.13%,6.49%,$14999.93,$109.17,Margin,
+X85848622,Corporation,GOOGL,ALPHABET INC CAP STK CL A,137.343,$300.88,-$2.25,$41323.76,-$309.03,-0.75%,+$22544.76,+120.05%,5.52%,$18779.00,$136.73,Margin,
+X85848622,Corporation,ASML,ASML HOLDING NV EUR0.09 NY REGISTRY SHS 2012,19.917,$1368.36,-$31.01,$27253.62,-$617.63,-2.22%,+$12253.98,+81.69%,3.64%,$14999.64,$753.11,Margin,
+X85848622,Corporation,VTV,VANGUARD INDEX FDS VANGUARD VALUE ETF FORMERLY VANGUARD INDEX TR,131.11,$202.33,-$2.66,$26527.48,-$348.76,-1.30%,+$8530.01,+47.39%,3.54%,$17997.47,$137.27,Margin,
+X85848622,Corporation,AMZN,AMAZON.COM INC,112.118,$218.94,+$2.12,$24547.11,+$237.69,+0.97%,+$5907.84,+31.69%,3.28%,$18639.27,$166.25,Margin,
+X85848622,Corporation,SPY,STATE STREET SPDR S&P 500 ETF UNITS,34.281,$681.31,-$3.82,$23355.98,-$130.96,-0.56%,+$20613.65,+751.68%,3.12%,$2742.33,$80.00,Margin,
+X85848622,Corporation,MSFT,MICROSOFT CORP,55.274,$410.68,+$5.48,$22699.92,+$302.90,+1.35%,+$1840.35,+8.82%,3.03%,$20859.57,$377.38,Margin,
+X85848622,Corporation,VRT,VERTIV HOLDINGS CO COM CL A,77,$249.75,-$1.53,$19230.75,-$117.81,-0.61%,+$9220.75,+92.11%,2.57%,$10010.00,$130.00,Margin,
+X85848622,Corporation,NUKZ,EXCHANGE TRADED CONCEPTS TRUST RANGE NUCLEAR RENAISSANCE INDEX ETF,226.815,$69.52,-$1.77,$15768.17,-$401.47,-2.49%,+$5780.20,+57.87%,2.11%,$9987.97,$44.04,Margin,
+X85848622,Corporation,COST,COSTCO WHOLESALE CORP COM,15,$982.57,-$24.17,$14738.55,-$362.55,-2.41%,-$186.45,-1.25%,1.97%,$14925.00,$995.00,Margin,
+X85848622,Corporation,XLV,SELECT SECTOR SPDR TRUST STATE STREET HEALTH CARE SELECT SECTOR SPDR ETF,94.93,$153.91,-$3.14,$14610.67,-$298.09,-2.00%,-$389.22,-2.60%,1.95%,$14999.89,$158.01,Cash,
+X85848622,Corporation,FCX,FREEPORT-MCMORAN INC COM USD0.10,195.831,$62.66,-$3.27,$12270.77,-$640.37,-4.96%,+$5270.78,+75.29%,1.64%,$6999.99,$35.75,Margin,
+X85848622,Corporation,SPAXX**,HELD IN MONEY MARKET,,,,$12125.86,,,,,1.62%,,,Cash,
+X85848622,Corporation,JPM,JPMORGAN CHASE &CO. COM,40,$293.55,-$5.84,$11742.00,-$233.60,-1.96%,+$1742.00,+17.42%,1.57%,$10000.00,$250.00,Margin,
+X85848622,Corporation,CEG,CONSTELLATION ENERGY CORP COM,33.189,$332.07,+$9.22,$11021.07,+$306.00,+2.85%,+$1021.15,+10.21%,1.47%,$9999.92,$301.30,Margin,
+X85848622,Corporation,SNOW,SNOWFLAKE INC. COMMON STOCK,62.096,$177.45,+$9.19,$11018.93,+$570.66,+5.46%,+$1019.00,+10.19%,1.47%,$9999.93,$161.04,Margin,
+X85848622,Corporation,PANW,PALO ALTO NETWORKS INC COM USD0.0001,54,$163.16,+$4.60,$8810.64,+$248.40,+2.90%,-$1179.36,-11.81%,1.18%,$9990.00,$185.00,Margin,
+X85848622,Corporation,SCHW,SCHWAB CHARLES CORP COM,92.199,$95.41,-$0.63,$8796.70,-$58.09,-0.66%,+$3796.75,+75.93%,1.17%,$4999.95,$54.23,Margin,
+X85848622,Corporation,DXCM,DEXCOM INC,112.945,$70.69,-$2.21,$7984.08,-$249.61,-3.04%,-$2015.90,-20.16%,1.07%,$9999.98,$88.54,Margin,
+X85848622,Corporation,PSA,PUBLIC STORAGE OPER CO COM,20.725,$306.94,-$3.82,$6361.33,-$79.17,-1.23%,+$361.48,+6.02%,0.85%,$5999.85,$289.50,Margin,
+X85848622,Corporation,REMX,VANECK ETF TRUST RARE EARTH AND S,61.438,$93.40,-$4.46,$5738.30,-$274.02,-4.56%,+$238.37,+4.33%,0.77%,$5499.93,$89.52,Cash,
+X85848622,Corporation,FLUT,FLUTTER ENTERTAINMENT PLC ORD EUR0.09 (DI),35.91,$114.57,+$1.89,$4114.20,+$67.86,+1.67%,-$3885.75,-48.58%,0.55%,$7999.95,$222.78,Margin,
+
+"The data and information in this spreadsheet is provided to you solely for your use and is not for distribution. The spreadsheet is provided for informational purposes only, and is not intended to provide advice, nor should it be construed as an offer to sell, a solicitation of an offer to buy or a recommendation for any security by Fidelity or any third party. Data and information shown is based on information known to Fidelity as of the date it was exported and is subject to change. It should not be used in place of your account statements or trade confirmations and is not intended for tax reporting purposes. For more information on the data included in this spreadsheet, including any limitations thereof, go to Fidelity.com."
+
+"Brokerage services are provided by Fidelity Brokerage Services LLC (FBS), 900 Salem Street, Smithfield, RI 02917. Custody and other services provided by National Financial Services LLC (NFS). Both are Fidelity Investment companies and members SIPC, NYSE. Neither FBS nor NFS offer crypto as a direct investment nor provide trading or custody services for such assets."
+
+"Date downloaded Mar-05-2026 at 10:16 p.m ET"

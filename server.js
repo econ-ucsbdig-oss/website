@@ -2645,7 +2645,7 @@ function calcBetaFromReturns(stockReturns, mktReturns) {
     return varM > 0 ? cov / varM : null;
 }
 
-async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252 } = {}) {
+async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252, baselineAtrPct = 2.45 } = {}) {
     // We need ~260 trading days (1 yr) of daily bars for all calculations
     const toDate = new Date().toISOString().split('T')[0];
     const fromDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // ~400 cal days ≈ 260 trading days
@@ -2717,15 +2717,10 @@ async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252 } =
             beta = calcBetaFromReturns(stockRet, mktRet);
         }
 
-        // Relative ATR: stock ATR% / SPY ATR% (normalized by price to avoid skew)
-        if (atr != null && price > 0) {
-            const spyATR = calcATR(spyPrices, atrPeriod);
-            const spyLatest = spyPrices[spyPrices.length - 1];
-            if (spyATR && spyATR > 0 && spyLatest && spyLatest.close > 0) {
-                const stockAtrPct = (atr / price) * 100;
-                const spyAtrPct = (spyATR / spyLatest.close) * 100;
-                relATR = stockAtrPct / spyAtrPct;
-            }
+        // Relative ATR: stock ATR% / baseline ATR%
+        if (atr != null && price > 0 && baselineAtrPct > 0) {
+            const stockAtrPct = (atr / price) * 100;
+            relATR = stockAtrPct / baselineAtrPct;
         }
     } catch (e) {
         // SPY fetch failed — beta & relATR stay null
@@ -2769,7 +2764,7 @@ async function computeScreenerRow(symbol, { atrPeriod = 14, betaPeriod = 252 } =
 
 app.post('/api/screener', async (req, res) => {
     try {
-        let { symbols, atrPeriod, betaPeriod } = req.body;
+        let { symbols, atrPeriod, betaPeriod, baselineTicker } = req.body;
         if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
             // Default to portfolio holdings
             symbols = CANONICAL_HOLDINGS.map(h => h.symbol);
@@ -2777,14 +2772,32 @@ app.post('/api/screener', async (req, res) => {
         symbols = symbols.map(s => s.toUpperCase());
 
         // Validate configurable periods
-        const validATR = [7, 14, 21, 50];
         const validBeta = { '3m': 63, '6m': 126, '1y': 252 };
-        const atrP = validATR.includes(atrPeriod) ? atrPeriod : 14;
+        const atrP = (Number.isInteger(atrPeriod) && atrPeriod >= 2 && atrPeriod <= 250) ? atrPeriod : 14;
         const betaP = validBeta[betaPeriod] || 252;
-        const opts = { atrPeriod: atrP, betaPeriod: betaP };
+
+        // Compute baseline ATR% — either from a ticker or use default 2.45%
+        let baselineAtrPct = 2.45;
+        const blTicker = (typeof baselineTicker === 'string' && baselineTicker.trim()) ? baselineTicker.trim().toUpperCase() : null;
+        if (blTicker) {
+            try {
+                const toDate = new Date().toISOString().split('T')[0];
+                const fromDate = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                const blPrices = await fetchHistoricalPrices(blTicker, 'day', fromDate, toDate, 300);
+                if (blPrices && blPrices.length > atrP) {
+                    const blATR = calcATR(blPrices, atrP);
+                    const blPrice = blPrices[blPrices.length - 1].close;
+                    if (blATR && blPrice > 0) baselineAtrPct = (blATR / blPrice) * 100;
+                }
+            } catch (e) {
+                // Fall back to default
+            }
+        }
+
+        const opts = { atrPeriod: atrP, betaPeriod: betaP, baselineAtrPct };
 
         // Check cache (keyed by symbols + options)
-        const cacheKey = symbols.sort().join(',') + `|atr${atrP}|beta${betaP}`;
+        const cacheKey = symbols.sort().join(',') + `|atr${atrP}|beta${betaP}|bl${blTicker || baselineAtrPct}`;
         if (_screenerCache.data && _screenerCache.expiresAt > Date.now()
             && _screenerCache.cacheKey === cacheKey) {
             return res.json({ rows: _screenerCache.data, cached: true });
