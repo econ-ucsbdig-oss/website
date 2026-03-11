@@ -1542,19 +1542,42 @@ function reconstructHistoricalHoldings(currentHoldings, transactions) {
     const sharesMap = {};
     currentHoldings.forEach(h => { sharesMap[h.symbol] = h.quantity; });
 
-    // Walk transactions backwards
+    // Walk transactions backwards (newest first)
     const sortedTx = [...transactions].sort((a, b) => b.date - a.date);
     const snapshots = [{ date: new Date(), holdings: { ...sharesMap } }];
 
+    // Group transactions by date so we process all same-day trades atomically.
+    // Previously, each transaction created its own snapshot, leaving intermediate
+    // states (e.g., after reversing 1 of 3 buys) that misrepresented holdings.
+    const txByDate = new Map();
     for (const tx of sortedTx) {
-        if (tx.type === 'BUY' || tx.type === 'TRANSFER_IN') {
-            sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) - Math.abs(tx.quantity);
-        } else if (tx.type === 'SELL' || tx.type === 'TRANSFER_OUT') {
-            sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) + Math.abs(tx.quantity);
-        }
-        if ((sharesMap[tx.symbol] || 0) <= 0.001) delete sharesMap[tx.symbol];
-        snapshots.push({ date: tx.date, holdings: { ...sharesMap } });
+        const ds = tx.date.toISOString().split('T')[0];
+        if (!txByDate.has(ds)) txByDate.set(ds, []);
+        txByDate.get(ds).push(tx);
     }
+
+    for (const [, txs] of txByDate) {
+        // Save POST-trade state before reversing this date's transactions.
+        // This is what the portfolio looked like from this date until the next trade.
+        snapshots.push({ date: txs[0].date, holdings: { ...sharesMap } });
+
+        // Now reverse all transactions for this date
+        for (const tx of txs) {
+            if (tx.type === 'BUY' || tx.type === 'TRANSFER_IN') {
+                sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) - Math.abs(tx.quantity);
+            } else if (tx.type === 'SELL' || tx.type === 'TRANSFER_OUT') {
+                sharesMap[tx.symbol] = (sharesMap[tx.symbol] || 0) + Math.abs(tx.quantity);
+            }
+            if ((sharesMap[tx.symbol] || 0) <= 0.001) delete sharesMap[tx.symbol];
+        }
+    }
+
+    // Initial state (pre-all-trades), dated one day before earliest transaction
+    if (sortedTx.length > 0) {
+        const earliest = sortedTx[sortedTx.length - 1].date;
+        snapshots.push({ date: new Date(earliest.getTime() - 86400000), holdings: { ...sharesMap } });
+    }
+
     snapshots.reverse();
     return snapshots;
 }
