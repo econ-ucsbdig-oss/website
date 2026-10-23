@@ -13,6 +13,9 @@
           "*.csv",
           "*.json",
           "data/**",
+          "assets/**",
+          "content/**",
+          "documents/**",
           "valuation-models/**",
           "TrackingError/**"
         ]
