@@ -54,7 +54,7 @@
   if (f) {
     const photo = f.photo ? `<img class="faculty-photo" src="${esc(f.photo)}" alt="${esc(f.name)}">` : "";
     const bio = (f.bio || []).map((para) => `<p>${esc(para)}</p>`).join("");
-    $("#faculty").innerHTML = `${photo}<div><h3>${esc(f.title)}</h3><p class="name">${link(f.name, f.link)}</p><p class="faculty-sub">${esc(f.subtitle || "")}${f.education ? `<br><span class="note">${esc(f.education)}</span>` : ""}</p>${bio ? `<div class="faculty-bio">${bio}</div>` : ""}</div>`;
+    $("#faculty").innerHTML = `${photo}<div class="faculty-head"><h3>${esc(f.title)}</h3><p class="name">${link(f.name, f.link)}</p><p class="faculty-sub">${esc(f.subtitle || "")}${f.education ? `<br><span class="note">${esc(f.education)}</span>` : ""}</p></div>${bio ? `<div class="faculty-bio">${bio}</div>` : ""}`;
   }
 
   // Contact links

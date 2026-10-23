@@ -106,8 +106,10 @@ p:last-child { margin-bottom: 0; }
 .faculty { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--rule-strong); }
 .faculty h3 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
 .faculty .name { font-weight: 700; font-size: 1.1rem; line-height: 1.3; color: var(--heading); }
-#faculty { display: grid; grid-template-columns: 180px 1fr; gap: 28px; align-items: start; }
-.faculty-photo { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center 30%; }
+/* Same column grid as the board, so the photo is exactly one board-card wide */
+#faculty { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); column-gap: 24px; align-items: start; }
+.faculty-photo { grid-column: 1; grid-row: 1 / span 2; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center 30%; display: block; }
+.faculty-head, #faculty .faculty-bio { grid-column: 2 / -1; }
 .faculty-sub { font-size: 0.95rem; margin-top: 2px; }
 .faculty-bio { margin-top: 16px; font-size: 0.95rem; color: #333; max-width: 40em; }
 
@@ -199,6 +201,10 @@ p:last-child { margin-bottom: 0; }
   .directory li:first-child { border-top: 0; padding-top: 0; }
   .directory .photo { grid-row: 1 / span 4; margin: 0; }
   .directory .bio { grid-column: 1 / -1; }
+  #faculty { grid-template-columns: 104px 1fr; column-gap: 16px; }
+  .faculty-photo { grid-row: 1; }
+  .faculty-head { grid-column: 2; }
+  #faculty .faculty-bio { grid-column: 1 / -1; }
   .footer-inner { grid-template-columns: 1fr; gap: 20px; }
 }
 @media (max-width: 760px) {
@@ -224,8 +230,6 @@ p:last-child { margin-bottom: 0; }
   .section { padding: 48px 0; }
   .people { grid-template-columns: repeat(3, 1fr); gap: 18px 12px; }
   .people li { font-size: 0.85rem; }
-  #faculty { grid-template-columns: 1fr; }
-  .faculty-photo { max-width: 220px; }
   .data-table { font-size: 0.9rem; }
   #holdings td:nth-child(3), #holdings th:nth-child(3) { display: none; }
   .chart .axis { font-size: 19px; }
