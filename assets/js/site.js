@@ -121,6 +121,14 @@
   }
   drawGrowth($("#growthChart"), P.growth);
 
+  // Factsheet download
+  if (D.factsheet && D.factsheet.file) {
+    const wrap = document.querySelector("[data-factsheet-wrap]");
+    document.querySelector("[data-factsheet]").href = D.factsheet.file;
+    document.querySelector("[data-factsheet-date]").textContent = D.factsheet.asOf || "";
+    if (wrap) wrap.hidden = false;
+  }
+
   // IPS link
   document.querySelectorAll("[data-ips]").forEach((a) => {
     const holder = a.closest("p") || a;

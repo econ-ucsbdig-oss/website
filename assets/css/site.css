@@ -150,6 +150,10 @@ p:last-child { margin-bottom: 0; }
 .bar-value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.88rem; }
 .facts .vs { display: block; font-size: 0.8rem; color: var(--muted); }
 
+.download { margin-top: 14px; font-size: 0.98rem; }
+.download a { font-weight: 700; }
+.download a::before { content: "↓ "; }
+
 /* Policy */
 .policy { margin: 0; }
 .policy div { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 14px 0; border-top: 1px solid var(--rule); }
