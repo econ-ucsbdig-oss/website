@@ -43,7 +43,7 @@ window.DIG = {
     { name: "Emma Bosco", year: "'28", sector: "", photo: "", linkedin: "" },
     { name: "Ashton Laczkowski", year: "'28", sector: "", photo: "", linkedin: "" },
     { name: "Weber Maisel", year: "'28", sector: "", photo: "", linkedin: "" },
-    { name: "Sidney Haycocks", year: "'29", sector: "", photo: "", linkedin: "" },
+    { name: "Sidney Haycocks", year: "'29", sector: "", photo: "assets/img/people/sidney-haycocks.jpg", linkedin: "" },
     { name: "Madigan Escobar", year: "'29", sector: "", photo: "", linkedin: "" },
   ],
 
