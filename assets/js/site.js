@@ -141,10 +141,14 @@
 
   // Alumni, grouped by class year (newest first)
   const alumni = D.alumni || [];
-  const years = [...new Set(alumni.map((a) => a.classYear))].sort((a, b) => b - a);
-  $("#alumniList").innerHTML = years.map((y) => {
-    const list = alumni.filter((a) => a.classYear === y).sort((a, b) => lastName(a.name).localeCompare(lastName(b.name)));
-    return `<div class="alumni-year"><h3>Class of ${esc(y)}</h3><ul class="alumni">${list.map((a) => {
+  // Alumni with no class year are listed last, under "Before <earliest known year>".
+  const years = [...new Set(alumni.map((a) => a.classYear).filter((y) => y))].sort((a, b) => b - a);
+  const groups = years.map((y) => ({ title: `Class of ${y}`, list: alumni.filter((a) => a.classYear === y) }));
+  const undated = alumni.filter((a) => !a.classYear);
+  if (undated.length) groups.push({ title: years.length ? `Before ${years[years.length - 1]}` : "Alumni", list: undated });
+  $("#alumniList").innerHTML = groups.map(({ title, list }) => {
+    list = [...list].sort((a, b) => lastName(a.name).localeCompare(lastName(b.name)) || a.name.localeCompare(b.name));
+    return `<div class="alumni-year"><h3>${esc(title)}</h3><ul class="alumni">${list.map((a) => {
       const where = [a.role, a.firm].filter(Boolean).join(", ");
       return `<li><span class="name">${link(a.name, a.linkedin)}</span>${where ? `<span class="detail">${esc(where)}</span>` : ""}</li>`;
     }).join("")}</ul></div>`;
