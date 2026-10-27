@@ -25,7 +25,7 @@ window.DIG = {
   students: [
     { name: "Ava Summers", year: "'27", sector: "", photo: "", linkedin: "" },
     { name: "Sarah He", year: "'27", sector: "", photo: "", linkedin: "" },
-    { name: "Saloni Singhal", year: "'27", sector: "", photo: "", linkedin: "" },
+    { name: "Saloni Singhal", year: "'27", sector: "", photo: "assets/img/people/saloni-singhal.jpg", linkedin: "" },
     { name: "Quinn Baltazar", year: "'27", sector: "", photo: "", linkedin: "" },
     { name: "Aidan Middleton", year: "'27", sector: "", photo: "", linkedin: "" },
     { name: "Victor Silverman", year: "'27", sector: "", photo: "", linkedin: "" },
