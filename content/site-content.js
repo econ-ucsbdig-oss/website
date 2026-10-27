@@ -35,7 +35,7 @@ window.DIG = {
     { name: "Dawn Suh", year: "'27", sector: "", photo: "", linkedin: "" },
     { name: "Vincent Gumbs", year: "'27", sector: "", photo: "", linkedin: "" },
     { name: "Skylar Schroth", year: "'27", sector: "", photo: "", linkedin: "" },
-    { name: "Piper Pickford", year: "'27", sector: "", photo: "", linkedin: "" },
+    { name: "Piper Pickford", year: "'27", sector: "", photo: "assets/img/people/piper-pickford.jpg", linkedin: "" },
     { name: "Benson Young", year: "'28", sector: "", photo: "assets/img/people/benson-young.jpg", linkedin: "" },
     { name: "Lizzy Stanley", year: "'28", sector: "", photo: "", linkedin: "" },
     { name: "Maxine Park", year: "'28", sector: "", photo: "assets/img/people/maxine-park.jpg", linkedin: "" },
